@@ -40,7 +40,14 @@ Do not put raw license keys, bank-card data, or the Supabase service-role key in
 
 Only Caddy publishes ports `80`, `443`, and `443/udp`. The API has no host port: it is visible only to Caddy within the Compose network. Caddy uses the official `2.11.4-alpine` image and automatically obtains and renews HTTPS certificates when the DuckDNS name resolves to the VPS.
 
-For this IPv4-only VPS, copy the **Shared Pooler, Session mode** connection string from Supabase Connect (port `5432`) into `DATABASE_URL`. Do not use a Supabase URL, anon key, or service-role key in the desktop app or in this file.
+For this IPv4-only VPS, copy the **Shared Pooler, Session mode** connection string from Supabase Connect (port `5432`) into `DATABASE_URL`. Download the CA certificate from **Database > Settings > SSL Configuration** in Supabase, copy it to the VPS as `supabase-ca.crt`, then run the one-off command below before migrating:
+
+```bash
+sudo docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD:/app" -w /app node:24-alpine node scripts/set-ca-cert.js /app/supabase-ca.crt
+```
+
+The API verifies the Supabase certificate rather than disabling TLS verification. Do not use a Supabase URL, anon key, or service-role key in the desktop app or in this file.
 
 ## Manual payment flow
 

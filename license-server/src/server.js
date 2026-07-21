@@ -3,6 +3,7 @@
 const http = require("node:http");
 const { Pool } = require("pg");
 const { loadConfig } = require("./config");
+const { databasePoolOptions } = require("./database");
 const { canonicalizeLicenseKey, generateRefreshToken, hmacHex } = require("./keys");
 const { createRateLimiter } = require("./rate-limiter");
 const { StoreError, createStore } = require("./store");
@@ -177,7 +178,7 @@ function createServer({ config, store, limiter }) {
 async function main() {
   loadLocalEnv();
   const config = loadConfig();
-  const pool = new Pool({ connectionString: config.databaseUrl, ssl: config.databaseSsl ? { rejectUnauthorized: true } : false });
+  const pool = new Pool(databasePoolOptions(config));
   await pool.query("SELECT 1");
   const server = createServer({ config, store: createStore(pool), limiter: createRateLimiter() });
   server.listen(config.port, "0.0.0.0", () => console.log(`CatCode license API listening on 0.0.0.0:${config.port}`));

@@ -2,6 +2,7 @@
 
 const { Pool } = require("pg");
 const { loadConfig } = require("../src/config");
+const { databasePoolOptions } = require("../src/database");
 const { generateLicenseKey, hmacHex } = require("../src/keys");
 const { createStore } = require("../src/store");
 
@@ -72,10 +73,7 @@ async function main() {
   loadLocalEnv();
   const { command, options } = parseArguments(process.argv.slice(2));
   const config = loadConfig();
-  const pool = new Pool({
-    connectionString: config.databaseUrl,
-    ssl: config.databaseSsl ? { rejectUnauthorized: true } : false,
-  });
+  const pool = new Pool(databasePoolOptions(config));
   const store = createStore(pool);
 
   try {
