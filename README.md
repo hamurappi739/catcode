@@ -13,6 +13,19 @@ The original source repository was unavailable. The `desktop` directory was reco
 
 Do not distribute builds from this repository until the security, licensing, code-signing, and release checklist in `docs/RECOVERY.md` is complete.
 
+## Desktop verification
+
+From `desktop`, run:
+
+```powershell
+npm ci
+npm run check
+npm run smoke
+npm run build:dir
+```
+
+`build:dir` creates an unsigned local folder at `desktop/release/win-unpacked`. It is for verification only, not for distribution.
+
 ## Safety rules
 
 - Never commit `.env`, database URLs, private signing keys, or payment information.
