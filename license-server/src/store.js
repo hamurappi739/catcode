@@ -226,6 +226,15 @@ function createStore(pool) {
     return result.rows;
   }
 
+  async function listDevices(licenseId) {
+    const result = await pool.query(
+      `SELECT id, license_id, device_name, app_version, first_activated_at, last_seen_at, deactivated_at
+       FROM license_devices WHERE license_id = $1 ORDER BY first_activated_at DESC`,
+      [licenseId],
+    );
+    return result.rows;
+  }
+
   async function revokeLicense(licenseId, ipHmac) {
     const client = await pool.connect();
     try {
@@ -272,6 +281,7 @@ function createStore(pool) {
     createLicense,
     deactivate,
     deactivateDeviceForAdmin,
+    listDevices,
     listLicenses,
     refresh,
     revokeLicense,

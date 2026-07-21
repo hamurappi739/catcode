@@ -40,7 +40,6 @@ function loadConfig(env = process.env) {
     licenseKeyHmacSecret: required(env, "LICENSE_KEY_HMAC_SECRET"),
     deviceHmacSecret: required(env, "DEVICE_HMAC_SECRET"),
     eventHmacSecret: required(env, "EVENT_HMAC_SECRET"),
-    adminApiToken: required(env, "ADMIN_API_TOKEN"),
     entitlementPrivateKey: privateKey,
     entitlementPublicKey: publicKey,
     entitlementPublicKeyPem: publicKeyPem,

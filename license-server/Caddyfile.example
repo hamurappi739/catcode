@@ -1,7 +1,0 @@
-api.example.ru {
-    encode zstd gzip
-
-    @health path /healthz
-    reverse_proxy @health 127.0.0.1:3000
-    reverse_proxy 127.0.0.1:3000
-}

@@ -18,7 +18,6 @@ console.log("# Put these values in the server .env file. Never commit that file.
 console.log(`LICENSE_KEY_HMAC_SECRET=${secret()}`);
 console.log(`DEVICE_HMAC_SECRET=${secret()}`);
 console.log(`EVENT_HMAC_SECRET=${secret()}`);
-console.log(`ADMIN_API_TOKEN=${secret()}`);
 console.log("ENTITLEMENT_KEY_ID=catcode-license-2026-01");
 console.log(`ENTITLEMENT_PRIVATE_KEY_PEM=${envPem(privatePem)}`);
 console.log(`ENTITLEMENT_PUBLIC_KEY_PEM=${envPem(publicPem)}`);

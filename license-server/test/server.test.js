@@ -19,7 +19,6 @@ function createTestConfig() {
     licenseKeyHmacSecret: "license-secret",
     deviceHmacSecret: "device-secret",
     eventHmacSecret: "event-secret",
-    adminApiToken: "admin-token",
     activationRateLimit: 10,
     refreshRateLimit: 10,
   };
@@ -27,7 +26,7 @@ function createTestConfig() {
 
 async function withServer(t, callback) {
   const config = createTestConfig();
-  const calls = { activate: 0, createLicense: 0 };
+  const calls = { activate: 0 };
   const store = {
     async activate() {
       calls.activate += 1;
@@ -40,26 +39,6 @@ async function withServer(t, callback) {
       throw new Error("not used");
     },
     async deactivate() {
-      throw new Error("not used");
-    },
-    async listLicenses() {
-      return [];
-    },
-    async createLicense(input) {
-      calls.createLicense += 1;
-      return {
-        id: "07134cd2-48d3-4f3a-85f9-7958ea225968",
-        key: input.key,
-        keyPrefix: input.key.slice(0, 10),
-        productCode: input.productCode,
-        maxDevices: input.maxDevices,
-        expiresAt: input.expiresAt,
-      };
-    },
-    async revokeLicense() {
-      throw new Error("not used");
-    },
-    async deactivateDeviceForAdmin() {
       throw new Error("not used");
     },
   };
@@ -90,19 +69,10 @@ test("activation returns a signed entitlement and opaque refresh token", async (
   });
 });
 
-test("admin key issuance requires a bearer token", async (t) => {
-  await withServer(t, async ({ baseUrl, calls }) => {
-    const denied = await fetch(`${baseUrl}/admin/licenses`, { method: "POST" });
-    assert.equal(denied.status, 401);
-
-    const response = await fetch(`${baseUrl}/admin/licenses`, {
-      method: "POST",
-      headers: { Authorization: "Bearer admin-token", "Content-Type": "application/json" },
-      body: JSON.stringify({ buyerEmail: "buyer@example.ru", paymentReference: "transfer-1" }),
-    });
-    assert.equal(response.status, 201);
-    const payload = await response.json();
-    assert.equal(calls.createLicense, 1);
-    assert.match(payload.license.key, /^CAT-(?:[0-9A-HJKMNP-TV-Z]{6}-){4}[0-9A-HJKMNP-TV-Z]{6}$/);
+test("administrative routes are not exposed over HTTP", async (t) => {
+  await withServer(t, async ({ baseUrl }) => {
+    const response = await fetch(`${baseUrl}/admin/licenses`, { method: "POST" });
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: "not_found" });
   });
 });

@@ -1,6 +1,6 @@
 # CatCode License Server
 
-This service issues and validates licenses for the CatCode desktop application.
+This service issues and validates licenses for the CatCode desktop application. Only its activation, refresh, deactivation, and health endpoints are reachable from the Internet. License management runs directly inside the private API container after an SSH login to the VPS.
 
 It is designed for manual payments: after confirming a transfer, the owner issues one key with the admin command. The server stores only an HMAC of the key, not the key itself. A desktop client receives a short-lived Ed25519-signed entitlement and a per-device refresh token.
 
@@ -24,34 +24,38 @@ Do not put raw license keys, bank-card data, or the Supabase service-role key in
 ## Production VPS setup
 
 1. Place this directory on the VPS without `.env` in source control.
-2. Create `.env` with production secrets, `DATABASE_SSL=true`, and `ALLOW_INSECURE_HTTP=false`.
-3. Point a dedicated subdomain such as `api.example.ru` to the VPS.
-4. Replace `api.example.ru` in `Caddyfile.example`, install Caddy, and use it as the only public listener on ports 80 and 443.
-5. Run `docker compose up -d --build`.
-6. Apply migrations once with `docker compose run --rm license-api node scripts/migrate.js`.
+2. Create `.env` with production secrets, `API_DOMAIN`, `DATABASE_SSL=true`, and `ALLOW_INSECURE_HTTP=false`.
+3. Point `API_DOMAIN` to the VPS before starting the stack. For the current CatCode VPS it is `catcode-license-739.duckdns.org`.
+4. Apply migrations once: `sudo docker compose run --rm license-api node scripts/migrate.js`.
+5. Start the stack: `sudo docker compose up -d --build`.
+6. Verify `https://$API_DOMAIN/healthz` returns `{"ok":true}` and Caddy has obtained a certificate.
 7. Pin the public Ed25519 key printed by `npm run generate-secrets` into the desktop client before building the installer.
 
-The container listens only on `127.0.0.1:3000`; Caddy terminates HTTPS and proxies requests to it.
+Only Caddy publishes ports `80`, `443`, and `443/udp`. The API has no host port: it is visible only to Caddy within the Compose network. Caddy uses the official `2.11.4-alpine` image and automatically obtains and renews HTTPS certificates when the DuckDNS name resolves to the VPS.
 
 ## Manual payment flow
 
-After you verify a payment, issue a key on the server:
+After you verify a payment, SSH to the VPS and issue a key inside the API container:
 
-```powershell
-$env:ADMIN_API_URL = "https://api.example.ru"
-$env:ADMIN_API_TOKEN = "your-admin-token"
-npm run admin -- issue --email buyer@example.ru --payment transfer-2026-0001 --devices 1
+```bash
+cd /home/catcode/catcode-license-server
+sudo docker compose exec -T license-api node scripts/admin-direct.js issue \
+  --payment transfer-2026-0001 --devices 1
 ```
 
-The command prints the key once. Send it to the buyer through the agreed channel, then remove it from any temporary notes.
+Add `--email buyer@example.ru` only after the data-location and privacy decision for buyer data has been made. The command prints the full key once. Send it to the buyer through the agreed channel, then remove it from any temporary notes.
 
 Useful support commands:
 
-```powershell
-npm run admin -- list
-npm run admin -- revoke --license LICENSE_UUID
-npm run admin -- reset-device --license LICENSE_UUID --device DEVICE_UUID
+```bash
+sudo docker compose exec -T license-api node scripts/admin-direct.js list
+sudo docker compose exec -T license-api node scripts/admin-direct.js devices --license LICENSE_UUID
+sudo docker compose exec -T license-api node scripts/admin-direct.js revoke --license LICENSE_UUID
+sudo docker compose exec -T license-api node scripts/admin-direct.js reset-device \
+  --license LICENSE_UUID --device DEVICE_UUID
 ```
+
+You can also use the shorter local aliases, for example `sudo docker compose exec -T license-api npm run admin -- list`.
 
 ## Desktop contract
 
