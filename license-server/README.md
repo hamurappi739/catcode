@@ -24,7 +24,14 @@ Do not put raw license keys, bank-card data, or the Supabase service-role key in
 ## Production VPS setup
 
 1. Place this directory on the VPS without `.env` in source control.
-2. Run `node scripts/bootstrap-env.js` once. It creates `.env` with new HMAC and Ed25519 keys and mode `600`; it refuses to overwrite an existing file. Add the production `DATABASE_URL`, then confirm `API_DOMAIN`, `DATABASE_SSL=true`, and `ALLOW_INSECURE_HTTP=false`.
+2. Run the one-off bootstrap container below once. It creates `.env` with new HMAC and Ed25519 keys and mode `600`; it refuses to overwrite an existing file. The explicit user mapping keeps `.env` owned by `catcode` rather than `root`.
+
+   ```bash
+   sudo docker run --rm --user "$(id -u):$(id -g)" \
+     -v "$PWD:/app" -w /app node:24-alpine node scripts/bootstrap-env.js
+   ```
+
+   Add the production `DATABASE_URL`, then confirm `API_DOMAIN`, `DATABASE_SSL=true`, and `ALLOW_INSECURE_HTTP=false`.
 3. Point `API_DOMAIN` to the VPS before starting the stack. For the current CatCode VPS it is `catcode-license-739.duckdns.org`.
 4. Apply migrations once: `sudo docker compose run --rm license-api node scripts/migrate.js`.
 5. Start the stack: `sudo docker compose up -d --build`.
@@ -32,6 +39,8 @@ Do not put raw license keys, bank-card data, or the Supabase service-role key in
 7. Pin the public Ed25519 key printed by `node scripts/bootstrap-env.js` into the desktop client before building the installer.
 
 Only Caddy publishes ports `80`, `443`, and `443/udp`. The API has no host port: it is visible only to Caddy within the Compose network. Caddy uses the official `2.11.4-alpine` image and automatically obtains and renews HTTPS certificates when the DuckDNS name resolves to the VPS.
+
+For this IPv4-only VPS, copy the **Shared Pooler, Session mode** connection string from Supabase Connect (port `5432`) into `DATABASE_URL`. Do not use a Supabase URL, anon key, or service-role key in the desktop app or in this file.
 
 ## Manual payment flow
 
