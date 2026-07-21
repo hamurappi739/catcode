@@ -1,0 +1,31 @@
+# Dependencies and build output
+**/node_modules/
+**/dist/
+**/out/
+**/release/
+**/.cache/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+
+# Packaged binaries and archives
+*.asar
+*.exe
+*.msi
+*.zip
+*.blockmap
+latest*.yml
+
+# Logs, test artifacts, and local tooling
+*.log
+coverage/
+playwright-report/
+test-results/
+.codebase-memory/
+.DS_Store
+Thumbs.db
