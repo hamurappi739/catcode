@@ -14884,248 +14884,7 @@ var Xo = F((CP, jh) => {
 });
 var Dh = F((PP, Mh) => {
   "use strict";
-  var { safeStorage: $n } = require("electron"),
-    rc = require("crypto"),
-    nc = require("os"),
-    Ob = require("path"),
-    { readJsonFile: Ib, writeJsonFile: xb, removeJsonFile: Nb } = Xo(),
-    Lb = "https://api.lemonsqueezy.com/v1/licenses";
-  function jb({ app: t, isMac: e, isWindows: r, logWarn: n, t: s }) {
-    function o() {
-      return Ob.join(t.getPath("userData"), "license.json");
-    }
-    function i() {
-      let R = Ib(o());
-      return !R ||
-        typeof R != "object" ||
-        typeof R.licenseKey != "string" ||
-        typeof R.instanceId != "string"
-        ? null
-        : R;
-    }
-    function a(R) {
-      xb(o(), R);
-    }
-    function c() {
-      Nb(o());
-    }
-    function l(R) {
-      return rc
-        .createHash("sha256")
-        .update(String(R || ""), "utf8")
-        .digest("hex");
-    }
-    function d() {
-      let R = (() => {
-        try {
-          return nc.userInfo();
-        } catch {
-          return {};
-        }
-      })();
-      return rc
-        .createHash("sha256")
-        .update(
-          [
-            t.getName ? t.getName() : "CatCode",
-            process.platform,
-            process.arch,
-            nc.hostname() || "",
-            R.username || "",
-            t.getPath("userData") || "",
-          ].join(`
-`),
-          "utf8",
-        )
-        .digest("hex");
-    }
-    function u(R, _) {
-      let T = { v: 1, licenseKeyHash: l(R), instanceId: String(_ || "") };
-      try {
-        if ($n && $n.isEncryptionAvailable())
-          return {
-            type: "safe-storage-v1",
-            value: $n.encryptString(JSON.stringify(T)).toString("base64"),
-          };
-      } catch (m) {
-        n(
-          "[CatCode] safeStorage license binding unavailable:",
-          m && m.message ? m.message : m,
-        );
-      }
-      return {
-        type: "local-fingerprint-v1",
-        value: rc
-          .createHash("sha256")
-          .update(
-            [T.licenseKeyHash, T.instanceId, d()].join(`
-`),
-            "utf8",
-          )
-          .digest("hex"),
-      };
-    }
-    function f(R) {
-      if (!R || typeof R != "object") return !1;
-      let _ = R.deviceBinding;
-      if (!_ || typeof _ != "object") return !1;
-      if (_.type === "safe-storage-v1" && typeof _.value == "string")
-        try {
-          if (!$n || !$n.isEncryptionAvailable()) return !1;
-          let T = JSON.parse($n.decryptString(Buffer.from(_.value, "base64")));
-          return (
-            T &&
-            T.v === 1 &&
-            T.licenseKeyHash === l(R.licenseKey) &&
-            T.instanceId === R.instanceId
-          );
-        } catch {
-          return !1;
-        }
-      if (_.type === "local-fingerprint-v1" && typeof _.value == "string") {
-        let T = u(R.licenseKey, R.instanceId);
-        return T.type === _.type && T.value === _.value;
-      }
-      return !1;
-    }
-    function h(R) {
-      return R && R.license_key && typeof R.license_key.status == "string"
-        ? R.license_key.status.toLowerCase()
-        : "";
-    }
-    function p(R) {
-      return !R || R === "active";
-    }
-    function g(R) {
-      let _ = R && R.payload;
-      if (_ && _.valid === !1) return !0;
-      let T = Number(R && R.statusCode);
-      if (!Number.isFinite(T) || T < 400 || T >= 500) return !1;
-      let m = String((_ && _.error) || (R && R.message) || "").toLowerCase();
-      return /license|instance|activation|activat|disabled|expired|revoked|invalid|suspended|not found/.test(
-        m,
-      );
-    }
-    function y(R) {
-      let _ = String(R || "").toLowerCase();
-      return /activation\s+limit|activation.*limit|limit.*reached|reached.*limit|activation.*reached/.test(
-        _,
-      )
-        ? "limit"
-        : /disabled|revoked|suspended|expired|no longer active/.test(_)
-          ? "disabled"
-          : "";
-    }
-    function w(R = "") {
-      return {
-        view: "license-activate",
-        reason: typeof R == "string" && R !== "license-activate" ? y(R) : "",
-      };
-    }
-    function A() {
-      let R = nc.hostname() || "Computer";
-      return `CatCode ${e ? "macOS" : r ? "Windows" : process.platform} - ${R}`;
-    }
-    async function S(R, _, T = {}) {
-      let m;
-      try {
-        m = await fetch(`${Lb}/${R}`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams(_),
-        });
-      } catch (b) {
-        let C = b && b.cause;
-        n("[CatCode] license server request failed:", {
-          endpoint: R,
-          message: b && b.message ? b.message : String(b),
-          causeCode: C && C.code,
-          causeMessage: C && C.message,
-        });
-        let G = new Error(s("licenseNetworkFailed"));
-        throw ((G.code = "LICENSE_NETWORK_FAILED"), (G.cause = b), G);
-      }
-      let x = await m.json().catch(() => ({}));
-      if (!m.ok) {
-        if (T.allowInvalidPayload && x && x.valid === !1) return x;
-        let b = new Error(x.error || `License server returned ${m.status}`);
-        throw ((b.statusCode = m.status), (b.payload = x), b);
-      }
-      return x;
-    }
-    async function D(R) {
-      let _ = String(R || "").trim();
-      if (!_) throw new Error(s("licenseMissingKey"));
-      let T = await S("activate", { license_key: _, instance_name: A() }),
-        m = h(T);
-      if (!T.activated || !T.instance || !T.instance.id || !p(m))
-        throw new Error(T.error || s("licenseActivateFailed"));
-      let x = new Date().toISOString(),
-        b = {
-          licenseKey: _,
-          instanceId: T.instance.id,
-          instanceName: T.instance.name || A(),
-          status: m,
-          customerEmail: T.meta && T.meta.customer_email,
-          productName: T.meta && T.meta.product_name,
-          activatedAt: x,
-          lastValidatedAt: x,
-        };
-      return ((b.deviceBinding = u(b.licenseKey, b.instanceId)), a(b), b);
-    }
-    async function B(R = {}) {
-      let _ = R.allowOffline !== !1,
-        T = i();
-      if (!T) return { ok: !1, reason: "missing" };
-      let m = typeof T.status == "string" ? T.status.toLowerCase() : "";
-      if (!p(m)) return { ok: !1, reason: "invalid" };
-      let x = !!T.deviceBinding;
-      if (x && !f(T)) return { ok: !1, reason: "invalid-device" };
-      try {
-        let b = await S(
-            "validate",
-            { license_key: T.licenseKey, instance_id: T.instanceId },
-            { allowInvalidPayload: !0 },
-          ),
-          C = h(b);
-        if (!b.valid || !p(C)) return { ok: !1, reason: b.error || "invalid" };
-        let G = {
-          ...T,
-          status: C,
-          customerEmail: b.meta && b.meta.customer_email,
-          productName: b.meta && b.meta.product_name,
-          deviceBinding: x ? T.deviceBinding : u(T.licenseKey, T.instanceId),
-          lastValidatedAt: new Date().toISOString(),
-        };
-        return (a(G), { ok: !0, license: G });
-      } catch (b) {
-        return g(b)
-          ? {
-              ok: !1,
-              reason: (b.payload && b.payload.error) || b.message || "invalid",
-            }
-          : _ && x && f(T)
-            ? { ok: !0, license: T, offline: !0 }
-            : {
-                ok: !1,
-                reason: b && b.message ? b.message : "network",
-                network: !0,
-              };
-      }
-    }
-    return {
-      loadLicense: i,
-      removeLicense: c,
-      licenseRecoveryReasonFromMessage: y,
-      licenseActivatePayload: w,
-      activateLicenseKey: D,
-      validateSavedLicense: B,
-    };
-  }
-  Mh.exports = { createLicenseService: jb };
+  Mh.exports = require("./license-client");
 });
 var $h = F((RP, Uh) => {
   "use strict";
@@ -15609,13 +15368,15 @@ var Wh = F((IP, Hh) => {
     startLicensedApp: i,
   }) {
     async function a(d = {}) {
-      return { ok: !0, bypass: !0 };
+      return r({ allowOffline: d.allowOffline !== !1 });
     }
     async function c(d = {}) {
-      return { ok: !0, bypass: !0 };
+      let u = await a(d);
+      return (u.ok || d.silent || s(n(u.reason || "invalid")), u);
     }
     async function l() {
-      i();
+      let d = await c({ allowOffline: !0, silent: !0 });
+      return (d.ok ? i() : o(n(d.reason || "missing")), d);
     }
     return {
       checkAppAccessValidityNow: c,
@@ -24158,45 +23919,14 @@ var _g = F((CR, yg) => {
     licenseResetPageUrl: A,
   }) {
     (t.handle("account-state-get", () => s()),
-      t.handle("account-google-login", async () => {
-        try {
-          let S = await r.startGoogleSignIn();
-          return (e.openExternal(S), { ok: !0 });
-        } catch (S) {
-          throw (
-            n(
-              "[CatCode] google login start failed:",
-              S && S.stack ? S.stack : S,
-            ),
-            S
-          );
-        }
-      }),
+      t.handle("account-google-login", async () => ({ ok: !1, reason: "disabled" })),
       t.handle("account-sign-out", async () => o()),
       t.handle("account-unlink-license", async () =>
         i({ confirmed: !0, silent: !0 }),
       ),
-      t.handle("account-link-license", async (S, D) => ({
-        ok: await a(String(D || ""), { legacy: !1 }),
-      })),
-      t.handle("account-link-legacy-license", async () => {
-        let S = c();
-        return !S || !S.licenseKey
-          ? { ok: !1, reason: "missing" }
-          : { ok: await a(S.licenseKey, { legacy: !0 }) };
-      }),
-      t.handle("account-reconnect", async () => {
-        let S = await r.refreshEntitlement({ force: !0 });
-        return S.ok
-          ? (g(), { ok: !0 })
-          : {
-              ok: !1,
-              reason: S.reason || "error",
-              revoked: !!S.revoked,
-              notLinked: !!S.notLinked,
-              network: !!S.network,
-            };
-      }),
+      t.handle("account-link-license", async () => ({ ok: !1, reason: "disabled" })),
+      t.handle("account-link-legacy-license", async () => ({ ok: !1, reason: "disabled" })),
+      t.handle("account-reconnect", async () => ({ ok: !1, reason: "disabled" })),
       t.handle("account-open-link-window", () => (l(""), { ok: !0 })),
       t.handle("account-nudge-dismissed-date-get", () => d()),
       t.handle("account-nudge-dismissed-date-set", (S, D) => {
@@ -24682,7 +24412,7 @@ var {
   Yr = Sh(),
   ui = xh(),
   { createAnalyticsEvents: fk } = Lh(),
-  { createLicenseService: pk } = Dh(),
+  { createLicenseService: pk } = require("./license-client"),
   { createAccountFlowService: gk } = $h(),
   { createDeepLinkService: mk } = Bh(),
   { createAppAccessService: yk } = Wh(),
@@ -25486,7 +25216,7 @@ var Re = null,
     escapeHtml: $A,
     normalizeLanguage: rl,
     getCurrentLanguage: () => Ht,
-    handleDeepLinkUrl: (...t) => rT(...t),
+    handleDeepLinkUrl: async () => {},
   }),
   {
     completeAccountLicenseLink: eT,
