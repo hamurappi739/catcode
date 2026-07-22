@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString } = require("../scripts/provision-runtime-role");
+const { configureRole, environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString } = require("../scripts/provision-runtime-role");
 
 const environment = [
   "DATABASE_URL=postgresql://postgres:admin@example.com:5432/postgres?sslmode=require",
@@ -33,6 +33,38 @@ test("migration environment contains only database credentials", () => {
 test("environment values remove dotenv quotes around a PEM certificate", () => {
   assert.equal(environmentValue(environment, "DATABASE_CA_CERT_PEM"), "certificate");
   assert.equal(environmentValue('DATABASE_CA_CERT_PEM="line-one\\nline-two"', "DATABASE_CA_CERT_PEM"), "line-one\\nline-two");
+});
+
+test("runtime role rotation does not alter Supabase-restricted role flags", async () => {
+  const statements = [];
+  const client = {
+    query: async (statement) => {
+      statements.push(statement);
+      return statement.startsWith("SELECT") ? { rowCount: 1 } : { rowCount: 0 };
+    },
+  };
+
+  await configureRole(client, "postgres", "runtime-password");
+
+  const alter = statements.find((statement) => statement.startsWith("ALTER ROLE"));
+  assert.match(alter, /NOINHERIT/);
+  assert.doesNotMatch(alter, /NOREPLICATION|NOBYPASSRLS/);
+  assert.equal(statements.some((statement) => statement.startsWith("GRANT \"catcode_api\" TO postgres")), false);
+});
+
+test("new runtime roles are created without elevated privileges", async () => {
+  const statements = [];
+  const client = {
+    query: async (statement) => {
+      statements.push(statement);
+      return statement.startsWith("SELECT") ? { rowCount: 0 } : { rowCount: 0 };
+    },
+  };
+
+  await configureRole(client, "postgres", "runtime-password");
+
+  const create = statements.find((statement) => statement.startsWith("CREATE ROLE"));
+  assert.match(create, /NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS/);
 });
 
 test("environment replacement preserves unrelated application secrets", () => {

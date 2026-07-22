@@ -48,16 +48,16 @@ function quoteIdentifier(value) {
 async function configureRole(client, databaseName, password) {
   const existing = await client.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [RUNTIME_ROLE]);
   const roleIdentifier = quoteIdentifier(RUNTIME_ROLE);
-  const roleOptions = `LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 10`;
+  const mutableRoleOptions = `LOGIN PASSWORD '${password}' NOINHERIT CONNECTION LIMIT 10`;
   if (existing.rowCount > 0) {
-    await client.query(`ALTER ROLE ${roleIdentifier} WITH ${roleOptions}`);
+    // Supabase deliberately blocks external changes to replication and RLS-bypass
+    // flags. They are safe defaults on the role created below and do not need
+    // to be touched when the runtime password is rotated.
+    await client.query(`ALTER ROLE ${roleIdentifier} WITH ${mutableRoleOptions}`);
   } else {
-    await client.query(`CREATE ROLE ${roleIdentifier} WITH ${roleOptions}`);
+    await client.query(`CREATE ROLE ${roleIdentifier} WITH ${mutableRoleOptions} NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`);
   }
 
-  // Supabase's `postgres` role needs the admin option to rotate this custom
-  // role later through the same pooled connection.
-  await client.query(`GRANT ${roleIdentifier} TO postgres WITH ADMIN OPTION`);
   await client.query(`REVOKE ALL PRIVILEGES ON DATABASE ${quoteIdentifier(databaseName)} FROM ${roleIdentifier}`);
   await client.query(`GRANT CONNECT ON DATABASE ${quoteIdentifier(databaseName)} TO ${roleIdentifier}`);
   await client.query(`REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM ${roleIdentifier}`);
@@ -112,4 +112,4 @@ if (require.main === module) {
   );
 }
 
-module.exports = { environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString };
+module.exports = { configureRole, environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString };
