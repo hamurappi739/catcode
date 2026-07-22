@@ -294,6 +294,26 @@ function createStore(pool) {
     }
   }
 
+  async function revokeAllLicenses(ipHmac) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query(
+        "UPDATE licenses SET status = 'revoked', revoked_at = now(), updated_at = now() WHERE status <> 'revoked' RETURNING id",
+      );
+      for (const { id: licenseId } of result.rows) {
+        await addEvent(client, { licenseId, eventType: "license_revoked", ipHmac });
+      }
+      await client.query("COMMIT");
+      return { ok: true, revoked: result.rowCount };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async function deactivateDeviceForAdmin(licenseId, deviceId, ipHmac) {
     const client = await pool.connect();
     try {
@@ -326,6 +346,7 @@ function createStore(pool) {
     listLicenseOverview,
     listLicenses,
     refresh,
+    revokeAllLicenses,
     revokeLicense,
   };
 }

@@ -123,6 +123,14 @@ async function main() {
       return;
     }
 
+    if (command === "revoke-all") {
+      if (options.confirm !== "REVOKE-ALL") {
+        throw new Error("Pass --confirm REVOKE-ALL to revoke every active license");
+      }
+      print(await store.revokeAllLicenses());
+      return;
+    }
+
     if (command === "reset-device") {
       print(await store.deactivateDeviceForAdmin(
         uuid(options.license, "--license"),
@@ -131,7 +139,7 @@ async function main() {
       return;
     }
 
-    throw new Error("Commands: issue, list, overview, inspect, devices, revoke, reset-device");
+    throw new Error("Commands: issue, list, overview, inspect, devices, revoke, revoke-all, reset-device");
   } finally {
     await pool.end();
   }

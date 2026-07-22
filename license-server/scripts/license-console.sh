@@ -38,6 +38,13 @@ revoke() {
   admin revoke --license "$license"
 }
 
+revoke_all() {
+  local confirmation
+  read -r -p "Type REVOKE-ALL to revoke every non-revoked license: " confirmation
+  [[ "$confirmation" == "REVOKE-ALL" ]] || { echo "Cancelled."; return; }
+  admin revoke-all --confirm REVOKE-ALL
+}
+
 reset_device() {
   local license device confirmation
   read -r -p "License UUID: " license
@@ -56,6 +63,7 @@ CatCode License Console
 3) Inspect license
 4) Revoke license
 5) Reset one device
+6) Revoke all licenses
 0) Exit
 MENU
   read -r -p "Select: " choice
@@ -65,6 +73,7 @@ MENU
     3) inspect ;;
     4) revoke ;;
     5) reset_device ;;
+    6) revoke_all ;;
     0) exit 0 ;;
     *) echo "Unknown option." ;;
   esac

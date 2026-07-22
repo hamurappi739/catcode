@@ -10,6 +10,10 @@ test("admin arguments support the owner overview and inspect workflows", () => {
     command: "inspect",
     options: { license: "de5c7a22-2e3d-4496-8f9c-214a17d86a27" },
   });
+  assert.deepEqual(parseArguments(["revoke-all", "--confirm", "REVOKE-ALL"]), {
+    command: "revoke-all",
+    options: { confirm: "REVOKE-ALL" },
+  });
   assert.equal(positiveInteger("2", 1, { min: 1, max: 10 }), 2);
 });
 
