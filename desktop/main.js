@@ -21729,6 +21729,7 @@ var Hp = F((fR, Bp) => {
     BrowserWindow: e,
     runtimePath: r,
     preloadPath: n,
+    licensePreloadPath: m,
     appIconPath: s,
     t: o,
     updateDockVisibility: i,
@@ -21739,8 +21740,28 @@ var Hp = F((fR, Bp) => {
     getPetWindow: u,
   }) {
     function f(h = "") {
-      let p = u();
-      p && !p.isDestroyed() && (i(), p.show && p.show(), p.focus && p.focus());
+      let p = l();
+      if (p && !p.isDestroyed()) {
+        (p.show(), p.focus());
+        return;
+      }
+      ((p = new e({
+        width: 500,
+        height: 400,
+        resizable: !1,
+        maximizable: !1,
+        title: o("licenseWindowTitle"),
+        icon: s,
+        webPreferences: {
+          preload: m,
+          contextIsolation: !0,
+          sandbox: !0,
+          nodeIntegration: !1,
+        },
+      })),
+        d(p),
+        p.on("closed", () => d(null)),
+        p.loadFile(r("renderer", "license", "index.html")));
     }
     return { createLicenseWindow: f };
   }
@@ -25075,6 +25096,7 @@ var Re = null,
     BrowserWindow: en,
     runtimePath: sn,
     preloadPath: nn.join(__dirname, "preload.js"),
+    licensePreloadPath: nn.join(__dirname, "license-preload.js"),
     appIconPath: wt,
     t: St,
     updateDockVisibility: vl,

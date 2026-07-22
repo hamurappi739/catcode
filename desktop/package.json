@@ -8,7 +8,7 @@
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
-    "check": "node --check main.js && node --check preload.js && node --check license-client.js",
+    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check license-client.js",
     "test": "node --test test/*.test.js",
     "start": "electron .",
     "smoke": "electron . --catcode-smoke-test",

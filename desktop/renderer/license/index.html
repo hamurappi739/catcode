@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Активация CatCode</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main>
+      <div class="brand">CatCode</div>
+      <h1>Активация лицензии</h1>
+      <p class="lead">Введите ключ, который вы получили после оплаты.</p>
+      <form id="activation-form">
+        <label for="license-key">Лицензионный ключ</label>
+        <input id="license-key" name="license-key" autocomplete="off" spellcheck="false" placeholder="CAT-XXXX-XXXX-XXXX-XXXX" required>
+        <button id="activate" type="submit">Активировать</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="renderer.js"></script>
+  </body>
+</html>
