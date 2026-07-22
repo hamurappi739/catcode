@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CatCode - Лицензии</title>
+    <link rel="stylesheet" href="/admin/dashboard.css">
+    <script src="/admin/dashboard.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">CATCODE</p>
+        <h1>Лицензии</h1>
+      </div>
+      <button id="refresh" class="icon-button" type="button" title="Обновить список" aria-label="Обновить список">&#8635;</button>
+    </header>
+
+    <main>
+      <section class="issue-section" aria-labelledby="issue-title">
+        <div>
+          <p class="eyebrow">НОВАЯ ПРОДАЖА</p>
+          <h2 id="issue-title">Выпустить ключ</h2>
+        </div>
+        <form id="issue-form" class="issue-form">
+          <label>Номер платежа<input name="paymentReference" maxlength="160" required placeholder="card-20260722-001"></label>
+          <label>Почта покупателя<input name="buyerEmail" type="email" maxlength="320" placeholder="Необязательно"></label>
+          <label>Устройств<input name="maxDevices" type="number" min="1" max="10" value="1" required></label>
+          <label class="wide">Заметка<input name="notes" maxlength="1000" placeholder="Внутренний комментарий"></label>
+          <button class="primary" type="submit">Выпустить ключ</button>
+        </form>
+      </section>
+
+      <section class="license-section" aria-labelledby="list-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">УЧЕТ</p>
+            <h2 id="list-title">Все лицензии</h2>
+          </div>
+          <p id="summary" class="summary">Загрузка...</p>
+        </div>
+        <p class="notice">Лицензии не удаляются: отзыв прекращает доступ, но сохраняет историю активаций и платежей.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Ключ</th><th>Статус</th><th>Платеж</th><th>Покупатель</th><th>Устройства</th><th>Активация</th><th></th></tr></thead>
+            <tbody id="license-list"></tbody>
+          </table>
+        </div>
+        <p id="empty" class="empty" hidden>Лицензий пока нет.</p>
+      </section>
+    </main>
+
+    <dialog id="details-dialog" class="dialog"><div class="dialog-content"><div class="dialog-heading"><h2 id="details-title">Лицензия</h2><button class="icon-button" type="button" data-close="details-dialog" title="Закрыть" aria-label="Закрыть">&#215;</button></div><div id="details-content"></div></div></dialog>
+    <dialog id="key-dialog" class="dialog"><div class="dialog-content narrow"><div class="dialog-heading"><h2>Ключ выпущен</h2><button class="icon-button" type="button" data-close="key-dialog" title="Закрыть" aria-label="Закрыть">&#215;</button></div><p class="notice">Скопируй ключ и передай покупателю. В списке хранится только его безопасный префикс.</p><code id="issued-key" class="issued-key"></code><button id="copy-key" class="primary" type="button">Скопировать ключ</button></div></dialog>
+    <p id="toast" class="toast" role="status" hidden></p>
+  </body>
+</html>

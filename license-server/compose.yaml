@@ -1,7 +1,9 @@
 services:
   caddy:
     image: caddy:2.11.4-alpine
-    env_file: .env
+    env_file:
+      - .env
+      - .dashboard.env
     restart: unless-stopped
     depends_on:
       license-api:
@@ -14,6 +16,25 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+
+  admin-dashboard:
+    build: .
+    command: ["node", "src/admin-server.js"]
+    env_file: .admin.env
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/healthz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   license-api:
     build: .

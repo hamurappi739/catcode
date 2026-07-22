@@ -9,5 +9,14 @@
         Referrer-Policy "no-referrer"
     }
 
-    reverse_proxy license-api:3000
+    handle /admin* {
+        basic_auth {
+            {$ADMIN_DASHBOARD_USERNAME} {$ADMIN_DASHBOARD_PASSWORD_HASH}
+        }
+        reverse_proxy admin-dashboard:3001
+    }
+
+    handle {
+        reverse_proxy license-api:3000
+    }
 }

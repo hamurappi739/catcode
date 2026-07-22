@@ -4,6 +4,7 @@ node_modules/
 !.env.example
 .migration.env
 .admin.env
+.dashboard.env
 .backup.env
 .monitor.env
 supabase-ca.crt

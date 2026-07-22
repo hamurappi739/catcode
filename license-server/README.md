@@ -97,6 +97,21 @@ bash scripts/license-console.sh
 
 It can issue a key, show an overview, inspect one license with its devices and events, revoke a license, or free one device slot. The console is not exposed to the Internet and requires the VPS account plus `sudo`.
 
+## Owner dashboard
+
+The browser dashboard is available at `https://$API_DOMAIN/admin`. It lists license activity and devices, issues a key, frees a device slot, and revokes a license. Licenses are intentionally never deleted: revocation preserves the payment and activation history needed for support.
+
+The dashboard runs in a separate `admin-dashboard` container. It receives `.admin.env`; the public `license-api` container does not receive administrator database credentials. Caddy protects `/admin` with HTTPS Basic Auth. Create its private configuration before deploying the dashboard:
+
+```bash
+cd /home/catcode/catcode-license-server
+cp .dashboard.env.example .dashboard.env
+chmod 600 .dashboard.env
+sudo docker run --rm caddy:2.11.4-alpine caddy hash-password --plaintext 'choose-a-long-unique-password'
+```
+
+Put the printed hash, not the plaintext password, in `ADMIN_DASHBOARD_PASSWORD_HASH` in `.dashboard.env`. Wrap the bcrypt hash in single quotes so Docker Compose keeps its `$` characters unchanged. Set a non-obvious username too. Then deploy with `sudo docker compose up -d --build` and open the `/admin` URL. Do not share the password or hash in chat, source control, or buyer documentation.
+
 Run the maintenance migration after deploying an updated server source. It adds the private `catcode_admin.license_overview` view for the Supabase SQL Editor; the view shows payment reference, status, device count, and last activity without exposing it through the Data API:
 
 ```bash
