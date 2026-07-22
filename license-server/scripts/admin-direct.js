@@ -98,6 +98,21 @@ async function main() {
       return;
     }
 
+    if (command === "overview") {
+      print({ licenses: await store.listLicenseOverview(positiveInteger(options.limit, 50, { min: 1, max: 200 })) });
+      return;
+    }
+
+    if (command === "inspect") {
+      const licenseId = uuid(options.license, "--license");
+      print({
+        license: await store.getLicenseOverview(licenseId),
+        devices: await store.listDevices(licenseId),
+        events: await store.listLicenseEvents(licenseId, positiveInteger(options.limit, 50, { min: 1, max: 200 })),
+      });
+      return;
+    }
+
     if (command === "devices") {
       print({ devices: await store.listDevices(uuid(options.license, "--license")) });
       return;
@@ -116,13 +131,17 @@ async function main() {
       return;
     }
 
-    throw new Error("Commands: issue, list, devices, revoke, reset-device");
+    throw new Error("Commands: issue, list, overview, inspect, devices, revoke, reset-device");
   } finally {
     await pool.end();
   }
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { optionalEmail, optionalFutureDate, parseArguments, positiveInteger };

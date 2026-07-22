@@ -86,6 +86,23 @@ sudo docker compose --profile maintenance run --rm license-admin node scripts/ad
   --license LICENSE_UUID --device DEVICE_UUID
 ```
 
+For regular manual sales, use the guided owner console after connecting to the VPS over SSH:
+
+```bash
+cd /home/catcode/catcode-license-server
+bash scripts/license-console.sh
+```
+
+It can issue a key, show an overview, inspect one license with its devices and events, revoke a license, or free one device slot. The console is not exposed to the Internet and requires the VPS account plus `sudo`.
+
+Run the maintenance migration after deploying an updated server source. It adds the private `catcode_admin.license_overview` view for the Supabase SQL Editor; the view shows payment reference, status, device count, and last activity without exposing it through the Data API:
+
+```bash
+sudo docker compose --profile maintenance run --rm license-migrate
+```
+
+Revoking a license denies its next online refresh and prevents the app from launching online. CatCode also checks the license at startup and every 15 minutes while it is running. A user who remains offline can use an already-issued entitlement until it expires; use `ENTITLEMENT_TTL_SECONDS=86400` for a one-day maximum offline interval.
+
 The `license-admin` container receives only the administrator database URI and `LICENSE_KEY_HMAC_SECRET`; it never receives the entitlement signing key.
 
 ## Desktop contract

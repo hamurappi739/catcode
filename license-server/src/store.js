@@ -232,6 +232,39 @@ function createStore(pool) {
     return result.rows;
   }
 
+  async function listLicenseOverview(limit = 50) {
+    const result = await pool.query(
+      `SELECT id, key_prefix, product_code, status, buyer_email, payment_reference, notes,
+              max_devices, expires_at, created_at, updated_at, revoked_at,
+              active_device_count, last_seen_at, first_activated_at
+       FROM catcode_admin.license_overview
+       ORDER BY created_at DESC LIMIT $1`,
+      [limit],
+    );
+    return result.rows;
+  }
+
+  async function getLicenseOverview(licenseId) {
+    const result = await pool.query(
+      `SELECT id, key_prefix, product_code, status, buyer_email, payment_reference, notes,
+              max_devices, expires_at, created_at, updated_at, revoked_at,
+              active_device_count, last_seen_at, first_activated_at
+       FROM catcode_admin.license_overview WHERE id = $1`,
+      [licenseId],
+    );
+    return result.rows[0] || null;
+  }
+
+  async function listLicenseEvents(licenseId, limit = 50) {
+    const result = await pool.query(
+      `SELECT id, device_id, event_type, metadata, created_at
+       FROM license_events WHERE license_id = $1
+       ORDER BY created_at DESC LIMIT $2`,
+      [licenseId, limit],
+    );
+    return result.rows;
+  }
+
   async function listDevices(licenseId) {
     const result = await pool.query(
       `SELECT id, license_id, device_name, app_version, first_activated_at, last_seen_at, deactivated_at
@@ -287,7 +320,10 @@ function createStore(pool) {
     createLicense,
     deactivate,
     deactivateDeviceForAdmin,
+    getLicenseOverview,
     listDevices,
+    listLicenseEvents,
+    listLicenseOverview,
     listLicenses,
     refresh,
     revokeLicense,
