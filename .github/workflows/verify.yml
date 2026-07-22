@@ -1,0 +1,48 @@
+name: Verify CatCode
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    name: Desktop (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run smoke
+      - run: npm run build:dir
+
+  license-server:
+    name: License server (Linux)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: license-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: license-server/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: bash -n scripts/backup-database.sh scripts/healthcheck.sh
+      - run: docker build --tag catcode-license-server:test .

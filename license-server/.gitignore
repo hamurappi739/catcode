@@ -4,5 +4,8 @@ node_modules/
 !.env.example
 .migration.env
 .admin.env
+.backup.env
+.monitor.env
 supabase-ca.crt
+backups/
 npm-debug.log*

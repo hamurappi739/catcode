@@ -22533,6 +22533,7 @@ var og = F((bR, sg) => {
 <html>
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
 .dim { position: absolute; background: rgba(0, 0, 0, 0.42); }
@@ -22602,6 +22603,7 @@ window.shareCaptureOverlay.onCropUpdate((crop) => window.updateCrop(crop));
 <html>
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
 .controls { display: flex; gap: 5px; align-items: center; justify-content: center; width: 100%; height: 100%; }
@@ -24418,6 +24420,7 @@ var {
     BrowserWindow: en,
     screen: Gs,
     ipcMain: tn,
+    session: catcodeSession,
     Menu: Pg,
     Tray: ik,
     desktopCapturer: ak,
@@ -24558,6 +24561,50 @@ if (wA) {
   kk({ app: me, cliFlag: Bg, logWarn: Ze });
   return;
 }
+function catcodeIsTrustedRendererUrl(t) {
+  try {
+    let e = new URL(String(t || ""));
+    return e.protocol === "file:" || e.protocol === "data:";
+  } catch {
+    return !1;
+  }
+}
+function catcodeIsTrustedIpcSender(t, e) {
+  let r = t && t.sender,
+    n = r && en.fromWebContents(r),
+    s = r && r.getURL ? r.getURL() : "";
+  return n && !n.isDestroyed() && catcodeIsTrustedRendererUrl(s)
+    ? !0
+    : (Ze("[CatCode] blocked IPC from an untrusted renderer", {
+        channel: e,
+        url: s,
+      }),
+      !1);
+}
+var catcodeTrustedIpcMain = {
+  handle: (t, e) =>
+    tn.handle(t, async (r, ...n) =>
+      catcodeIsTrustedIpcSender(r, t)
+        ? e(r, ...n)
+        : { ok: !1, reason: "untrusted-sender" },
+    ),
+  on: (t, e) =>
+    tn.on(t, (r, ...n) => {
+      catcodeIsTrustedIpcSender(r, t) && e(r, ...n);
+    }),
+};
+me.on("web-contents-created", (t, e) => {
+  (typeof e.setWindowOpenHandler == "function" &&
+    e.setWindowOpenHandler(() => ({ action: "deny" })),
+    e.on("will-navigate", (r, n) => {
+      catcodeIsTrustedRendererUrl(n) ||
+        (r.preventDefault(),
+        Ze("[CatCode] blocked renderer navigation", { url: String(n || "") }));
+    }),
+    e.on("will-attach-webview", (r) => {
+      (r.preventDefault(), Ze("[CatCode] blocked webview attachment"));
+    }));
+});
 var Re = null,
   Bt = null,
   $s = null,
@@ -25525,7 +25572,7 @@ var Xr = Lg(),
     desktopCapturer: ak,
     dialog: Js,
     nativeImage: rn,
-    ipcMain: tn,
+    ipcMain: catcodeTrustedIpcMain,
     fs: Ir,
     os: uk,
     path: nn,
@@ -25675,7 +25722,7 @@ var { createPetWindow: HT } = Gk({
     startLicensedApp: Ol,
   });
 nA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   dialog: Js,
   nativeImage: rn,
   path: nn,
@@ -25721,7 +25768,7 @@ nA({
   presetTypeForAnalytics: kA,
 });
 sA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   shell: Og,
   accountManager: Yr,
   logWarn: Ze,
@@ -25744,7 +25791,7 @@ sA({
   licenseResetPageUrl: NA,
 });
 oA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   analytics: ui,
   logInfo: It,
   getCurrentLanguage: () => Ht,
@@ -25775,7 +25822,7 @@ oA({
   refreshAppTrayMenu: ir,
 });
 iA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   reminderList: gE,
   addReminder: yE,
   updateReminder: _E,
@@ -25789,7 +25836,7 @@ iA({
   setPomodoroRestSec: _l,
 });
 cA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   checkForUpdatesNow: bl,
   downloadUpdate: sT,
   installDownloadedUpdate: oT,
@@ -25800,7 +25847,7 @@ var { scheduleRegularChecks: ZT, stopRegularChecks: eC } = bk({
   checkForUpdatesNow: bl,
 });
 aA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   Menu: Pg,
   t: St,
   releaseBuildExcludesDevOptions: gi,
@@ -25875,6 +25922,11 @@ me.whenReady().then(async () => {
     }
     (LE(),
       me.setName(pi()),
+      catcodeSession.defaultSession.setPermissionRequestHandler((t, e, r) => {
+        (Ze("[CatCode] denied renderer permission request", { permission: e }),
+          r(!1));
+      }),
+      catcodeSession.defaultSession.setPermissionCheckHandler(() => !1),
       me.dock && Ir.existsSync(wt) && me.dock.setIcon(rn.createFromPath(wt)),
       Yr.init({
         userDataPath: me.getPath("userData"),

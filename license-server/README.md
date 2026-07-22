@@ -4,6 +4,8 @@ This service issues and validates licenses for the CatCode desktop application. 
 
 It is designed for manual payments: after confirming a transfer, the owner issues one key with the admin command. The server stores only an HMAC of the key, not the key itself. A desktop client receives a short-lived Ed25519-signed entitlement and a per-device refresh token.
 
+Operational backups, monitoring, and recovery procedures are in [`../docs/SERVER_OPERATIONS.md`](../docs/SERVER_OPERATIONS.md).
+
 ## What is stored
 
 - License prefix, HMAC, product, status, optional email and payment reference.
