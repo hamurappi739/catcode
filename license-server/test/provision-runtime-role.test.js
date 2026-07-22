@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString } = require("../scripts/provision-runtime-role");
+const { environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString } = require("../scripts/provision-runtime-role");
 
 const environment = [
   "DATABASE_URL=postgresql://postgres:admin@example.com:5432/postgres?sslmode=require",
@@ -28,6 +28,11 @@ test("migration environment contains only database credentials", () => {
     migrationEnvironment(environment),
     "DATABASE_URL=postgresql://postgres:admin@example.com:5432/postgres?sslmode=require\nDATABASE_SSL=true\nDATABASE_CA_CERT_PEM=certificate\n",
   );
+});
+
+test("environment values remove dotenv quotes around a PEM certificate", () => {
+  assert.equal(environmentValue(environment, "DATABASE_CA_CERT_PEM"), "certificate");
+  assert.equal(environmentValue('DATABASE_CA_CERT_PEM="line-one\\nline-two"', "DATABASE_CA_CERT_PEM"), "line-one\\nline-two");
 });
 
 test("environment replacement preserves unrelated application secrets", () => {

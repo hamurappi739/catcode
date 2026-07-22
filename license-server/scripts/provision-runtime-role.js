@@ -22,7 +22,9 @@ function environmentLine(environment, name) {
 }
 
 function environmentValue(environment, name) {
-  return environmentLine(environment, name).slice(name.length + 1);
+  const value = environmentLine(environment, name).slice(name.length + 1);
+  if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) return value.slice(1, -1);
+  return value;
 }
 
 function runtimeConnectionString(adminConnectionString, password) {
@@ -106,4 +108,4 @@ if (require.main === module) {
   );
 }
 
-module.exports = { migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString };
+module.exports = { environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString };
