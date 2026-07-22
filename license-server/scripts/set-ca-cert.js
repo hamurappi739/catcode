@@ -11,18 +11,23 @@ function encodeCertificate(certificate) {
   return normalized.replace(/\n/g, "\\n");
 }
 
-function setCertificate({ directory = process.cwd(), certificatePath }) {
-  if (!certificatePath) throw new Error("Usage: node scripts/set-ca-cert.js /path/to/database-ca.crt");
-  const envPath = path.join(directory, ".env");
-  const certificate = encodeCertificate(fs.readFileSync(certificatePath, "utf8"));
-  let environment = fs.readFileSync(envPath, "utf8");
-  const line = `DATABASE_CA_CERT_PEM="${certificate}"`;
+function setCertificateInFile(filePath, line) {
+  let environment = fs.readFileSync(filePath, "utf8");
   if (/^DATABASE_CA_CERT_PEM=.*$/m.test(environment)) {
     environment = environment.replace(/^DATABASE_CA_CERT_PEM=.*$/m, line);
   } else {
     environment = `${environment.replace(/\s*$/, "")}\n${line}\n`;
   }
-  fs.writeFileSync(envPath, environment, { encoding: "utf8", mode: 0o600 });
+  fs.writeFileSync(filePath, environment, { encoding: "utf8", mode: 0o600 });
+}
+
+function setCertificate({ directory = process.cwd(), certificatePath }) {
+  if (!certificatePath) throw new Error("Usage: node scripts/set-ca-cert.js /path/to/database-ca.crt");
+  const certificate = encodeCertificate(fs.readFileSync(certificatePath, "utf8"));
+  const line = `DATABASE_CA_CERT_PEM="${certificate}"`;
+  setCertificateInFile(path.join(directory, ".env"), line);
+  const migrationPath = path.join(directory, ".migration.env");
+  if (fs.existsSync(migrationPath)) setCertificateInFile(migrationPath, line);
 }
 
 if (require.main === module) {
@@ -35,4 +40,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { encodeCertificate, setCertificate };
+module.exports = { encodeCertificate, setCertificate, setCertificateInFile };

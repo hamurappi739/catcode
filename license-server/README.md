@@ -34,9 +34,18 @@ Do not put raw license keys, bank-card data, or the Supabase service-role key in
    Add the production `DATABASE_URL`, then confirm `API_DOMAIN`, `DATABASE_SSL=true`, and `ALLOW_INSECURE_HTTP=false`.
 3. Point `API_DOMAIN` to the VPS before starting the stack. For the current CatCode VPS it is `catcode-license-739.duckdns.org`.
 4. Apply migrations once: `sudo docker compose run --rm license-api node scripts/migrate.js`.
-5. Start the stack: `sudo docker compose up -d --build`.
-6. Verify `https://$API_DOMAIN/healthz` returns `{"ok":true}` and Caddy has obtained a certificate.
-7. Pin the public Ed25519 key printed by `node scripts/bootstrap-env.js` into the desktop client before building the installer.
+5. Before starting the public API, create a restricted runtime database role. This moves the administrator connection string into `.migration.env`, which the API container never receives:
+
+   ```bash
+   sudo docker compose build license-api
+   sudo docker compose run --rm --user "$(id -u):$(id -g)" \
+     -v "$PWD:/workspace" -w /workspace license-api \
+     sh -c 'NODE_PATH=/app/node_modules node scripts/provision-runtime-role.js'
+   ```
+
+6. Start the stack: `sudo docker compose up -d --build`.
+7. Verify `https://$API_DOMAIN/healthz` returns `{"ok":true}` and Caddy has obtained a certificate.
+8. Pin the public Ed25519 key printed by `node scripts/bootstrap-env.js` into the desktop client before building the installer.
 
 Only Caddy publishes ports `80`, `443`, and `443/udp`. The API has no host port: it is visible only to Caddy within the Compose network. Caddy uses the official `2.11.4-alpine` image and automatically obtains and renews HTTPS certificates when the DuckDNS name resolves to the VPS.
 
@@ -48,6 +57,12 @@ sudo docker run --rm --user "$(id -u):$(id -g)" \
 ```
 
 The API verifies the Supabase certificate rather than disabling TLS verification. Do not use a Supabase URL, anon key, or service-role key in the desktop app or in this file.
+
+For future schema changes, run migrations only through the maintenance profile. It receives `.migration.env`; the public API does not.
+
+```bash
+sudo docker compose --profile maintenance run --rm license-migrate
+```
 
 ## Manual payment flow
 

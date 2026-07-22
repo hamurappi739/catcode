@@ -19,4 +19,9 @@ test("CA installer adds an escaped PEM value to the environment file", (t) => {
   setCertificate({ directory, certificatePath });
   const environment = fs.readFileSync(path.join(directory, ".env"), "utf8");
   assert.match(environment, /^DATABASE_CA_CERT_PEM="-----BEGIN CERTIFICATE-----\\nMIIB\\n-----END CERTIFICATE-----"$/m);
+
+  fs.writeFileSync(path.join(directory, ".migration.env"), "DATABASE_URL=postgresql://admin\n", "utf8");
+  setCertificate({ directory, certificatePath });
+  const migrationEnvironment = fs.readFileSync(path.join(directory, ".migration.env"), "utf8");
+  assert.match(migrationEnvironment, /^DATABASE_CA_CERT_PEM="-----BEGIN CERTIFICATE-----\\nMIIB\\n-----END CERTIFICATE-----"$/m);
 });

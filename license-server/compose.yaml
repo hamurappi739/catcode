@@ -33,6 +33,19 @@ services:
       retries: 3
       start_period: 10s
 
+  license-migrate:
+    build: .
+    env_file:
+      - path: .migration.env
+        required: false
+    profiles: ["maintenance"]
+    command: ["node", "scripts/migrate.js"]
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+
 volumes:
   caddy_data:
   caddy_config:

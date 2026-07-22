@@ -2,4 +2,6 @@ node_modules/
 .env
 .env.*
 !.env.example
+.migration.env
+supabase-ca.crt
 npm-debug.log*
