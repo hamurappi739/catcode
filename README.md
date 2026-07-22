@@ -11,7 +11,7 @@ This private repository contains two components:
 
 The original source repository was unavailable. The `desktop` directory was recovered from the active installed `app.asar` for CatCode 0.2.0 on 2026-07-22. It is a functional recovery baseline, not yet a production-ready source release.
 
-Do not distribute builds from this repository until the security, licensing, code-signing, and release checklist in `docs/RECOVERY.md` is complete.
+Do not distribute builds from this repository until the security, licensing, code-signing, and release checklist in `docs/RECOVERY.md` and `docs/RELEASE.md` is complete.
 
 ## Desktop verification
 
@@ -22,9 +22,10 @@ npm ci
 npm run check
 npm run smoke
 npm run build:dir
+npm run build:installer
 ```
 
-`build:dir` creates an unsigned local folder at `desktop/release/win-unpacked`. It is for verification only, not for distribution.
+`build:dir` creates an unsigned local folder at `desktop/release/win-unpacked`. `build:installer` creates the NSIS installer. Both are for verification only until the installer is code signed.
 
 ## Safety rules
 

@@ -21808,6 +21808,7 @@ var Vp = F((pR, Wp) => {
         webPreferences: {
           preload: r,
           contextIsolation: !0,
+          sandbox: !0,
           nodeIntegration: !1,
         },
       });
@@ -21851,6 +21852,7 @@ var zp = F((gR, Kp) => {
         webPreferences: {
           preload: r,
           contextIsolation: !0,
+          sandbox: !0,
           nodeIntegration: !1,
         },
       });
@@ -21935,6 +21937,7 @@ var Jp = F((mR, Gp) => {
         webPreferences: {
           preload: n,
           contextIsolation: !0,
+          sandbox: !0,
           nodeIntegration: !1,
         },
       });
@@ -22519,9 +22522,10 @@ var og = F((bR, sg) => {
           hasShadow: !1,
           alwaysOnTop: !0,
           webPreferences: {
-            nodeIntegration: !0,
-            sandbox: !1,
-            contextIsolation: !1,
+            preload: c.join(__dirname, "share-capture-preload.js"),
+            nodeIntegration: !1,
+            sandbox: !0,
+            contextIsolation: !0,
           },
         });
       (E.setIgnoreMouseEvents(!0), A(E));
@@ -22546,7 +22550,6 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
 <div class="dim right"></div>
 <div class="frame"></div>
 <script>
-const { ipcRenderer } = require("electron");
 const parts = {
   top: document.querySelector(".top"),
   bottom: document.querySelector(".bottom"),
@@ -22568,7 +22571,7 @@ window.updateCrop = (crop) => {
   parts.frame.style.width = Math.max(0, crop.width) + "px";
   parts.frame.style.height = Math.max(0, crop.height) + "px";
 };
-ipcRenderer.on("share-crop-update", (_event, crop) => window.updateCrop(crop));
+window.shareCaptureOverlay.onCropUpdate((crop) => window.updateCrop(crop));
 </script>
 </body>
 </html>`;
@@ -22588,9 +22591,10 @@ ipcRenderer.on("share-crop-update", (_event, crop) => window.updateCrop(crop));
         hasShadow: !1,
         alwaysOnTop: !0,
         webPreferences: {
-          nodeIntegration: !0,
-          sandbox: !1,
-          contextIsolation: !1,
+          preload: c.join(__dirname, "share-capture-preload.js"),
+          nodeIntegration: !1,
+          sandbox: !0,
+          contextIsolation: !0,
         },
       });
       A(v);
@@ -22621,12 +22625,11 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
   </button>
 </div>
 <script>
-const { ipcRenderer } = require("electron");
 const total = ${Y};
 const startedAt = Date.now();
 const timer = document.getElementById("timer");
 document.getElementById("cancel").addEventListener("click", () => {
-  ipcRenderer.send("share-capture-cancel");
+  window.shareCaptureOverlay.cancel();
 });
 setInterval(() => {
   const elapsed = Math.floor((Date.now() - startedAt) / 1000);
@@ -25282,7 +25285,7 @@ var Re = null,
     sendUpdateState: BA,
     checkAppAccessValidityNow: (...t) => Mm(...t),
   }),
-  { registerDeepLinkEntryPoints: iT, requestSingleInstanceLock: aT } = wk({
+  { requestSingleInstanceLock: aT } = wk({
     app: me,
     isSmokeTest: Kc,
     isAgentHookCli: qg,
@@ -25295,7 +25298,6 @@ var Re = null,
     getPetWindow: () => Re,
   }),
   gm = aT();
-gm && iT();
 var Xr = Lg(),
   {
     legacyPresetOfficialNames: cT,
@@ -25873,12 +25875,10 @@ me.whenReady().then(async () => {
     }
     (LE(),
       me.setName(pi()),
-      XE(),
       me.dock && Ir.existsSync(wt) && me.dock.setIcon(rn.createFromPath(wt)),
       Yr.init({
         userDataPath: me.getPath("userData"),
         log: { info: It, warn: Ze, error: Us },
-        oauthRedirectUrl: WE(),
       }),
       ui.init({
         app: me,
@@ -25886,7 +25886,6 @@ me.whenReady().then(async () => {
         getAllowAnalysis: () => Or,
         log: { info: It, warn: Ze, error: Us },
       }),
-      QE(),
       (Ht = FA()),
       dE(),
       an("app_opened"),
@@ -25898,7 +25897,6 @@ me.whenReady().then(async () => {
       QT(),
       nT(),
       await Cg(),
-      YE(),
       me.on("activate", () => {
         let t = jE();
         if (t) {
@@ -25931,7 +25929,6 @@ me.on("will-quit", () => {
     Kg(),
     yi(),
     eC(),
-    ZE(),
     BE(),
     ui.shutdown().catch(() => {}),
     Rg.unregisterAll());

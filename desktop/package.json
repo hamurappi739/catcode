@@ -2,17 +2,18 @@
   "name": "catcode",
   "private": true,
   "productName": "CatCode",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "CatCode",
   "description": "Desktop cat companion for focus, reminders, and healthy work habits.",
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
-    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check license-client.js",
+    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check share-capture-preload.js && node --check license-client.js",
     "test": "node --test test/*.test.js",
     "start": "electron .",
     "smoke": "electron . --catcode-smoke-test",
-    "build:dir": "electron-builder --win --dir"
+    "build:dir": "electron-builder --win --dir",
+    "build:installer": "electron-builder --win nsis"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
@@ -44,13 +45,22 @@
     "win": {
       "target": [
         {
-          "target": "dir",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
         }
       ],
       "icon": "assets/catcode-logo.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CatCode",
+      "deleteAppDataOnUninstall": false
     }
   }
 }
