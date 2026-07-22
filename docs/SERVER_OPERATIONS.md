@@ -13,7 +13,7 @@ nano .backup.env
 chmod 600 .backup.env
 ```
 
-Set `BACKUP_RCLONE_REMOTE` to the configured encrypted rclone remote. Leave `REQUIRE_OFFSITE_BACKUP=true`; a local disk copy is useful only for short-term recovery and is not enough if the VPS is lost.
+Set `BACKUP_RCLONE_REMOTE` to the configured encrypted rclone remote. If rclone's config is encrypted, also set `RCLONE_CONFIG_PASS` to its separate password so the root-owned systemd timer can unlock it. Leave `REQUIRE_OFFSITE_BACKUP=true`; a local disk copy is useful only for short-term recovery and is not enough if the VPS is lost.
 
 Test it manually before scheduling:
 
