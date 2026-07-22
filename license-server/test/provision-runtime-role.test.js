@@ -38,6 +38,15 @@ test("admin environment contains only database access and the key HMAC secret", 
   );
 });
 
+test("admin environment removes Windows carriage returns from the HMAC secret", () => {
+  const windowsEnvironment = environment.replace(/\n/g, "\r\n");
+  const maintenance = migrationEnvironment(windowsEnvironment);
+  assert.equal(
+    adminEnvironment(maintenance, windowsEnvironment),
+    `${migrationEnvironment(environment)}LICENSE_KEY_HMAC_SECRET=secret\n`,
+  );
+});
+
 test("environment values remove dotenv quotes around a PEM certificate", () => {
   assert.equal(environmentValue(environment, "DATABASE_CA_CERT_PEM"), "certificate");
   assert.equal(environmentValue('DATABASE_CA_CERT_PEM="line-one\\nline-two"', "DATABASE_CA_CERT_PEM"), "line-one\\nline-two");

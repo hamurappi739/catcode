@@ -18,7 +18,7 @@ function replaceEnvironmentValue(environment, name, value) {
 function environmentLine(environment, name) {
   const match = environment.match(new RegExp(`^${name}=.*$`, "m"));
   if (!match) throw new Error(`Missing ${name} in .env`);
-  return match[0];
+  return match[0].replace(/\r$/, "");
 }
 
 function environmentValue(environment, name) {
@@ -79,11 +79,14 @@ async function provisionRuntimeRole({ directory = process.cwd() } = {}) {
   const environmentPath = path.join(directory, ".env");
   const migrationEnvironmentPath = path.join(directory, ".migration.env");
   const adminEnvironmentPath = path.join(directory, ".admin.env");
-  const environment = fs.readFileSync(environmentPath, "utf8");
+  // The configuration may have been created on Windows and copied to Linux.
+  // Normalize line endings before deriving secret-bearing maintenance files so
+  // an invisible CR cannot become part of one HMAC secret but not the other.
+  const environment = fs.readFileSync(environmentPath, "utf8").replace(/\r\n/g, "\n");
   // After initial provisioning, .env deliberately holds a restricted user. The
   // separate maintenance file retains administrative access for future rotation.
   const maintenanceEnvironment = fs.existsSync(migrationEnvironmentPath)
-    ? fs.readFileSync(migrationEnvironmentPath, "utf8")
+    ? fs.readFileSync(migrationEnvironmentPath, "utf8").replace(/\r\n/g, "\n")
     : migrationEnvironment(environment);
   const adminConnectionString = environmentValue(maintenanceEnvironment, "DATABASE_URL").trim();
   if (!adminConnectionString) throw new Error("DATABASE_URL is required");
