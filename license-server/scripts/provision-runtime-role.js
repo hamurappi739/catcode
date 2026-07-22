@@ -47,20 +47,24 @@ function quoteIdentifier(value) {
 
 async function configureRole(client, databaseName, password) {
   const existing = await client.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [RUNTIME_ROLE]);
+  const roleIdentifier = quoteIdentifier(RUNTIME_ROLE);
   const roleOptions = `LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 10`;
   if (existing.rowCount > 0) {
-    await client.query(`ALTER ROLE ${RUNTIME_ROLE} WITH ${roleOptions}`);
+    await client.query(`ALTER ROLE ${roleIdentifier} WITH ${roleOptions}`);
   } else {
-    await client.query(`CREATE ROLE ${RUNTIME_ROLE} WITH ${roleOptions}`);
+    await client.query(`CREATE ROLE ${roleIdentifier} WITH ${roleOptions}`);
   }
 
-  await client.query(`REVOKE ALL PRIVILEGES ON DATABASE ${quoteIdentifier(databaseName)} FROM ${RUNTIME_ROLE}`);
-  await client.query(`GRANT CONNECT ON DATABASE ${quoteIdentifier(databaseName)} TO ${RUNTIME_ROLE}`);
-  await client.query(`REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM ${RUNTIME_ROLE}`);
-  await client.query(`REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM ${RUNTIME_ROLE}`);
-  await client.query(`REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM ${RUNTIME_ROLE}`);
-  await client.query(`GRANT USAGE ON SCHEMA public TO ${RUNTIME_ROLE}`);
-  await client.query(`GRANT SELECT, INSERT, UPDATE ON TABLE public.licenses, public.license_devices, public.license_events TO ${RUNTIME_ROLE}`);
+  // Supabase's `postgres` role needs the admin option to rotate this custom
+  // role later through the same pooled connection.
+  await client.query(`GRANT ${roleIdentifier} TO postgres WITH ADMIN OPTION`);
+  await client.query(`REVOKE ALL PRIVILEGES ON DATABASE ${quoteIdentifier(databaseName)} FROM ${roleIdentifier}`);
+  await client.query(`GRANT CONNECT ON DATABASE ${quoteIdentifier(databaseName)} TO ${roleIdentifier}`);
+  await client.query(`REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM ${roleIdentifier}`);
+  await client.query(`REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM ${roleIdentifier}`);
+  await client.query(`REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM ${roleIdentifier}`);
+  await client.query(`GRANT USAGE ON SCHEMA public TO ${roleIdentifier}`);
+  await client.query(`GRANT SELECT, INSERT, UPDATE ON TABLE public.licenses, public.license_devices, public.license_events TO ${roleIdentifier}`);
 }
 
 async function provisionRuntimeRole({ directory = process.cwd() } = {}) {
