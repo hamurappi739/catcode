@@ -72,7 +72,25 @@ async function configureRole(client, databaseName, password) {
   await client.query(`REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM ${roleIdentifier}`);
   await client.query(`REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM ${roleIdentifier}`);
   await client.query(`GRANT USAGE ON SCHEMA public TO ${roleIdentifier}`);
-  await client.query(`GRANT SELECT, INSERT, UPDATE ON TABLE public.licenses, public.license_devices, public.license_events TO ${roleIdentifier}`);
+  // `FOR UPDATE` locks the selected license while a device is activated. PostgreSQL
+  // requires UPDATE on one column for that lock even though the API never changes a license.
+  await client.query(`GRANT SELECT (id, key_hmac, product_code, status, max_devices, expires_at), UPDATE (updated_at) ON TABLE public.licenses TO ${roleIdentifier}`);
+  await client.query(`GRANT SELECT (id, license_id, installation_id_hmac, refresh_token_hmac, device_name, app_version, first_activated_at, last_seen_at, deactivated_at), INSERT (id, license_id, installation_id_hmac, refresh_token_hmac, device_name, app_version), UPDATE (refresh_token_hmac, device_name, app_version, last_seen_at, deactivated_at) ON TABLE public.license_devices TO ${roleIdentifier}`);
+  await client.query(`GRANT INSERT (id, license_id, device_id, event_type, ip_hmac, metadata) ON TABLE public.license_events TO ${roleIdentifier}`);
+
+  const policies = [
+    ["licenses", "catcode_api_select_licenses", "FOR SELECT TO " + roleIdentifier + " USING (true)"],
+    ["licenses", "catcode_api_lock_licenses", "FOR UPDATE TO " + roleIdentifier + " USING (true) WITH CHECK (true)"],
+    ["license_devices", "catcode_api_select_devices", "FOR SELECT TO " + roleIdentifier + " USING (true)"],
+    ["license_devices", "catcode_api_insert_devices", "FOR INSERT TO " + roleIdentifier + " WITH CHECK (true)"],
+    ["license_devices", "catcode_api_update_devices", "FOR UPDATE TO " + roleIdentifier + " USING (true) WITH CHECK (true)"],
+    ["license_events", "catcode_api_insert_events", "FOR INSERT TO " + roleIdentifier + " WITH CHECK (true)"],
+  ];
+  for (const [table, policy, definition] of policies) {
+    await client.query(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY`);
+    await client.query(`DROP POLICY IF EXISTS ${quoteIdentifier(policy)} ON public.${table}`);
+    await client.query(`CREATE POLICY ${quoteIdentifier(policy)} ON public.${table} ${definition}`);
+  }
 }
 
 async function provisionRuntimeRole({ directory = process.cwd() } = {}) {

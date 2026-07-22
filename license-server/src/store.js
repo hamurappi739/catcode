@@ -88,14 +88,19 @@ function createStore(pool) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      const licenseResult = await client.query("SELECT * FROM licenses WHERE key_hmac = $1 FOR UPDATE", [keyHmac]);
+      const licenseResult = await client.query(
+        "SELECT id, key_hmac, product_code, status, max_devices, expires_at FROM licenses WHERE key_hmac = $1 FOR UPDATE",
+        [keyHmac],
+      );
       const license = licenseResult.rows[0];
       if (!license) throw new StoreError("license_invalid");
       if (license.status === "revoked") throw new StoreError("license_revoked");
       if (!isLicenseActive(license)) throw new StoreError("license_expired");
 
       const deviceResult = await client.query(
-        "SELECT * FROM license_devices WHERE license_id = $1 AND installation_id_hmac = $2 FOR UPDATE",
+        `SELECT id, license_id, installation_id_hmac, refresh_token_hmac, device_name, app_version,
+                first_activated_at, last_seen_at, deactivated_at
+         FROM license_devices WHERE license_id = $1 AND installation_id_hmac = $2 FOR UPDATE`,
         [license.id, installationIdHmac],
       );
       let device = deviceResult.rows[0];
@@ -154,7 +159,8 @@ function createStore(pool) {
     try {
       await client.query("BEGIN");
       const result = await client.query(
-        `SELECT l.*, d.id AS device_id, d.device_name, d.app_version AS device_app_version,
+        `SELECT l.id, l.product_code, l.status, l.max_devices, l.expires_at,
+                d.id AS device_id, d.device_name, d.app_version AS device_app_version,
                 d.first_activated_at, d.last_seen_at, d.deactivated_at
          FROM license_devices d JOIN licenses l ON l.id = d.license_id
          WHERE d.id = $1 AND d.refresh_token_hmac = $2 FOR UPDATE`,

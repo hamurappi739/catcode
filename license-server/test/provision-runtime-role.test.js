@@ -67,6 +67,11 @@ test("runtime role rotation does not alter Supabase-restricted role flags", asyn
   assert.match(alter, /NOINHERIT/);
   assert.doesNotMatch(alter, /NOREPLICATION|NOBYPASSRLS/);
   assert.equal(statements.some((statement) => statement.startsWith("GRANT \"catcode_api\" TO postgres")), false);
+  assert.equal(statements.some((statement) => statement.includes("GRANT SELECT, INSERT, UPDATE ON TABLE")), false);
+  assert.equal(statements.some((statement) => statement.includes("GRANT SELECT (id, key_hmac, product_code, status, max_devices, expires_at), UPDATE (updated_at)")), true);
+  assert.equal(statements.some((statement) => statement.includes("CREATE POLICY \"catcode_api_lock_licenses\"")), true);
+  assert.equal(statements.some((statement) => statement.includes("CREATE POLICY \"catcode_api_insert_devices\"")), true);
+  assert.equal(statements.some((statement) => statement.includes("CREATE POLICY \"catcode_api_insert_events\"")), true);
 });
 
 test("new runtime roles are created without elevated privileges", async () => {
