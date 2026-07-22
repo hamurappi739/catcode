@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { configureRole, environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString } = require("../scripts/provision-runtime-role");
+const { adminEnvironment, configureRole, environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString } = require("../scripts/provision-runtime-role");
 
 const environment = [
   "DATABASE_URL=postgresql://postgres:admin@example.com:5432/postgres?sslmode=require",
@@ -27,6 +27,14 @@ test("migration environment contains only database credentials", () => {
   assert.equal(
     migrationEnvironment(environment),
     "DATABASE_URL=postgresql://postgres:admin@example.com:5432/postgres?sslmode=require\nDATABASE_SSL=true\nDATABASE_CA_CERT_PEM=certificate\n",
+  );
+});
+
+test("admin environment contains only database access and the key HMAC secret", () => {
+  const maintenance = migrationEnvironment(environment);
+  assert.equal(
+    adminEnvironment(maintenance, environment),
+    `${maintenance}LICENSE_KEY_HMAC_SECRET=secret\n`,
   );
 });
 

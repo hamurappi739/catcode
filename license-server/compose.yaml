@@ -46,6 +46,18 @@ services:
     tmpfs:
       - /tmp
 
+  license-admin:
+    build: .
+    env_file:
+      - path: .admin.env
+        required: false
+    profiles: ["maintenance"]
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+
 volumes:
   caddy_data:
   caddy_config:

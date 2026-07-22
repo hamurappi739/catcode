@@ -1,18 +1,10 @@
 "use strict";
 
 const { Pool } = require("pg");
-const { loadConfig } = require("../src/config");
+const { loadAdminConfig } = require("../src/config");
 const { databasePoolOptions } = require("../src/database");
 const { generateLicenseKey, hmacHex } = require("../src/keys");
 const { createStore } = require("../src/store");
-
-function loadLocalEnv() {
-  try {
-    process.loadEnvFile(".env");
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-}
 
 function parseArguments(argv) {
   const [command, ...tokens] = argv;
@@ -70,9 +62,8 @@ function print(value) {
 }
 
 async function main() {
-  loadLocalEnv();
   const { command, options } = parseArguments(process.argv.slice(2));
-  const config = loadConfig();
+  const config = loadAdminConfig();
   const pool = new Pool(databasePoolOptions(config));
   const store = createStore(pool);
 

@@ -41,6 +41,14 @@ function migrationEnvironment(environment) {
   return `${MIGRATION_KEYS.map((name) => environmentLine(environment, name)).join("\n")}\n`;
 }
 
+function adminEnvironment(maintenanceEnvironment, runtimeEnvironment) {
+  const values = [
+    ...MIGRATION_KEYS.map((name) => environmentLine(maintenanceEnvironment, name)),
+    environmentLine(runtimeEnvironment, "LICENSE_KEY_HMAC_SECRET"),
+  ];
+  return `${values.join("\n")}\n`;
+}
+
 function quoteIdentifier(value) {
   return `"${value.replaceAll('"', '""')}"`;
 }
@@ -70,6 +78,7 @@ async function configureRole(client, databaseName, password) {
 async function provisionRuntimeRole({ directory = process.cwd() } = {}) {
   const environmentPath = path.join(directory, ".env");
   const migrationEnvironmentPath = path.join(directory, ".migration.env");
+  const adminEnvironmentPath = path.join(directory, ".admin.env");
   const environment = fs.readFileSync(environmentPath, "utf8");
   // After initial provisioning, .env deliberately holds a restricted user. The
   // separate maintenance file retains administrative access for future rotation.
@@ -99,6 +108,7 @@ async function provisionRuntimeRole({ directory = process.cwd() } = {}) {
 
   const runtimeEnvironment = replaceEnvironmentValue(environment, "DATABASE_URL", runtimeConnectionString(adminConnectionString, password));
   fs.writeFileSync(migrationEnvironmentPath, maintenanceEnvironment, { encoding: "utf8", mode: 0o600 });
+  fs.writeFileSync(adminEnvironmentPath, adminEnvironment(maintenanceEnvironment, environment), { encoding: "utf8", mode: 0o600 });
   fs.writeFileSync(environmentPath, runtimeEnvironment, { encoding: "utf8", mode: 0o600 });
 }
 
@@ -112,4 +122,4 @@ if (require.main === module) {
   );
 }
 
-module.exports = { configureRole, environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString };
+module.exports = { adminEnvironment, configureRole, environmentValue, migrationEnvironment, replaceEnvironmentValue, runtimeConnectionString };

@@ -70,7 +70,7 @@ After you verify a payment, SSH to the VPS and issue a key inside the API contai
 
 ```bash
 cd /home/catcode/catcode-license-server
-sudo docker compose exec -T license-api node scripts/admin-direct.js issue \
+sudo docker compose --profile maintenance run --rm license-admin node scripts/admin-direct.js issue \
   --payment transfer-2026-0001 --devices 1
 ```
 
@@ -79,14 +79,14 @@ Add `--email buyer@example.ru` only after the data-location and privacy decision
 Useful support commands:
 
 ```bash
-sudo docker compose exec -T license-api node scripts/admin-direct.js list
-sudo docker compose exec -T license-api node scripts/admin-direct.js devices --license LICENSE_UUID
-sudo docker compose exec -T license-api node scripts/admin-direct.js revoke --license LICENSE_UUID
-sudo docker compose exec -T license-api node scripts/admin-direct.js reset-device \
+sudo docker compose --profile maintenance run --rm license-admin node scripts/admin-direct.js list
+sudo docker compose --profile maintenance run --rm license-admin node scripts/admin-direct.js devices --license LICENSE_UUID
+sudo docker compose --profile maintenance run --rm license-admin node scripts/admin-direct.js revoke --license LICENSE_UUID
+sudo docker compose --profile maintenance run --rm license-admin node scripts/admin-direct.js reset-device \
   --license LICENSE_UUID --device DEVICE_UUID
 ```
 
-You can also use the shorter local aliases, for example `sudo docker compose exec -T license-api npm run admin -- list`.
+The `license-admin` container receives only the administrator database URI and `LICENSE_KEY_HMAC_SECRET`; it never receives the entitlement signing key.
 
 ## Desktop contract
 
