@@ -27,5 +27,5 @@ test("systemd timers run backups daily and health checks every five minutes", ()
   const backupTimer = fs.readFileSync(path.join(systemdDir, "catcode-license-backup.timer"), "utf8");
   const healthTimer = fs.readFileSync(path.join(systemdDir, "catcode-license-healthcheck.timer"), "utf8");
   assert.match(backupTimer, /OnCalendar=\*-\*-\* 03:25:00 UTC/);
-  assert.match(healthTimer, /OnUnitActiveSec=5m/);
+  assert.match(healthTimer, /OnCalendar=\*:0\/5/);
 });

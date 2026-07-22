@@ -3,7 +3,7 @@ Description=CatCode license API health check every five minutes
 
 [Timer]
 OnBootSec=2m
-OnUnitActiveSec=5m
+OnCalendar=*:0/5
 Persistent=true
 
 [Install]
