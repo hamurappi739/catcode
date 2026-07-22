@@ -42,6 +42,10 @@ Get-FileHash .\release\CatCode-<version>-x64.exe -Algorithm SHA256
 
 Only publish a file whose signature status is `Valid` and whose signer is your organization. An unsigned test installer must never be sent to customers.
 
+## Updates
+
+Automatic updates are disabled by default. Do not set `CATCODE_ENABLE_AUTO_UPDATES=1` until a signed installer, a controlled HTTPS update channel, and an update rollback procedure are in place. For unsigned early releases, publish each new installer manually from one official download page with its SHA-256 hash and release notes.
+
 ## Release acceptance
 
 1. Install on a clean Windows account.

@@ -2,7 +2,7 @@
   "name": "catcode",
   "private": true,
   "productName": "CatCode",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "author": "CatCode",
   "description": "Desktop cat companion for focus, reminders, and healthy work habits.",
   "type": "commonjs",

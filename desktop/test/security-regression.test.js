@@ -42,3 +42,9 @@ test("local renderers have CSP and the main process blocks untrusted IPC", () =>
   assert.match(mainSource, /setWindowOpenHandler/);
   assert.match(mainSource, /setPermissionRequestHandler/);
 });
+
+test("automatic updates require an explicit production opt-in", () => {
+  assert.match(mainSource, /CATCODE_ENABLE_AUTO_UPDATES === "1"/);
+  assert.match(mainSource, /updatesEnabled: catcodeAutoUpdatesEnabled/);
+  assert.match(mainSource, /reason: "disabled"/);
+});

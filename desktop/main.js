@@ -15403,7 +15403,12 @@ var Kh = F((xP, Vh) => {
     }
     return !1;
   }
-  function Hb({ app: t, sendUpdateState: e, checkAppAccessValidityNow: r }) {
+  function Hb({
+    app: t,
+    sendUpdateState: e,
+    checkAppAccessValidityNow: r,
+    updatesEnabled: m = !1,
+  }) {
     let n = !1,
       s = !1,
       o = null;
@@ -15419,6 +15424,7 @@ var Kh = F((xP, Vh) => {
       (e({ state: f, version: p }), (s = !1));
     }
     function c() {
+      if (!m) return;
       let f = i();
       ((f.autoDownload = !1),
         (f.autoInstallOnAppQuit = !1),
@@ -15455,6 +15461,7 @@ var Kh = F((xP, Vh) => {
         }));
     }
     async function l(f = {}) {
+      if (!m) return { ok: !1, reason: "disabled" };
       if (!t.isPackaged) return { ok: !1, reason: "dev" };
       let h = !!f.manual,
         p = f.validateAccess !== !1,
@@ -15492,6 +15499,7 @@ var Kh = F((xP, Vh) => {
       }
     }
     async function d() {
+      if (!m) return { ok: !1, reason: "disabled" };
       if (!t.isPackaged) return { ok: !1, reason: "dev" };
       try {
         return (await i().downloadUpdate(), { ok: !0 });
@@ -15506,6 +15514,7 @@ var Kh = F((xP, Vh) => {
       }
     }
     function u() {
+      if (!m) return { ok: !1, reason: "disabled" };
       if (!t.isPackaged) return { ok: !1, reason: "dev" };
       if (n) return { ok: !0 };
       let f = i();
@@ -24524,7 +24533,8 @@ var {
   Fg = process.argv.includes(Zc),
   qg = vA || $g || Fg,
   Bg = "--catcode-cleanup-hooks",
-  wA = process.argv.includes(Bg);
+  wA = process.argv.includes(Bg),
+  catcodeAutoUpdatesEnabled = process.env.CATCODE_ENABLE_AUTO_UPDATES === "1";
 on && !process.env.PREBUILDS_ONLY && (process.env.PREBUILDS_ONLY = "1");
 var Hg = Rk(me);
 me.setName(Hg);
@@ -25331,6 +25341,7 @@ var Re = null,
     app: me,
     sendUpdateState: BA,
     checkAppAccessValidityNow: (...t) => Mm(...t),
+    updatesEnabled: catcodeAutoUpdatesEnabled,
   }),
   { requestSingleInstanceLock: aT } = wk({
     app: me,
