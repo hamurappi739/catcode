@@ -17,6 +17,12 @@ test("runtime role receives an encoded, dedicated database connection string", (
   assert.equal(runtimeUrl.password, "runtime-password");
 });
 
+test("runtime role preserves the Supabase pooler tenant suffix", () => {
+  const runtimeUrl = new URL(runtimeConnectionString("postgresql://postgres.project-ref:admin@aws-0-eu-west-3.pooler.supabase.com:5432/postgres", "runtime-password"));
+  assert.equal(runtimeUrl.username, "catcode_api.project-ref");
+  assert.equal(runtimeUrl.password, "runtime-password");
+});
+
 test("migration environment contains only database credentials", () => {
   assert.equal(
     migrationEnvironment(environment),

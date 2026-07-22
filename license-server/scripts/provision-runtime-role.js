@@ -9,14 +9,6 @@ const { databasePoolOptions } = require("../src/database");
 const RUNTIME_ROLE = "catcode_api";
 const MIGRATION_KEYS = ["DATABASE_URL", "DATABASE_SSL", "DATABASE_CA_CERT_PEM"];
 
-function loadLocalEnv() {
-  try {
-    process.loadEnvFile(".env");
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-}
-
 function replaceEnvironmentValue(environment, name, value) {
   const expression = new RegExp(`^${name}=.*$`, "m");
   if (!expression.test(environment)) throw new Error(`Missing ${name} in .env`);
@@ -29,9 +21,16 @@ function environmentLine(environment, name) {
   return match[0];
 }
 
+function environmentValue(environment, name) {
+  return environmentLine(environment, name).slice(name.length + 1);
+}
+
 function runtimeConnectionString(adminConnectionString, password) {
   const url = new URL(adminConnectionString);
-  url.username = RUNTIME_ROLE;
+  // Supabase's shared pooler identifies a tenant through `role.<project-ref>`.
+  // Keep that suffix while swapping administrative access for the runtime role.
+  const tenantSuffix = url.username.includes(".") ? url.username.slice(url.username.indexOf(".")) : "";
+  url.username = `${RUNTIME_ROLE}${tenantSuffix}`;
   url.password = password;
   return url.toString();
 }
@@ -63,11 +62,18 @@ async function configureRole(client, databaseName, password) {
 }
 
 async function provisionRuntimeRole({ directory = process.cwd() } = {}) {
-  loadLocalEnv();
-  const adminConnectionString = String(process.env.DATABASE_URL || "").trim();
+  const environmentPath = path.join(directory, ".env");
+  const migrationEnvironmentPath = path.join(directory, ".migration.env");
+  const environment = fs.readFileSync(environmentPath, "utf8");
+  // After initial provisioning, .env deliberately holds a restricted user. The
+  // separate maintenance file retains administrative access for future rotation.
+  const maintenanceEnvironment = fs.existsSync(migrationEnvironmentPath)
+    ? fs.readFileSync(migrationEnvironmentPath, "utf8")
+    : migrationEnvironment(environment);
+  const adminConnectionString = environmentValue(maintenanceEnvironment, "DATABASE_URL").trim();
   if (!adminConnectionString) throw new Error("DATABASE_URL is required");
-  const databaseSsl = String(process.env.DATABASE_SSL || "true").toLowerCase() !== "false";
-  const databaseCaCertPem = String(process.env.DATABASE_CA_CERT_PEM || "").trim().replace(/\\n/g, "\n") || null;
+  const databaseSsl = environmentValue(maintenanceEnvironment, "DATABASE_SSL").toLowerCase() !== "false";
+  const databaseCaCertPem = environmentValue(maintenanceEnvironment, "DATABASE_CA_CERT_PEM").trim().replace(/\\n/g, "\n") || null;
   const adminUrl = new URL(adminConnectionString);
   const databaseName = decodeURIComponent(adminUrl.pathname.replace(/^\//, ""));
   if (!databaseName) throw new Error("DATABASE_URL must include a database name");
@@ -85,10 +91,8 @@ async function provisionRuntimeRole({ directory = process.cwd() } = {}) {
     await pool.end();
   }
 
-  const environmentPath = path.join(directory, ".env");
-  const environment = fs.readFileSync(environmentPath, "utf8");
   const runtimeEnvironment = replaceEnvironmentValue(environment, "DATABASE_URL", runtimeConnectionString(adminConnectionString, password));
-  fs.writeFileSync(path.join(directory, ".migration.env"), migrationEnvironment(environment), { encoding: "utf8", mode: 0o600 });
+  fs.writeFileSync(migrationEnvironmentPath, maintenanceEnvironment, { encoding: "utf8", mode: 0o600 });
   fs.writeFileSync(environmentPath, runtimeEnvironment, { encoding: "utf8", mode: 0o600 });
 }
 
