@@ -14884,248 +14884,7 @@ var Xo = F((CP, jh) => {
 });
 var Dh = F((PP, Mh) => {
   "use strict";
-  var { safeStorage: $n } = require("electron"),
-    rc = require("crypto"),
-    nc = require("os"),
-    Ob = require("path"),
-    { readJsonFile: Ib, writeJsonFile: xb, removeJsonFile: Nb } = Xo(),
-    Lb = "https://api.lemonsqueezy.com/v1/licenses";
-  function jb({ app: t, isMac: e, isWindows: r, logWarn: n, t: s }) {
-    function o() {
-      return Ob.join(t.getPath("userData"), "license.json");
-    }
-    function i() {
-      let R = Ib(o());
-      return !R ||
-        typeof R != "object" ||
-        typeof R.licenseKey != "string" ||
-        typeof R.instanceId != "string"
-        ? null
-        : R;
-    }
-    function a(R) {
-      xb(o(), R);
-    }
-    function c() {
-      Nb(o());
-    }
-    function l(R) {
-      return rc
-        .createHash("sha256")
-        .update(String(R || ""), "utf8")
-        .digest("hex");
-    }
-    function d() {
-      let R = (() => {
-        try {
-          return nc.userInfo();
-        } catch {
-          return {};
-        }
-      })();
-      return rc
-        .createHash("sha256")
-        .update(
-          [
-            t.getName ? t.getName() : "CatCode",
-            process.platform,
-            process.arch,
-            nc.hostname() || "",
-            R.username || "",
-            t.getPath("userData") || "",
-          ].join(`
-`),
-          "utf8",
-        )
-        .digest("hex");
-    }
-    function u(R, _) {
-      let T = { v: 1, licenseKeyHash: l(R), instanceId: String(_ || "") };
-      try {
-        if ($n && $n.isEncryptionAvailable())
-          return {
-            type: "safe-storage-v1",
-            value: $n.encryptString(JSON.stringify(T)).toString("base64"),
-          };
-      } catch (m) {
-        n(
-          "[CatCode] safeStorage license binding unavailable:",
-          m && m.message ? m.message : m,
-        );
-      }
-      return {
-        type: "local-fingerprint-v1",
-        value: rc
-          .createHash("sha256")
-          .update(
-            [T.licenseKeyHash, T.instanceId, d()].join(`
-`),
-            "utf8",
-          )
-          .digest("hex"),
-      };
-    }
-    function f(R) {
-      if (!R || typeof R != "object") return !1;
-      let _ = R.deviceBinding;
-      if (!_ || typeof _ != "object") return !1;
-      if (_.type === "safe-storage-v1" && typeof _.value == "string")
-        try {
-          if (!$n || !$n.isEncryptionAvailable()) return !1;
-          let T = JSON.parse($n.decryptString(Buffer.from(_.value, "base64")));
-          return (
-            T &&
-            T.v === 1 &&
-            T.licenseKeyHash === l(R.licenseKey) &&
-            T.instanceId === R.instanceId
-          );
-        } catch {
-          return !1;
-        }
-      if (_.type === "local-fingerprint-v1" && typeof _.value == "string") {
-        let T = u(R.licenseKey, R.instanceId);
-        return T.type === _.type && T.value === _.value;
-      }
-      return !1;
-    }
-    function h(R) {
-      return R && R.license_key && typeof R.license_key.status == "string"
-        ? R.license_key.status.toLowerCase()
-        : "";
-    }
-    function p(R) {
-      return !R || R === "active";
-    }
-    function g(R) {
-      let _ = R && R.payload;
-      if (_ && _.valid === !1) return !0;
-      let T = Number(R && R.statusCode);
-      if (!Number.isFinite(T) || T < 400 || T >= 500) return !1;
-      let m = String((_ && _.error) || (R && R.message) || "").toLowerCase();
-      return /license|instance|activation|activat|disabled|expired|revoked|invalid|suspended|not found/.test(
-        m,
-      );
-    }
-    function y(R) {
-      let _ = String(R || "").toLowerCase();
-      return /activation\s+limit|activation.*limit|limit.*reached|reached.*limit|activation.*reached/.test(
-        _,
-      )
-        ? "limit"
-        : /disabled|revoked|suspended|expired|no longer active/.test(_)
-          ? "disabled"
-          : "";
-    }
-    function w(R = "") {
-      return {
-        view: "license-activate",
-        reason: typeof R == "string" && R !== "license-activate" ? y(R) : "",
-      };
-    }
-    function A() {
-      let R = nc.hostname() || "Computer";
-      return `CatCode ${e ? "macOS" : r ? "Windows" : process.platform} - ${R}`;
-    }
-    async function S(R, _, T = {}) {
-      let m;
-      try {
-        m = await fetch(`${Lb}/${R}`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams(_),
-        });
-      } catch (b) {
-        let C = b && b.cause;
-        n("[CatCode] license server request failed:", {
-          endpoint: R,
-          message: b && b.message ? b.message : String(b),
-          causeCode: C && C.code,
-          causeMessage: C && C.message,
-        });
-        let G = new Error(s("licenseNetworkFailed"));
-        throw ((G.code = "LICENSE_NETWORK_FAILED"), (G.cause = b), G);
-      }
-      let x = await m.json().catch(() => ({}));
-      if (!m.ok) {
-        if (T.allowInvalidPayload && x && x.valid === !1) return x;
-        let b = new Error(x.error || `License server returned ${m.status}`);
-        throw ((b.statusCode = m.status), (b.payload = x), b);
-      }
-      return x;
-    }
-    async function D(R) {
-      let _ = String(R || "").trim();
-      if (!_) throw new Error(s("licenseMissingKey"));
-      let T = await S("activate", { license_key: _, instance_name: A() }),
-        m = h(T);
-      if (!T.activated || !T.instance || !T.instance.id || !p(m))
-        throw new Error(T.error || s("licenseActivateFailed"));
-      let x = new Date().toISOString(),
-        b = {
-          licenseKey: _,
-          instanceId: T.instance.id,
-          instanceName: T.instance.name || A(),
-          status: m,
-          customerEmail: T.meta && T.meta.customer_email,
-          productName: T.meta && T.meta.product_name,
-          activatedAt: x,
-          lastValidatedAt: x,
-        };
-      return ((b.deviceBinding = u(b.licenseKey, b.instanceId)), a(b), b);
-    }
-    async function B(R = {}) {
-      let _ = R.allowOffline !== !1,
-        T = i();
-      if (!T) return { ok: !1, reason: "missing" };
-      let m = typeof T.status == "string" ? T.status.toLowerCase() : "";
-      if (!p(m)) return { ok: !1, reason: "invalid" };
-      let x = !!T.deviceBinding;
-      if (x && !f(T)) return { ok: !1, reason: "invalid-device" };
-      try {
-        let b = await S(
-            "validate",
-            { license_key: T.licenseKey, instance_id: T.instanceId },
-            { allowInvalidPayload: !0 },
-          ),
-          C = h(b);
-        if (!b.valid || !p(C)) return { ok: !1, reason: b.error || "invalid" };
-        let G = {
-          ...T,
-          status: C,
-          customerEmail: b.meta && b.meta.customer_email,
-          productName: b.meta && b.meta.product_name,
-          deviceBinding: x ? T.deviceBinding : u(T.licenseKey, T.instanceId),
-          lastValidatedAt: new Date().toISOString(),
-        };
-        return (a(G), { ok: !0, license: G });
-      } catch (b) {
-        return g(b)
-          ? {
-              ok: !1,
-              reason: (b.payload && b.payload.error) || b.message || "invalid",
-            }
-          : _ && x && f(T)
-            ? { ok: !0, license: T, offline: !0 }
-            : {
-                ok: !1,
-                reason: b && b.message ? b.message : "network",
-                network: !0,
-              };
-      }
-    }
-    return {
-      loadLicense: i,
-      removeLicense: c,
-      licenseRecoveryReasonFromMessage: y,
-      licenseActivatePayload: w,
-      activateLicenseKey: D,
-      validateSavedLicense: B,
-    };
-  }
-  Mh.exports = { createLicenseService: jb };
+  Mh.exports = require("./license-client");
 });
 var $h = F((RP, Uh) => {
   "use strict";
@@ -15609,13 +15368,15 @@ var Wh = F((IP, Hh) => {
     startLicensedApp: i,
   }) {
     async function a(d = {}) {
-      return { ok: !0, bypass: !0 };
+      return r({ allowOffline: d.allowOffline !== !1 });
     }
     async function c(d = {}) {
-      return { ok: !0, bypass: !0 };
+      let u = await a(d);
+      return (u.ok || d.silent || s(n(u.reason || "invalid")), u);
     }
     async function l() {
-      i();
+      let d = await c({ allowOffline: !0, silent: !0 });
+      return (d.ok ? i() : o(n(d.reason || "missing")), d);
     }
     return {
       checkAppAccessValidityNow: c,
@@ -15642,7 +15403,12 @@ var Kh = F((xP, Vh) => {
     }
     return !1;
   }
-  function Hb({ app: t, sendUpdateState: e, checkAppAccessValidityNow: r }) {
+  function Hb({
+    app: t,
+    sendUpdateState: e,
+    checkAppAccessValidityNow: r,
+    updatesEnabled: m = !1,
+  }) {
     let n = !1,
       s = !1,
       o = null;
@@ -15658,6 +15424,7 @@ var Kh = F((xP, Vh) => {
       (e({ state: f, version: p }), (s = !1));
     }
     function c() {
+      if (!m) return;
       let f = i();
       ((f.autoDownload = !1),
         (f.autoInstallOnAppQuit = !1),
@@ -15694,6 +15461,7 @@ var Kh = F((xP, Vh) => {
         }));
     }
     async function l(f = {}) {
+      if (!m) return { ok: !1, reason: "disabled" };
       if (!t.isPackaged) return { ok: !1, reason: "dev" };
       let h = !!f.manual,
         p = f.validateAccess !== !1,
@@ -15731,6 +15499,7 @@ var Kh = F((xP, Vh) => {
       }
     }
     async function d() {
+      if (!m) return { ok: !1, reason: "disabled" };
       if (!t.isPackaged) return { ok: !1, reason: "dev" };
       try {
         return (await i().downloadUpdate(), { ok: !0 });
@@ -15745,6 +15514,7 @@ var Kh = F((xP, Vh) => {
       }
     }
     function u() {
+      if (!m) return { ok: !1, reason: "disabled" };
       if (!t.isPackaged) return { ok: !1, reason: "dev" };
       if (n) return { ok: !0 };
       let f = i();
@@ -19130,7 +18900,7 @@ Choose which version to keep. The selected version will become the version used 
         accountUnlinkNotLinked: "No license is linked to this account.",
         accountUnlinkSignedOut:
           "Sign in again, then try unlinking the license.",
-        patternEditorTitle: "CatCode Pattern Editor",
+        patternEditorTitle: "CatCode Editor",
         mappingEditorTitle: "CatCode Cell Mapping Editor",
         appMenuAbout: "About CatCode",
         appMenuQuit: "Quit",
@@ -19175,12 +18945,13 @@ Choose which version to keep. The selected version will become the version used 
         pomodoroRestLabel: "Break",
         pomodoroMinutes: (t) => `${t} min`,
         pomodoroCustom: "Custom",
-        patternEditor: "Pattern Editor",
+        patternEditor: "Cat Editor",
         mappingEditor: "Cell Mapping Editor",
-        taskCompleteSound: "Sound",
+        taskCompleteSound: "Sound Volume",
         soundVolumeHeader: "Volume",
         soundMute: "Mute",
         soundLevel: (t) => `${t}`,
+        attentionRequests: "Cat asks for attention",
         launchAtLogin: "Open at Login",
         agentMonitoring: "Agent Monitoring",
         agentMonitoringCursor: "Cursor",
@@ -19212,6 +18983,8 @@ Choose which version to keep. The selected version will become the version used 
           "Some macOS environments also require Input Monitoring. Add CatCode in Input Monitoring, then restart CatCode if typing reactions do not start.",
         openInputMonitoring: "Open Input Monitoring",
         openAccessibility: "Open Accessibility",
+        openScreenRecording: "Open Screen Recording",
+        macPermissions: "macOS permissions",
         shareVideoTitle: "Share video",
         shareVideoSaveTitle: "Save share video",
         shareRecordingFailed: "Could not make the share video.",
@@ -19566,7 +19339,7 @@ Choose which version to keep. The selected version will become the version used 
         accountUnlinkNotLinked: "К этому аккаунту не привязана лицензия.",
         accountUnlinkSignedOut:
           "Войдите снова, затем попробуйте отвязать лицензию.",
-        patternEditorTitle: "Редактор узора CatCode",
+        patternEditorTitle: "Редактор кота CatCode",
         mappingEditorTitle: "Редактор ячеек CatCode",
         appMenuAbout: "О CatCode",
         appMenuQuit: "Выйти",
@@ -19611,12 +19384,13 @@ Choose which version to keep. The selected version will become the version used 
         pomodoroRestLabel: "Перерыв",
         pomodoroMinutes: (t) => `${t} мин`,
         pomodoroCustom: "Свое",
-        patternEditor: "Редактор узора",
+        patternEditor: "Редактор кота",
         mappingEditor: "Редактор ячеек",
-        taskCompleteSound: "Звук",
+        taskCompleteSound: "Громкость звука",
         soundVolumeHeader: "Громкость",
         soundMute: "Без звука",
         soundLevel: (t) => `${t}`,
+        attentionRequests: "Кот просит внимания",
         launchAtLogin: "Открывать при входе",
         agentMonitoring: "Мониторинг агентов",
         agentMonitoringCursor: "Cursor",
@@ -19649,6 +19423,8 @@ Choose which version to keep. The selected version will become the version used 
           "В некоторых окружениях macOS также нужен Input Monitoring. Добавьте CatCode туда и перезапустите приложение.",
         openInputMonitoring: "Открыть Input Monitoring",
         openAccessibility: "Открыть Accessibility",
+        openScreenRecording: "Открыть запись экрана",
+        macPermissions: "Разрешения macOS",
         shareVideoTitle: "Видео для шаринга",
         shareVideoSaveTitle: "Сохранить видео",
         shareRecordingFailed: "Не удалось создать видео.",
@@ -20081,6 +19857,8 @@ var pp = F((rR, fp) => {
               : T.taskCompleteSoundVolume === 0 &&
                 ((T.soundMuted = !0),
                 (T.taskCompleteSoundVolume = g().defaultSoundVolume)),
+            typeof _.attentionRequestsEnabled == "boolean" &&
+              (T.attentionRequestsEnabled = _.attentionRequestsEnabled),
             typeof _.launchAtLogin == "boolean" &&
               (T.launchAtLogin = _.launchAtLogin),
             typeof _.allowAnalysis == "boolean" &&
@@ -20147,6 +19925,7 @@ var pp = F((rR, fp) => {
               catNamePromptShown: m.catNamePromptShown,
               taskCompleteSoundVolume: m.taskCompleteSoundVolume,
               soundMuted: m.soundMuted,
+              attentionRequestsEnabled: m.attentionRequestsEnabled,
               launchAtLogin: m.launchAtLogin,
               allowAnalysis: m.allowAnalysis,
               agentMonitoringOverrides: m.agentMonitoringOverrides,
@@ -20809,6 +20588,7 @@ var Hc = F((cR, Ip) => {
   function kS() {
     return {
       selectedPresetId: null,
+      pixelResolution: 2,
       baseColor: Fc,
       eyeColor: Jr,
       eyeBgColor: qc,
@@ -20843,6 +20623,9 @@ var Hc = F((cR, Ip) => {
     return {
       selectedPresetId:
         typeof e.selectedPresetId == "string" ? e.selectedPresetId : null,
+      // Version 2 skins keep their coordinates on the 64x64 detail grid.
+      // Older files intentionally remain unmarked so the renderer can migrate them.
+      pixelResolution: Number(e.pixelResolution) === 2 ? 2 : 1,
       baseColor: typeof e.baseColor == "string" ? e.baseColor : Fc,
       eyeColor: typeof e.eyeColor == "string" ? e.eyeColor : Jr,
       eyeBgColor: typeof e.eyeBgColor == "string" ? e.eyeBgColor : qc,
@@ -21059,6 +20842,96 @@ var jp = F((lR, Lp) => {
         file: "rusian-blue.json",
         image: "../../assets/img/presets/rusian-blue.png",
       },
+      {
+        id: "community-asexual-v0",
+        label: { en: "Asexual v0", ru: "Асексуал v0" },
+        file: "community/comnyang-pattern-asexual-v0.json",
+        source: "collection",
+      },
+      {
+        id: "community-dalmatian",
+        label: { en: "Dalmatian", ru: "Далматинец" },
+        file: "community/comnyang-pattern-dalmatian.json",
+        source: "collection",
+      },
+      {
+        id: "community-dilute-calico-77",
+        label: { en: "Dilute calico 77", ru: "Разбавленный калико 77" },
+        file: "community/comnyang-pattern-dilute-calico-77.json",
+        source: "collection",
+      },
+      {
+        id: "community-gunbamie",
+        label: { en: "Gunbamie", ru: "Гунбами" },
+        file: "community/comnyang-pattern-gunbamie.json",
+        source: "collection",
+      },
+      {
+        id: "community-jamun",
+        label: { en: "Jamun", ru: "Джамун" },
+        file: "community/comnyang-pattern-jamun.json",
+        source: "collection",
+      },
+      {
+        id: "community-kohaze",
+        label: { en: "Kohaze", ru: "Кохадзэ" },
+        file: "community/comnyang-pattern-kohaze.json",
+        source: "collection",
+      },
+      {
+        id: "community-lazlo",
+        label: { en: "Lazlo", ru: "Лазло" },
+        file: "community/comnyang-pattern-lazlo.json",
+        source: "collection",
+      },
+      {
+        id: "community-mandarino",
+        label: { en: "Mandarino", ru: "Мандарино" },
+        file: "community/comnyang-pattern-mandarino.json",
+        source: "collection",
+      },
+      {
+        id: "community-matcha",
+        label: { en: "Matcha", ru: "Матча" },
+        file: "community/comnyang-pattern-matcha.json",
+        source: "collection",
+      },
+      {
+        id: "community-misty",
+        label: { en: "Misty", ru: "Мисти" },
+        file: "community/comnyang-pattern-misty.json",
+        source: "collection",
+      },
+      {
+        id: "community-pepperino",
+        label: { en: "Pepperino", ru: "Пепперино" },
+        file: "community/comnyang-pattern-pepperino.json",
+        source: "collection",
+      },
+      {
+        id: "community-potato",
+        label: { en: "Potato", ru: "Картошка" },
+        file: "community/comnyang-pattern-potato.json",
+        source: "collection",
+      },
+      {
+        id: "community-tortuga",
+        label: { en: "Tortuga", ru: "Тортуга" },
+        file: "community/comnyang-pattern-tortuga.json",
+        source: "collection",
+      },
+      {
+        id: "community-winter",
+        label: { en: "Winter", ru: "Зима" },
+        file: "community/comnyang-pattern-winter.json",
+        source: "collection",
+      },
+      {
+        id: "community-zorro",
+        label: { en: "Zorro", ru: "Зорро" },
+        file: "community/comnyang-pattern-zorro.json",
+        source: "collection",
+      },
     ],
     Np = {
       "black-cat": "Black",
@@ -21110,9 +20983,9 @@ var jp = F((lR, Lp) => {
             return {
               id: m.id,
               label: m.label,
-              source: "builtin",
+              source: m.source || "builtin",
               image: m.image,
-              pattern: ai(JSON.parse(x)),
+              pattern: ai((JSON.parse(x).preset || {}).pattern || JSON.parse(x)),
             };
           } catch {
             return null;
@@ -21968,6 +21841,7 @@ var Hp = F((fR, Bp) => {
     BrowserWindow: e,
     runtimePath: r,
     preloadPath: n,
+    licensePreloadPath: m,
     appIconPath: s,
     t: o,
     updateDockVisibility: i,
@@ -21978,8 +21852,28 @@ var Hp = F((fR, Bp) => {
     getPetWindow: u,
   }) {
     function f(h = "") {
-      let p = u();
-      p && !p.isDestroyed() && (i(), p.show && p.show(), p.focus && p.focus());
+      let p = l();
+      if (p && !p.isDestroyed()) {
+        (p.show(), p.focus());
+        return;
+      }
+      ((p = new e({
+        width: 500,
+        height: 400,
+        resizable: !1,
+        maximizable: !1,
+        title: o("licenseWindowTitle"),
+        icon: s,
+        webPreferences: {
+          preload: m,
+          contextIsolation: !0,
+          sandbox: !0,
+          nodeIntegration: !1,
+        },
+      })),
+        d(p),
+        p.on("closed", () => d(null)),
+        p.loadFile(r("renderer", "license", "index.html")));
     }
     return { createLicenseWindow: f };
   }
@@ -22026,6 +21920,7 @@ var Vp = F((pR, Wp) => {
         webPreferences: {
           preload: r,
           contextIsolation: !0,
+          sandbox: !0,
           nodeIntegration: !1,
         },
       });
@@ -22069,6 +21964,7 @@ var zp = F((gR, Kp) => {
         webPreferences: {
           preload: r,
           contextIsolation: !0,
+          sandbox: !0,
           nodeIntegration: !1,
         },
       });
@@ -22153,6 +22049,7 @@ var Jp = F((mR, Gp) => {
         webPreferences: {
           preload: n,
           contextIsolation: !0,
+          sandbox: !0,
           nodeIntegration: !1,
         },
       });
@@ -22737,9 +22634,10 @@ var og = F((bR, sg) => {
           hasShadow: !1,
           alwaysOnTop: !0,
           webPreferences: {
-            nodeIntegration: !0,
-            sandbox: !1,
-            contextIsolation: !1,
+            preload: c.join(__dirname, "share-capture-preload.js"),
+            nodeIntegration: !1,
+            sandbox: !0,
+            contextIsolation: !0,
           },
         });
       (E.setIgnoreMouseEvents(!0), A(E));
@@ -22747,6 +22645,7 @@ var og = F((bR, sg) => {
 <html>
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
 .dim { position: absolute; background: rgba(0, 0, 0, 0.42); }
@@ -22764,7 +22663,6 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
 <div class="dim right"></div>
 <div class="frame"></div>
 <script>
-const { ipcRenderer } = require("electron");
 const parts = {
   top: document.querySelector(".top"),
   bottom: document.querySelector(".bottom"),
@@ -22786,7 +22684,7 @@ window.updateCrop = (crop) => {
   parts.frame.style.width = Math.max(0, crop.width) + "px";
   parts.frame.style.height = Math.max(0, crop.height) + "px";
 };
-ipcRenderer.on("share-crop-update", (_event, crop) => window.updateCrop(crop));
+window.shareCaptureOverlay.onCropUpdate((crop) => window.updateCrop(crop));
 </script>
 </body>
 </html>`;
@@ -22806,9 +22704,10 @@ ipcRenderer.on("share-crop-update", (_event, crop) => window.updateCrop(crop));
         hasShadow: !1,
         alwaysOnTop: !0,
         webPreferences: {
-          nodeIntegration: !0,
-          sandbox: !1,
-          contextIsolation: !1,
+          preload: c.join(__dirname, "share-capture-preload.js"),
+          nodeIntegration: !1,
+          sandbox: !0,
+          contextIsolation: !0,
         },
       });
       A(v);
@@ -22816,6 +22715,7 @@ ipcRenderer.on("share-crop-update", (_event, crop) => window.updateCrop(crop));
 <html>
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
 .controls { display: flex; gap: 5px; align-items: center; justify-content: center; width: 100%; height: 100%; }
@@ -22839,12 +22739,11 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
   </button>
 </div>
 <script>
-const { ipcRenderer } = require("electron");
 const total = ${Y};
 const startedAt = Date.now();
 const timer = document.getElementById("timer");
 document.getElementById("cancel").addEventListener("click", () => {
-  ipcRenderer.send("share-capture-cancel");
+  window.shareCaptureOverlay.cancel();
 });
 setInterval(() => {
   const elapsed = Math.floor((Date.now() - startedAt) / 1000);
@@ -23320,6 +23219,10 @@ var pg = F((ER, fg) => {
     setLaunchAtLogin: Te,
     getAllowAnalysis: Je,
     setAllowAnalysis: qe,
+    getAttentionRequestsEnabled: attentionGet,
+    setAttentionRequestsEnabled: attentionSet,
+    openOnboarding: tourOpen,
+    openMacPrivacyPane: openMacPrivacyPane,
     getAgentMonitoringEnabled: kt,
     setAgentMonitoringOverride: xe,
     signOutCurrentAccount: pe,
@@ -23554,7 +23457,10 @@ var pg = F((ER, fg) => {
             label: d("soundLevel", zt),
             type: "radio",
             checked: !ce && I(Ae) === zt,
-            click: () => $(zt),
+            click: () => {
+              let volume = $(zt);
+              Q("sound-preview", { volume });
+            },
           };
         }),
       ];
@@ -23651,6 +23557,37 @@ var pg = F((ER, fg) => {
             },
           ],
         },
+        {
+          label: d("attentionRequests"),
+          type: "checkbox",
+          checked: attentionGet(),
+          click: (Be) => attentionSet(Be.checked),
+        },
+        {
+          label: N() === "ru" ? "Пройти обучение" : "Take the tour",
+          click: () => tourOpen && tourOpen(),
+        },
+        ...(i && openMacPrivacyPane
+          ? [
+              {
+                label: d("macPermissions"),
+                submenu: [
+                  {
+                    label: d("openAccessibility"),
+                    click: () => openMacPrivacyPane("accessibility"),
+                  },
+                  {
+                    label: d("openInputMonitoring"),
+                    click: () => openMacPrivacyPane("inputMonitoring"),
+                  },
+                  {
+                    label: d("openScreenRecording"),
+                    click: () => openMacPrivacyPane("screenRecording"),
+                  },
+                ],
+              },
+            ]
+          : []),
         { label: d("language"), submenu: ke() },
         {
           label: d("launchAtLogin"),
@@ -24020,6 +23957,27 @@ var mg = F((TR, gg) => {
           { ok: !0, imported: N.length, selectedId: N[0]?.id || null }
         );
       }),
+      t.handle("pattern-ai-template-save", async () => {
+        let Y = await e.showSaveDialog(a() || c() || void 0, {
+          title: "Save CatCode AI template",
+          defaultPath: "catcode-my-cat-template.json",
+          filters: [{ name: "JSON", extensions: ["json"] }],
+        });
+        if (Y.canceled || !Y.filePath) return { ok: !1, canceled: !0 };
+        try {
+          let U = i("presets", "patterns", "catcode-ai-template.json"),
+            E = JSON.parse(s.readFileSync(U, "utf8"));
+          return (H(Y.filePath, E), { ok: !0, filePath: Y.filePath });
+        } catch (U) {
+          return (
+            oe(
+              "[CatCode] failed to save AI pattern template:",
+              U && U.message ? U.message : U,
+            ),
+            { ok: !1 }
+          );
+        }
+      }),
       t.on("pattern-set", (Y, U) => {
         if (!U || typeof U != "object") return;
         let E =
@@ -24153,50 +24111,20 @@ var _g = F((CR, yg) => {
     saveLocalUiState: h,
     activateLicenseKey: p,
     startLicensedApp: g,
+    openOnboardingAfterActivation: V,
     licenseRecoveryReasonFromMessage: y,
     landingPageUrl: w,
     licenseResetPageUrl: A,
   }) {
     (t.handle("account-state-get", () => s()),
-      t.handle("account-google-login", async () => {
-        try {
-          let S = await r.startGoogleSignIn();
-          return (e.openExternal(S), { ok: !0 });
-        } catch (S) {
-          throw (
-            n(
-              "[CatCode] google login start failed:",
-              S && S.stack ? S.stack : S,
-            ),
-            S
-          );
-        }
-      }),
+      t.handle("account-google-login", async () => ({ ok: !1, reason: "disabled" })),
       t.handle("account-sign-out", async () => o()),
       t.handle("account-unlink-license", async () =>
         i({ confirmed: !0, silent: !0 }),
       ),
-      t.handle("account-link-license", async (S, D) => ({
-        ok: await a(String(D || ""), { legacy: !1 }),
-      })),
-      t.handle("account-link-legacy-license", async () => {
-        let S = c();
-        return !S || !S.licenseKey
-          ? { ok: !1, reason: "missing" }
-          : { ok: await a(S.licenseKey, { legacy: !0 }) };
-      }),
-      t.handle("account-reconnect", async () => {
-        let S = await r.refreshEntitlement({ force: !0 });
-        return S.ok
-          ? (g(), { ok: !0 })
-          : {
-              ok: !1,
-              reason: S.reason || "error",
-              revoked: !!S.revoked,
-              notLinked: !!S.notLinked,
-              network: !!S.network,
-            };
-      }),
+      t.handle("account-link-license", async () => ({ ok: !1, reason: "disabled" })),
+      t.handle("account-link-legacy-license", async () => ({ ok: !1, reason: "disabled" })),
+      t.handle("account-reconnect", async () => ({ ok: !1, reason: "disabled" })),
       t.handle("account-open-link-window", () => (l(""), { ok: !0 })),
       t.handle("account-nudge-dismissed-date-get", () => d()),
       t.handle("account-nudge-dismissed-date-set", (S, D) => {
@@ -24208,6 +24136,7 @@ var _g = F((CR, yg) => {
           let B = await p(D);
           return (
             g(),
+            typeof V == "function" && V(),
             {
               ok: !0,
               productName: B.productName || null,
@@ -24495,12 +24424,6 @@ var Ag = F((OR, kg) => {
         e.buildFromTemplate([
           { label: M ? "Offline" : "Online", enabled: !1 },
           { type: "separator" },
-          ...(B()
-            ? [
-                { label: r("accountLinkMenu"), click: () => R("") },
-                { type: "separator" },
-              ]
-            : []),
           {
             label: r("fixedMessage"),
             click: () => P.webContents.send("fixed-message-edit", _()),
@@ -24664,6 +24587,7 @@ var {
     BrowserWindow: en,
     screen: Gs,
     ipcMain: tn,
+    session: catcodeSession,
     Menu: Pg,
     Tray: ik,
     desktopCapturer: ak,
@@ -24679,10 +24603,11 @@ var {
   uk = require("os"),
   dk = require("vm"),
   { spawn: hk } = require("child_process"),
+  { createMacOsSupport: createCatcodeMacOsSupport } = require("./macos-support"),
   Yr = Sh(),
   ui = xh(),
   { createAnalyticsEvents: fk } = Lh(),
-  { createLicenseService: pk } = Dh(),
+  { createLicenseService: pk } = require("./license-client"),
   { createAccountFlowService: gk } = $h(),
   { createDeepLinkService: mk } = Bh(),
   { createAppAccessService: yk } = Wh(),
@@ -24767,7 +24692,14 @@ var {
   Fg = process.argv.includes(Zc),
   qg = vA || $g || Fg,
   Bg = "--catcode-cleanup-hooks",
-  wA = process.argv.includes(Bg);
+  wA = process.argv.includes(Bg),
+  catcodeAutoUpdatesEnabled = process.env.CATCODE_ENABLE_AUTO_UPDATES === "1";
+var catcodeMacOsSupport = createCatcodeMacOsSupport({
+  platform: process.platform,
+  shell: Og,
+  systemPreferences: ck,
+  logWarn: Ze,
+});
 on && !process.env.PREBUILDS_ONLY && (process.env.PREBUILDS_ONLY = "1");
 var Hg = Rk(me);
 me.setName(Hg);
@@ -24804,12 +24736,56 @@ if (wA) {
   kk({ app: me, cliFlag: Bg, logWarn: Ze });
   return;
 }
+function catcodeIsTrustedRendererUrl(t) {
+  try {
+    let e = new URL(String(t || ""));
+    return e.protocol === "file:" || e.protocol === "data:";
+  } catch {
+    return !1;
+  }
+}
+function catcodeIsTrustedIpcSender(t, e) {
+  let r = t && t.sender,
+    n = r && en.fromWebContents(r),
+    s = r && r.getURL ? r.getURL() : "";
+  return n && !n.isDestroyed() && catcodeIsTrustedRendererUrl(s)
+    ? !0
+    : (Ze("[CatCode] blocked IPC from an untrusted renderer", {
+        channel: e,
+        url: s,
+      }),
+      !1);
+}
+var catcodeTrustedIpcMain = {
+  handle: (t, e) =>
+    tn.handle(t, async (r, ...n) =>
+      catcodeIsTrustedIpcSender(r, t)
+        ? e(r, ...n)
+        : { ok: !1, reason: "untrusted-sender" },
+    ),
+  on: (t, e) =>
+    tn.on(t, (r, ...n) => {
+      catcodeIsTrustedIpcSender(r, t) && e(r, ...n);
+    }),
+};
+me.on("web-contents-created", (t, e) => {
+  (typeof e.setWindowOpenHandler == "function" &&
+    e.setWindowOpenHandler(() => ({ action: "deny" })),
+    e.on("will-navigate", (r, n) => {
+      catcodeIsTrustedRendererUrl(n) ||
+        (r.preventDefault(),
+        Ze("[CatCode] blocked renderer navigation", { url: String(n || "") }));
+    }),
+    e.on("will-attach-webview", (r) => {
+      (r.preventDefault(), Ze("[CatCode] blocked webview attachment"));
+    }));
+});
 var Re = null,
   Bt = null,
   $s = null,
   Ar = null,
   wt = sn("assets", "catcode-logo.png"),
-  TA = sn("assets", "trayTemplate.png"),
+  TA = sn("assets", rs ? "tray-macTemplate.png" : "trayTemplate.png"),
   Vg = 23456,
   {
     buildEmbeddedNodeHookCommand: CA,
@@ -24849,7 +24825,7 @@ var Re = null,
   jA = 96,
   MA = 48,
   jR = 1 / 30,
-  DA = 3600 * 1e3,
+  DA = 15 * 60 * 1e3,
   UA = 30 * 1e3,
   fi = 100,
   Ht = "en",
@@ -25111,6 +25087,7 @@ var Re = null,
       catNamePromptShown: Vs,
       taskCompleteSoundVolume: Pr,
       soundMuted: Rr,
+      attentionRequestsEnabled,
       launchAtLogin: Ks,
       allowAnalysis: Or,
       agentMonitoringOverrides: zs,
@@ -25146,6 +25123,8 @@ var Re = null,
           (Pr = t.taskCompleteSoundVolume),
         Object.prototype.hasOwnProperty.call(t, "soundMuted") &&
           (Rr = t.soundMuted),
+        Object.prototype.hasOwnProperty.call(t, "attentionRequestsEnabled") &&
+          (attentionRequestsEnabled = t.attentionRequestsEnabled),
         Object.prototype.hasOwnProperty.call(t, "launchAtLogin") &&
           (Ks = t.launchAtLogin),
         Object.prototype.hasOwnProperty.call(t, "allowAnalysis") &&
@@ -25345,6 +25324,7 @@ var Re = null,
     BrowserWindow: en,
     runtimePath: sn,
     preloadPath: nn.join(__dirname, "preload.js"),
+    licensePreloadPath: nn.join(__dirname, "license-preload.js"),
     appIconPath: wt,
     t: St,
     updateDockVisibility: vl,
@@ -25453,6 +25433,21 @@ var Re = null,
     setLaunchAtLogin: (...t) => vT(...t),
     getAllowAnalysis: () => Or,
     setAllowAnalysis: (...t) => Tl(...t),
+    getAttentionRequestsEnabled: () => attentionRequestsEnabled,
+    setAttentionRequestsEnabled: (enabled) => {
+      attentionRequestsEnabled = !!enabled;
+      cn();
+      Re &&
+        !Re.isDestroyed() &&
+        Re.webContents.send(
+          "attention-requests-enabled",
+          attentionRequestsEnabled,
+        );
+      ir();
+      return attentionRequestsEnabled;
+    },
+    openOnboarding: () => openCatcodeOnboarding({ force: !0 }),
+    openMacPrivacyPane: (pane) => catcodeMacOsSupport.openPrivacyPane(pane),
     getAgentMonitoringEnabled: (...t) => el(...t),
     setAgentMonitoringOverride: (...t) => Rm(...t),
     signOutCurrentAccount: (...t) => fm(...t),
@@ -25486,7 +25481,7 @@ var Re = null,
     escapeHtml: $A,
     normalizeLanguage: rl,
     getCurrentLanguage: () => Ht,
-    handleDeepLinkUrl: (...t) => rT(...t),
+    handleDeepLinkUrl: async () => {},
   }),
   {
     completeAccountLicenseLink: eT,
@@ -25529,8 +25524,9 @@ var Re = null,
     app: me,
     sendUpdateState: BA,
     checkAppAccessValidityNow: (...t) => Mm(...t),
+    updatesEnabled: catcodeAutoUpdatesEnabled,
   }),
-  { registerDeepLinkEntryPoints: iT, requestSingleInstanceLock: aT } = wk({
+  { requestSingleInstanceLock: aT } = wk({
     app: me,
     isSmokeTest: Kc,
     isAgentHookCli: qg,
@@ -25543,7 +25539,6 @@ var Re = null,
     getPetWindow: () => Re,
   }),
   gm = aT();
-gm && iT();
 var Xr = Lg(),
   {
     legacyPresetOfficialNames: cT,
@@ -25603,6 +25598,7 @@ var Xr = Lg(),
   Rr = !1,
   Ks = !1,
   Or = !0,
+  attentionRequestsEnabled = !0,
   zs = {},
   li = "",
   {
@@ -25771,7 +25767,7 @@ var Xr = Lg(),
     desktopCapturer: ak,
     dialog: Js,
     nativeImage: rn,
-    ipcMain: tn,
+    ipcMain: catcodeTrustedIpcMain,
     fs: Ir,
     os: uk,
     path: nn,
@@ -25789,6 +25785,108 @@ var Xr = Lg(),
     t: St,
   });
 BT();
+catcodeTrustedIpcMain.handle("macos-permissions-get", () =>
+  catcodeMacOsSupport.getStatus(),
+);
+catcodeTrustedIpcMain.handle("macos-permissions-open", (event, pane) =>
+  catcodeMacOsSupport.openPrivacyPane(pane),
+);
+catcodeTrustedIpcMain.handle("share-pet-snapshot-save", async () => {
+  let pet = Re;
+  if (!pet || pet.isDestroyed()) return { ok: !1, reason: "pet-unavailable" };
+  try {
+    let image = await pet.capturePage();
+    let defaultPath = nn.join(
+      me.getPath("pictures"),
+      `CatCode-${new Date().toISOString().replace(/[:.]/g, "-")}.png`,
+    );
+    let result = await Js.showSaveDialog(pet, {
+      title: "Сохранить снимок CatCode",
+      defaultPath,
+      filters: [{ name: "PNG", extensions: ["png"] }],
+    });
+    if (result.canceled || !result.filePath) return { ok: !1, canceled: !0 };
+    Ir.writeFileSync(result.filePath, image.toPNG());
+    return { ok: !0, filePath: result.filePath };
+  } catch (error) {
+    Ze("[CatCode] share snapshot fallback failed:", error);
+    return { ok: !1, reason: "snapshot-failed" };
+  }
+});
+let catcodeOnboardingWindow = null;
+function catcodeOnboardingStatePath() {
+  return nn.join(me.getPath("userData"), "onboarding-state.json");
+}
+function catcodeOnboardingCompleted() {
+  try {
+    let state = JSON.parse(Ir.readFileSync(catcodeOnboardingStatePath(), "utf8"));
+    return !!state.completed;
+  } catch {
+    return !1;
+  }
+}
+function setCatcodeOnboardingCompleted() {
+  try {
+    Ir.writeFileSync(
+      catcodeOnboardingStatePath(),
+      JSON.stringify({ completed: !0, completedAt: new Date().toISOString() }),
+    );
+  } catch (error) {
+    Ze("[CatCode] failed to save onboarding state:", error);
+  }
+}
+function openCatcodeOnboarding({ force = !1 } = {}) {
+  if (!force && catcodeOnboardingCompleted()) return { ok: !0, shown: !1 };
+  if (catcodeOnboardingWindow && !catcodeOnboardingWindow.isDestroyed()) {
+    catcodeOnboardingWindow.show();
+    catcodeOnboardingWindow.focus();
+    return { ok: !0, shown: !0 };
+  }
+  let parent = Re && !Re.isDestroyed() ? Re : void 0;
+  catcodeOnboardingWindow = new en({
+    width: 940,
+    height: 670,
+    minWidth: 820,
+    minHeight: 610,
+    title: "CatCode",
+    icon: wt,
+    parent,
+    autoHideMenuBar: !0,
+    backgroundColor: "#11181a",
+    webPreferences: {
+      preload: nn.join(__dirname, "onboarding-preload.js"),
+      contextIsolation: !0,
+      sandbox: !0,
+      nodeIntegration: !1,
+    },
+  });
+  catcodeOnboardingWindow.on("closed", () => {
+    catcodeOnboardingWindow = null;
+  });
+  catcodeOnboardingWindow.loadFile(
+    sn("renderer", "onboarding", "index.html"),
+  );
+  return { ok: !0, shown: !0 };
+}
+function openCatcodeOnboardingAfterActivation() {
+  setTimeout(() => openCatcodeOnboarding(), 300);
+}
+catcodeTrustedIpcMain.handle("onboarding-complete", () => {
+  setCatcodeOnboardingCompleted();
+  let window = catcodeOnboardingWindow;
+  window && !window.isDestroyed() && setTimeout(() => window.close(), 180);
+  return { ok: !0 };
+});
+catcodeTrustedIpcMain.handle("onboarding-skip", () => {
+  setCatcodeOnboardingCompleted();
+  let window = catcodeOnboardingWindow;
+  window && !window.isDestroyed() && window.close();
+  return { ok: !0 };
+});
+catcodeTrustedIpcMain.handle("onboarding-open-cat-editor", () => {
+  wl();
+  return { ok: !0 };
+});
 var { createPetWindow: HT } = Gk({
     BrowserWindow: en,
     screen: Gs,
@@ -25921,7 +26019,7 @@ var { createPetWindow: HT } = Gk({
     startLicensedApp: Ol,
   });
 nA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   dialog: Js,
   nativeImage: rn,
   path: nn,
@@ -25967,7 +26065,7 @@ nA({
   presetTypeForAnalytics: kA,
 });
 sA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   shell: Og,
   accountManager: Yr,
   logWarn: Ze,
@@ -25985,12 +26083,13 @@ sA({
   saveLocalUiState: hE,
   activateLicenseKey: IE,
   startLicensedApp: Ol,
+  openOnboardingAfterActivation: openCatcodeOnboardingAfterActivation,
   licenseRecoveryReasonFromMessage: RE,
   landingPageUrl: xA,
   licenseResetPageUrl: NA,
 });
 oA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   analytics: ui,
   logInfo: It,
   getCurrentLanguage: () => Ht,
@@ -26020,8 +26119,21 @@ oA({
   clearSyncPolling: yi,
   refreshAppTrayMenu: ir,
 });
+catcodeTrustedIpcMain.handle(
+  "attention-requests-get",
+  () => attentionRequestsEnabled,
+);
+catcodeTrustedIpcMain.handle("attention-requests-set", (event, enabled) => {
+  attentionRequestsEnabled = !!enabled;
+  cn();
+  Re &&
+    !Re.isDestroyed() &&
+    Re.webContents.send("attention-requests-enabled", attentionRequestsEnabled);
+  ir();
+  return attentionRequestsEnabled;
+});
 iA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   reminderList: gE,
   addReminder: yE,
   updateReminder: _E,
@@ -26035,7 +26147,7 @@ iA({
   setPomodoroRestSec: _l,
 });
 cA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   checkForUpdatesNow: bl,
   downloadUpdate: sT,
   installDownloadedUpdate: oT,
@@ -26046,7 +26158,7 @@ var { scheduleRegularChecks: ZT, stopRegularChecks: eC } = bk({
   checkForUpdatesNow: bl,
 });
 aA({
-  ipcMain: tn,
+  ipcMain: catcodeTrustedIpcMain,
   Menu: Pg,
   t: St,
   releaseBuildExcludesDevOptions: gi,
@@ -26121,12 +26233,15 @@ me.whenReady().then(async () => {
     }
     (LE(),
       me.setName(pi()),
-      XE(),
+      catcodeSession.defaultSession.setPermissionRequestHandler((t, e, r) => {
+        (Ze("[CatCode] denied renderer permission request", { permission: e }),
+          r(!1));
+      }),
+      catcodeSession.defaultSession.setPermissionCheckHandler(() => !1),
       me.dock && Ir.existsSync(wt) && me.dock.setIcon(rn.createFromPath(wt)),
       Yr.init({
         userDataPath: me.getPath("userData"),
         log: { info: It, warn: Ze, error: Us },
-        oauthRedirectUrl: WE(),
       }),
       ui.init({
         app: me,
@@ -26134,7 +26249,6 @@ me.whenReady().then(async () => {
         getAllowAnalysis: () => Or,
         log: { info: It, warn: Ze, error: Us },
       }),
-      QE(),
       (Ht = FA()),
       dE(),
       an("app_opened"),
@@ -26146,7 +26260,6 @@ me.whenReady().then(async () => {
       QT(),
       nT(),
       await Cg(),
-      YE(),
       me.on("activate", () => {
         let t = jE();
         if (t) {
@@ -26179,7 +26292,6 @@ me.on("will-quit", () => {
     Kg(),
     yi(),
     eC(),
-    ZE(),
     BE(),
     ui.shutdown().catch(() => {}),
     Rg.unregisterAll());

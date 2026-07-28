@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily CatCode license database backup
+
+[Timer]
+OnCalendar=*-*-* 03:25:00 UTC
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

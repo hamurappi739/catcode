@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { Pool } = require("pg");
+const { databasePoolOptions } = require("../src/database");
 
 function loadLocalEnv() {
   try {
@@ -17,7 +18,8 @@ async function main() {
   const databaseUrl = String(process.env.DATABASE_URL || "").trim();
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
   const databaseSsl = String(process.env.DATABASE_SSL || "true").toLowerCase() !== "false";
-  const pool = new Pool({ connectionString: databaseUrl, ssl: databaseSsl ? { rejectUnauthorized: true } : false });
+  const databaseCaCertPem = String(process.env.DATABASE_CA_CERT_PEM || "").trim().replace(/\\n/g, "\n") || null;
+  const pool = new Pool(databasePoolOptions({ databaseUrl, databaseSsl, databaseCaCertPem }));
   const client = await pool.connect();
   try {
     await client.query("CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");

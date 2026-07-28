@@ -88,14 +88,19 @@ function createStore(pool) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      const licenseResult = await client.query("SELECT * FROM licenses WHERE key_hmac = $1 FOR UPDATE", [keyHmac]);
+      const licenseResult = await client.query(
+        "SELECT id, key_hmac, product_code, status, max_devices, expires_at FROM licenses WHERE key_hmac = $1 FOR UPDATE",
+        [keyHmac],
+      );
       const license = licenseResult.rows[0];
       if (!license) throw new StoreError("license_invalid");
       if (license.status === "revoked") throw new StoreError("license_revoked");
       if (!isLicenseActive(license)) throw new StoreError("license_expired");
 
       const deviceResult = await client.query(
-        "SELECT * FROM license_devices WHERE license_id = $1 AND installation_id_hmac = $2 FOR UPDATE",
+        `SELECT id, license_id, installation_id_hmac, refresh_token_hmac, device_name, app_version,
+                first_activated_at, last_seen_at, deactivated_at
+         FROM license_devices WHERE license_id = $1 AND installation_id_hmac = $2 FOR UPDATE`,
         [license.id, installationIdHmac],
       );
       let device = deviceResult.rows[0];
@@ -154,7 +159,8 @@ function createStore(pool) {
     try {
       await client.query("BEGIN");
       const result = await client.query(
-        `SELECT l.*, d.id AS device_id, d.device_name, d.app_version AS device_app_version,
+        `SELECT l.id, l.product_code, l.status, l.max_devices, l.expires_at,
+                d.id AS device_id, d.device_name, d.app_version AS device_app_version,
                 d.first_activated_at, d.last_seen_at, d.deactivated_at
          FROM license_devices d JOIN licenses l ON l.id = d.license_id
          WHERE d.id = $1 AND d.refresh_token_hmac = $2 FOR UPDATE`,
@@ -226,6 +232,48 @@ function createStore(pool) {
     return result.rows;
   }
 
+  async function listLicenseOverview(limit = 50) {
+    const result = await pool.query(
+      `SELECT id, key_prefix, product_code, status, buyer_email, payment_reference, notes,
+              max_devices, expires_at, created_at, updated_at, revoked_at,
+              active_device_count, last_seen_at, first_activated_at
+       FROM catcode_admin.license_overview
+       ORDER BY created_at DESC LIMIT $1`,
+      [limit],
+    );
+    return result.rows;
+  }
+
+  async function getLicenseOverview(licenseId) {
+    const result = await pool.query(
+      `SELECT id, key_prefix, product_code, status, buyer_email, payment_reference, notes,
+              max_devices, expires_at, created_at, updated_at, revoked_at,
+              active_device_count, last_seen_at, first_activated_at
+       FROM catcode_admin.license_overview WHERE id = $1`,
+      [licenseId],
+    );
+    return result.rows[0] || null;
+  }
+
+  async function listLicenseEvents(licenseId, limit = 50) {
+    const result = await pool.query(
+      `SELECT id, device_id, event_type, metadata, created_at
+       FROM license_events WHERE license_id = $1
+       ORDER BY created_at DESC LIMIT $2`,
+      [licenseId, limit],
+    );
+    return result.rows;
+  }
+
+  async function listDevices(licenseId) {
+    const result = await pool.query(
+      `SELECT id, license_id, device_name, app_version, first_activated_at, last_seen_at, deactivated_at
+       FROM license_devices WHERE license_id = $1 ORDER BY first_activated_at DESC`,
+      [licenseId],
+    );
+    return result.rows;
+  }
+
   async function revokeLicense(licenseId, ipHmac) {
     const client = await pool.connect();
     try {
@@ -238,6 +286,26 @@ function createStore(pool) {
       await addEvent(client, { licenseId, eventType: "license_revoked", ipHmac });
       await client.query("COMMIT");
       return { ok: true };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async function revokeAllLicenses(ipHmac) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query(
+        "UPDATE licenses SET status = 'revoked', revoked_at = now(), updated_at = now() WHERE status <> 'revoked' RETURNING id",
+      );
+      for (const { id: licenseId } of result.rows) {
+        await addEvent(client, { licenseId, eventType: "license_revoked", ipHmac });
+      }
+      await client.query("COMMIT");
+      return { ok: true, revoked: result.rowCount };
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -272,8 +340,13 @@ function createStore(pool) {
     createLicense,
     deactivate,
     deactivateDeviceForAdmin,
+    getLicenseOverview,
+    listDevices,
+    listLicenseEvents,
+    listLicenseOverview,
     listLicenses,
     refresh,
+    revokeAllLicenses,
     revokeLicense,
   };
 }

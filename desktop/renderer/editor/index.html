@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'self'" />
     <title>CatCode Pattern Editor</title>
     <link rel="stylesheet" href="editor.css" />
   </head>
@@ -228,6 +229,9 @@
               Back
             </button>
           </div>
+          <button id="create-your-cat" class="create-cat-entry" type="button">
+            Create your cat
+          </button>
           <div
             id="preset-file-status"
             class="preset-file-status"
@@ -239,9 +243,41 @@
             aria-label="Pattern presets"
           ></div>
         </div>
+
+        <div id="create-cat-panel" class="control-panel create-cat-panel">
+          <div class="panel-heading">
+            <h2 data-creator-i18n="title">Create your cat</h2>
+            <button id="back-to-presets" class="panel-back" type="button" data-creator-i18n="back">
+              Back
+            </button>
+          </div>
+          <p class="creator-intro" data-creator-i18n="intro">
+            Turn a photo of your cat into a CatCode skin with an AI assistant.
+          </p>
+          <ol class="creator-steps">
+            <li data-creator-i18n="stepPhoto">Attach a photo of your cat to an AI assistant.</li>
+            <li data-creator-i18n="stepTemplate">Download and attach the CatCode JSON template.</li>
+            <li data-creator-i18n="stepPrompt">Copy the prompt below and ask the assistant to return a JSON file only.</li>
+            <li data-creator-i18n="stepImport">Save the answer as a .json file and import it here.</li>
+          </ol>
+          <div class="creator-actions">
+            <button id="download-cat-template" class="creator-button" type="button" data-creator-i18n="downloadTemplate">
+              Download JSON template
+            </button>
+            <button id="copy-cat-prompt" class="creator-button" type="button" data-creator-i18n="copyPrompt">
+              Copy prompt
+            </button>
+          </div>
+          <textarea id="cat-ai-prompt" class="creator-prompt" readonly spellcheck="false"></textarea>
+          <button id="import-ai-cat" class="creator-button creator-button-primary" type="button" data-creator-i18n="importJson">
+            Import finished cat
+          </button>
+          <p id="cat-creator-status" class="creator-status" aria-live="polite"></p>
+        </div>
       </aside>
     </main>
 
     <script src="editor.js"></script>
+    <script src="custom-cat-creator.js"></script>
   </body>
 </html>

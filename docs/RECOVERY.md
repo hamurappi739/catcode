@@ -10,18 +10,20 @@ The license API was moved in as source from the local `catcode-license-server` w
 
 - Original TypeScript/source maps, commit history, CI configuration, and release configuration.
 - Code-signing certificates and any production credentials.
-- A reproducible desktop installer build.
+- A signed desktop installer and release pipeline.
 
 ## Required work before production
 
-1. Replace the temporary desktop access bypass with the signed license flow.
-2. Delete the dormant legacy Supabase account/authentication implementation and all account IPC routes.
-3. Harden Electron renderers: context isolation, sandboxing, CSP, restrictive navigation, and IPC sender validation.
+1. The temporary access bypass has been replaced by the signed license flow.
+2. Legacy Supabase OAuth protocol registration and its localhost callback server are disabled. The recovered minified desktop bundle still contains dormant legacy account code; remove that code only after the application has been reconstructed into maintainable source modules.
+3. All Electron windows use context isolation, sandboxing, and disabled Node integration. CSP, restrictive navigation, and IPC sender validation still need a dedicated review.
 4. Replace or resolve the licensing obligations of `ffmpeg-static` before proprietary distribution.
-5. Add a clean Electron build configuration, lockfile, tests, CI, and Windows code signing.
-6. Deploy the license API behind HTTPS with a Russian-hosted PostgreSQL database for customer data.
-7. Complete activation, revocation, offline-grace, update, backup, and restore tests.
+5. The clean Electron runtime, lockfile, smoke build, regression tests, and NSIS installer are present. Windows code signing and CI are still required.
+6. The license API is deployed behind HTTPS with Supabase PostgreSQL. Confirm the chosen data location and privacy obligations before accepting customer data.
+7. Complete activation, revocation, offline-grace, update, backup, restore, and installer tests before the first sale.
 
 ## Recovery verification
 
 Run `npm run check` from `desktop` to validate JavaScript syntax. Run `npm test` from `license-server` to validate the license API contract.
+
+Run `npm run smoke` from `desktop` to launch the recovered application in smoke mode, and `npm run build:dir` to create an unsigned local Windows build for verification.

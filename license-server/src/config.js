@@ -24,6 +24,26 @@ function pem(value) {
   return value.replace(/\\n/g, "\n");
 }
 
+function optionalPem(env, name) {
+  const value = String(env[name] || "").trim();
+  return value ? pem(value) : null;
+}
+
+function loadDatabaseConfig(env = process.env) {
+  return {
+    databaseUrl: required(env, "DATABASE_URL"),
+    databaseSsl: boolean(env, "DATABASE_SSL", true),
+    databaseCaCertPem: optionalPem(env, "DATABASE_CA_CERT_PEM"),
+  };
+}
+
+function loadAdminConfig(env = process.env) {
+  return {
+    ...loadDatabaseConfig(env),
+    licenseKeyHmacSecret: required(env, "LICENSE_KEY_HMAC_SECRET"),
+  };
+}
+
 function loadConfig(env = process.env) {
   const privateKeyPem = pem(required(env, "ENTITLEMENT_PRIVATE_KEY_PEM"));
   const publicKeyPem = pem(required(env, "ENTITLEMENT_PUBLIC_KEY_PEM"));
@@ -35,12 +55,10 @@ function loadConfig(env = process.env) {
 
   return {
     port: positiveInteger(env, "PORT", 3000, { max: 65535 }),
-    databaseUrl: required(env, "DATABASE_URL"),
-    databaseSsl: boolean(env, "DATABASE_SSL", true),
+    ...loadDatabaseConfig(env),
     licenseKeyHmacSecret: required(env, "LICENSE_KEY_HMAC_SECRET"),
     deviceHmacSecret: required(env, "DEVICE_HMAC_SECRET"),
     eventHmacSecret: required(env, "EVENT_HMAC_SECRET"),
-    adminApiToken: required(env, "ADMIN_API_TOKEN"),
     entitlementPrivateKey: privateKey,
     entitlementPublicKey: publicKey,
     entitlementPublicKeyPem: publicKeyPem,
@@ -53,4 +71,4 @@ function loadConfig(env = process.env) {
   };
 }
 
-module.exports = { loadConfig };
+module.exports = { loadAdminConfig, loadConfig };

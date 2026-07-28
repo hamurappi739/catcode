@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'">
+    <title>CatCode</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main id="tour" data-scene="hello">
+      <header class="topbar">
+        <div class="brand"><img src="../../assets/catcode-logo.png" alt=""><span>CatCode</span></div>
+        <div class="progress" aria-label="Progress"><span id="step-count"></span><div class="progress-track"><i id="progress-fill"></i></div></div>
+        <button class="quiet" id="skip" type="button"></button>
+      </header>
+      <section class="stage" aria-live="polite">
+        <div class="stage-grid" aria-hidden="true"></div>
+        <div class="demo-bubble" id="demo-bubble"></div>
+        <img class="demo-cat" src="../../svg/cat-idle-follow-v2.svg" alt="">
+        <div class="demo-keyboard" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="demo-water" aria-hidden="true"></div>
+        <div class="demo-clock" aria-hidden="true"></div>
+        <div class="demo-note" aria-hidden="true"></div>
+      </section>
+      <section class="content">
+        <p class="eyebrow" id="eyebrow"></p>
+        <h1 id="title"></h1>
+        <p class="description" id="description"></p>
+        <ul id="details"></ul>
+        <div class="state-controls" id="state-controls"></div>
+        <button class="action" id="action" type="button" hidden></button>
+      </section>
+      <footer class="controls">
+        <button class="secondary" id="back" type="button"></button>
+        <div class="dots" id="dots" aria-label="Tour steps"></div>
+        <button class="primary" id="next" type="button"></button>
+      </footer>
+    </main>
+    <script src="renderer.js"></script>
+  </body>
+</html>

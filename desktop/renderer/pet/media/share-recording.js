@@ -175,6 +175,8 @@ function createShareRecording({
         throw new Error(result.reason || "share-save-failed");
       }
     } catch (error) {
+      const snapshot = await electronAPI.sharePetSnapshotSave().catch(() => null);
+      if (snapshot && snapshot.ok) return;
       console.error("Share recording failed:", error);
       await electronAPI.shareErrorDialog(failureMessage(error)).catch(() => {
         window.alert(failureMessage(error));

@@ -405,6 +405,8 @@
           if (B && B.ok === !1 && !B.canceled)
             throw new Error(B.reason || "share-save-failed");
         } catch (d) {
+          let b = await t.sharePetSnapshotSave().catch(() => null);
+          if (b && b.ok) return;
           (console.error("Share recording failed:", d),
             await t.shareErrorDialog(f(d)).catch(() => {
               window.alert(f(d));
@@ -3055,6 +3057,44 @@
         earL: ["ear-left"],
         earR: ["ear-right"],
       };
+    var So = 2,
+      Ao = {
+        head: { x: 22, y: 18 },
+        body: { x: 22, y: 15 },
+        tail: { x: 13, y: 10 },
+        legFl: { x: 8, y: 11 },
+        legFr: { x: 8, y: 11 },
+        legRl: { x: 8, y: 8 },
+        legRr: { x: 8, y: 8 },
+        earL: { x: 6, y: 8 },
+        earR: { x: 5, y: 8 },
+      };
+    function ho(n) {
+      let a = n && typeof n == "object" ? n : {};
+      if (a.pixelResolution === So) return a;
+      let s = { ...a, pixelResolution: So };
+      for (let [c, b] of Object.entries(Ao)) {
+        let w = Array.isArray(a[c]) ? a[c] : [];
+        s[c] = w.flatMap((d) => {
+          let p = Number(d && d.x),
+            h = Number(d && d.y);
+          return !Number.isInteger(p) ||
+            !Number.isInteger(h) ||
+            p < 0 ||
+            h < 0 ||
+            p >= b.x ||
+            h >= b.y
+            ? []
+            : [
+                { ...d, x: p * So, y: h * So },
+                { ...d, x: p * So + 1, y: h * So },
+                { ...d, x: p * So, y: h * So + 1 },
+                { ...d, x: p * So + 1, y: h * So + 1 },
+              ];
+        });
+      }
+      return s;
+    }
     function Eo({
       registry: e,
       refreshHeatOverlays: t,
@@ -3064,7 +3104,7 @@
       let y = { head: [] };
       function T(n, a = y) {
         if (!(!n || !a))
-          for (let [s, c] of Object.entries(a)) {
+          for (let [s, c] of Object.entries(ho(a))) {
             if (!Array.isArray(c)) continue;
             let b = yo[s] || [s];
             for (let w of b) g(n, w, c);
@@ -3086,15 +3126,15 @@
           for (S.setAttribute("shape-rendering", "crispEdges"); S.firstChild; )
             S.removeChild(S.firstChild);
           for (let M of s) {
-            let _ = l > 0 ? l - 1 - M.x : M.x,
+            let _ = l > 0 ? l * So - 1 - M.x : M.x,
               A = m(n, a, _, M.y);
             if (A) {
               for (let R of A) {
                 let H = n.createElementNS(ct, "rect");
                 (H.setAttribute("x", R.x),
                   H.setAttribute("y", R.y),
-                  H.setAttribute("width", 1),
-                  H.setAttribute("height", 1),
+                  H.setAttribute("width", R.width || 1),
+                  H.setAttribute("height", R.height || 1),
                   H.setAttribute("fill", M.color),
                   H.setAttribute("shape-rendering", "crispEdges"),
                   S.appendChild(H));
@@ -3102,10 +3142,10 @@
               continue;
             }
             let E = n.createElementNS(ct, "rect");
-            (E.setAttribute("x", w + _ * p),
-              E.setAttribute("y", d + M.y * h),
-              E.setAttribute("width", p),
-              E.setAttribute("height", h),
+            (E.setAttribute("x", w + _ * (p / So)),
+              E.setAttribute("y", d + M.y * (h / So)),
+              E.setAttribute("width", p / So),
+              E.setAttribute("height", h / So),
               E.setAttribute("fill", M.color),
               E.setAttribute("shape-rendering", "crispEdges"),
               S.appendChild(E));
@@ -3117,14 +3157,19 @@
         if (!b || typeof b.getPixelsForCell != "function") return null;
         let w = e.getName(n);
         if (!w) return null;
-        let d = b.getPixelsForCell(w, a, s, c);
+        let d = b.getPixelsForCell(w, a, Math.floor(s / So), Math.floor(c / So));
         return Array.isArray(d) &&
           d.length === 0 &&
           (w === "jump-ing" || w === "jump-start") &&
           (a === "leg-fl" || a === "leg-fr")
           ? null
           : Array.isArray(d)
-            ? d
+            ? d.map((p) => ({
+                x: p.x + (s % So) / So,
+                y: p.y + (c % So) / So,
+                width: 1 / So,
+                height: 1 / So,
+              }))
             : null;
       }
       function f(n, a) {
@@ -3226,15 +3271,17 @@
           let R =
             _ &&
             _.cells &&
-            Array.isArray(_.cells[`${E.x},${E.y}`]) &&
-            _.cells[`${E.x},${E.y}`].length > 0
-              ? _.cells[`${E.x},${E.y}`]
-              : [[E.x, E.y]];
+            Array.isArray(
+              _.cells[`${Math.floor(E.x / So)},${Math.floor(E.y / So)}`],
+            ) &&
+            _.cells[`${Math.floor(E.x / So)},${Math.floor(E.y / So)}`].length > 0
+              ? _.cells[`${Math.floor(E.x / So)},${Math.floor(E.y / So)}`]
+              : [[Math.floor(E.x / So), Math.floor(E.y / So)]];
           for (let [H, C] of R) A(H, C, E.color);
         }
       }
       function i(n) {
-        ((y = n || {}),
+        ((y = ho(n)),
           e.forEach((a) => {
             (T(a, y), t(a));
           }));

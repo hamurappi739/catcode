@@ -1,0 +1,47 @@
+name: macOS Beta
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Unsigned ${{ matrix.arch }}
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x64]
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      npm_config_platform: darwin
+      npm_config_arch: ${{ matrix.arch }}
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - name: Package unsigned beta
+        run: npm run build:mac:beta:${{ matrix.arch }}
+      - name: Verify architecture and native runtime
+        run: |
+          app_path="$(find release -type d -name CatCode.app -print -quit)"
+          bash scripts/verify-macos-artifact.sh "$app_path" "${{ matrix.arch }}" unsigned
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CatCode-macOS-beta-${{ matrix.arch }}
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+          if-no-files-found: error
+          retention-days: 14

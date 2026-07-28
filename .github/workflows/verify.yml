@@ -1,0 +1,74 @@
+name: Verify CatCode
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    name: Desktop (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run smoke
+      - run: npm run build:dir
+
+  desktop-macos:
+    name: Desktop (macOS)
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      npm_config_platform: darwin
+      npm_config_arch: arm64
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build:mac:dir -- --arm64
+      - name: Verify architecture and native runtime
+        run: |
+          app_path="$(find release -type d -name CatCode.app -print -quit)"
+          bash scripts/verify-macos-artifact.sh "$app_path" arm64 unsigned
+
+  license-server:
+    name: License server (Linux)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: license-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: license-server/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: bash -n scripts/backup-database.sh scripts/healthcheck.sh
+      - run: docker build --tag catcode-license-server:test .
