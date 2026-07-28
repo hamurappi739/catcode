@@ -12,6 +12,44 @@ const PATTERN_PART_MAPPING = {
   earR: ["ear-right"],
 };
 
+// Pattern coordinates are now stored on a two-times denser grid.  Keeping the
+// conversion here lets pre-64x64 presets render unchanged in every pose.
+const DETAIL_SCALE = 2;
+const LEGACY_PART_CELLS = {
+  head: { x: 22, y: 18 },
+  body: { x: 22, y: 15 },
+  tail: { x: 13, y: 10 },
+  legFl: { x: 8, y: 11 },
+  legFr: { x: 8, y: 11 },
+  legRl: { x: 8, y: 8 },
+  legRr: { x: 8, y: 8 },
+  earL: { x: 6, y: 8 },
+  earR: { x: 5, y: 8 },
+};
+
+function normalizePatternResolution(pattern) {
+  const source = pattern && typeof pattern === "object" ? pattern : {};
+  if (source.pixelResolution === DETAIL_SCALE) return source;
+
+  const upgraded = { ...source, pixelResolution: DETAIL_SCALE };
+  for (const [part, cells] of Object.entries(LEGACY_PART_CELLS)) {
+    const spots = Array.isArray(source[part]) ? source[part] : [];
+    upgraded[part] = spots.flatMap((spot) => {
+      const x = Number(spot && spot.x);
+      const y = Number(spot && spot.y);
+      if (!Number.isInteger(x) || !Number.isInteger(y)) return [];
+      if (x < 0 || y < 0 || x >= cells.x || y >= cells.y) return [];
+      return [
+        { ...spot, x: x * DETAIL_SCALE, y: y * DETAIL_SCALE },
+        { ...spot, x: x * DETAIL_SCALE + 1, y: y * DETAIL_SCALE },
+        { ...spot, x: x * DETAIL_SCALE, y: y * DETAIL_SCALE + 1 },
+        { ...spot, x: x * DETAIL_SCALE + 1, y: y * DETAIL_SCALE + 1 },
+      ];
+    });
+  }
+  return upgraded;
+}
+
 function createPatternRenderer({
   registry,
   refreshHeatOverlays,
@@ -22,7 +60,8 @@ function createPatternRenderer({
 
   function applyToSvg(doc, pattern = currentPattern) {
     if (!doc || !pattern) return;
-    for (const [partKey, spots] of Object.entries(pattern)) {
+    const detailedPattern = normalizePatternResolution(pattern);
+    for (const [partKey, spots] of Object.entries(detailedPattern)) {
       if (!Array.isArray(spots)) continue;
       const elemIds = PATTERN_PART_MAPPING[partKey] || [partKey];
       for (const elemId of elemIds) {
@@ -50,15 +89,18 @@ function createPatternRenderer({
     slot.setAttribute("shape-rendering", "crispEdges");
     while (slot.firstChild) slot.removeChild(slot.firstChild);
     for (const spot of spots) {
-      const cellX = mirrorXCells > 0 ? mirrorXCells - 1 - spot.x : spot.x;
+      const cellX =
+        mirrorXCells > 0
+          ? mirrorXCells * DETAIL_SCALE - 1 - spot.x
+          : spot.x;
       const mappedPixels = getMappedPixelsForSpot(doc, elemId, cellX, spot.y);
       if (mappedPixels) {
         for (const pixel of mappedPixels) {
           const rect = doc.createElementNS(SVG_NS, "rect");
           rect.setAttribute("x", pixel.x);
           rect.setAttribute("y", pixel.y);
-          rect.setAttribute("width", 1);
-          rect.setAttribute("height", 1);
+          rect.setAttribute("width", pixel.width || 1);
+          rect.setAttribute("height", pixel.height || 1);
           rect.setAttribute("fill", spot.color);
           rect.setAttribute("shape-rendering", "crispEdges");
           slot.appendChild(rect);
@@ -67,10 +109,10 @@ function createPatternRenderer({
       }
 
       const rect = doc.createElementNS(SVG_NS, "rect");
-      rect.setAttribute("x", ox + cellX * cw);
-      rect.setAttribute("y", oy + spot.y * ch);
-      rect.setAttribute("width", cw);
-      rect.setAttribute("height", ch);
+      rect.setAttribute("x", ox + cellX * (cw / DETAIL_SCALE));
+      rect.setAttribute("y", oy + spot.y * (ch / DETAIL_SCALE));
+      rect.setAttribute("width", cw / DETAIL_SCALE);
+      rect.setAttribute("height", ch / DETAIL_SCALE);
       rect.setAttribute("fill", spot.color);
       rect.setAttribute("shape-rendering", "crispEdges");
       slot.appendChild(rect);
@@ -82,7 +124,9 @@ function createPatternRenderer({
     if (!api || typeof api.getPixelsForCell !== "function") return null;
     const svgName = registry.getName(doc);
     if (!svgName) return null;
-    const pixels = api.getPixelsForCell(svgName, elemId, cellX, cellY);
+    const sourceX = Math.floor(cellX / DETAIL_SCALE);
+    const sourceY = Math.floor(cellY / DETAIL_SCALE);
+    const pixels = api.getPixelsForCell(svgName, elemId, sourceX, sourceY);
     if (
       Array.isArray(pixels) &&
       pixels.length === 0 &&
@@ -91,7 +135,15 @@ function createPatternRenderer({
     ) {
       return null;
     }
-    return Array.isArray(pixels) ? pixels : null;
+    if (!Array.isArray(pixels)) return null;
+    const offsetX = (cellX % DETAIL_SCALE) / DETAIL_SCALE;
+    const offsetY = (cellY % DETAIL_SCALE) / DETAIL_SCALE;
+    return pixels.map((pixel) => ({
+      x: pixel.x + offsetX,
+      y: pixel.y + offsetY,
+      width: 1 / DETAIL_SCALE,
+      height: 1 / DETAIL_SCALE,
+    }));
   }
 
   function distributeBodyPatchesToChain(doc, spots) {
@@ -171,6 +223,9 @@ function createPatternRenderer({
       });
     }
 
+    // Stretching poses still distribute patches through the legacy body-chain
+    // map. The surrounding renderer uses half-pixel patches; this lookup must
+    // stay on the map's native 22-column coordinate system.
     const CELLS_X = 22;
     const chainMapping =
       window.cellMappings &&
@@ -212,10 +267,24 @@ function createPatternRenderer({
       const mappedBlocks =
         chainMapping &&
         chainMapping.cells &&
-        Array.isArray(chainMapping.cells[`${spot.x},${spot.y}`]) &&
-        chainMapping.cells[`${spot.x},${spot.y}`].length > 0
-          ? chainMapping.cells[`${spot.x},${spot.y}`]
-          : [[spot.x, spot.y]];
+        Array.isArray(
+          chainMapping.cells[
+            `${Math.floor(spot.x / DETAIL_SCALE)},${Math.floor(
+              spot.y / DETAIL_SCALE,
+            )}`
+          ],
+        ) &&
+        chainMapping.cells[
+          `${Math.floor(spot.x / DETAIL_SCALE)},${Math.floor(
+            spot.y / DETAIL_SCALE,
+          )}`
+        ].length > 0
+          ? chainMapping.cells[
+              `${Math.floor(spot.x / DETAIL_SCALE)},${Math.floor(
+                spot.y / DETAIL_SCALE,
+              )}`
+            ]
+          : [[Math.floor(spot.x / DETAIL_SCALE), Math.floor(spot.y / DETAIL_SCALE)]];
       for (const [blockX, blockY] of mappedBlocks) {
         addBodyBlockPatch(blockX, blockY, spot.color);
       }
@@ -223,7 +292,7 @@ function createPatternRenderer({
   }
 
   function applyAll(pattern) {
-    currentPattern = pattern || {};
+    currentPattern = normalizePatternResolution(pattern);
     registry.forEach((doc) => {
       applyToSvg(doc, currentPattern);
       refreshHeatOverlays(doc);

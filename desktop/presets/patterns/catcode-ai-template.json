@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "app": "catcode",
+  "preset": {
+    "name": "Мой кот",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-01-01T00:00:00.000Z",
+    "pattern": {
+      "baseColor": "#1A1A1A",
+      "pixelResolution": 2,
+      "eyeColor": "#1A1A1A",
+      "eyeBgColor": "#FFFFFF",
+      "eyePupilScale": 100,
+      "oddEye": false,
+      "eyeColorLeft": "#1A1A1A",
+      "eyeColorRight": "#1A1A1A",
+      "head": [],
+      "body": [],
+      "tail": [],
+      "legFl": [],
+      "legFr": [],
+      "legRl": [],
+      "legRr": [],
+      "earL": [],
+      "earR": []
+    }
+  }
+}

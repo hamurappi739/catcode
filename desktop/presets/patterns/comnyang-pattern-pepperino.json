@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 2,
+  "app": "comnyang",
+  "exportedAt": "2026-07-22T15:07:57.704Z",
+  "preset": {
+    "name": "Pepperino",
+    "createdAt": "2026-07-12T21:29:50.332717+00:00",
+    "updatedAt": "2026-07-12T21:29:50.332717+00:00",
+    "catName": "Pepperino",
+    "userName": "Ariel",
+    "description": "Top 3 mejores gatos en Comnyang 😼\r\nEste pequeño felino es como la pimienta: oscura y algo picante. Le encanta correro por toda la casa a las 3am y disfruta ver el atardercer.",
+    "pattern": {
+      "body": [],
+      "earL": [],
+      "earR": [],
+      "head": [],
+      "tail": [
+        {
+          "x": 8,
+          "y": 3,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 9,
+          "y": 3,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 10,
+          "y": 3,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 11,
+          "y": 3,
+          "color": "#FFFFFF"
+        },
+        {
+          "x": 12,
+          "y": 3,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 12,
+          "y": 2,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 11,
+          "y": 2,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 10,
+          "y": 2,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 9,
+          "y": 2,
+          "color": "#FFFFFF"
+        },
+        {
+          "x": 8,
+          "y": 2,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 10,
+          "y": 1,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 9,
+          "y": 1,
+          "color": "#FFFFFF"
+        },
+        {
+          "x": 9,
+          "y": 0,
+          "color": "#CFCFCF"
+        },
+        {
+          "x": 10,
+          "y": 4,
+          "color": "#FFFFFF"
+        }
+      ],
+      "legFl": [],
+      "legFr": [],
+      "legRl": [],
+      "legRr": [],
+      "oddEye": false,
+      "eyeColor": "#1A1A1A",
+      "baseColor": "#1A1A1A",
+      "eyeBgColor": "#FFFFFF",
+      "eyeColorLeft": "#1A1A1A",
+      "eyeColorRight": "#1A1A1A",
+      "eyePupilScale": 100
+    }
+  },
+  "name": "Pepperino",
+  "cat_name": "Pepperino",
+  "user_name": "Ariel",
+  "description": "Top 3 mejores gatos en Comnyang 😼\r\nEste pequeño felino es como la pimienta: oscura y algo picante. Le encanta correro por toda la casa a las 3am y disfruta ver el atardercer.",
+  "pattern_json": {
+    "body": [],
+    "earL": [],
+    "earR": [],
+    "head": [],
+    "tail": [
+      {
+        "x": 8,
+        "y": 3,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 9,
+        "y": 3,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 10,
+        "y": 3,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 11,
+        "y": 3,
+        "color": "#FFFFFF"
+      },
+      {
+        "x": 12,
+        "y": 3,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 12,
+        "y": 2,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 11,
+        "y": 2,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 10,
+        "y": 2,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 9,
+        "y": 2,
+        "color": "#FFFFFF"
+      },
+      {
+        "x": 8,
+        "y": 2,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 10,
+        "y": 1,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 9,
+        "y": 1,
+        "color": "#FFFFFF"
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "color": "#CFCFCF"
+      },
+      {
+        "x": 10,
+        "y": 4,
+        "color": "#FFFFFF"
+      }
+    ],
+    "legFl": [],
+    "legFr": [],
+    "legRl": [],
+    "legRr": [],
+    "oddEye": false,
+    "eyeColor": "#1A1A1A",
+    "baseColor": "#1A1A1A",
+    "eyeBgColor": "#FFFFFF",
+    "eyeColorLeft": "#1A1A1A",
+    "eyeColorRight": "#1A1A1A",
+    "eyePupilScale": 100
+  },
+  "source": {
+    "type": "comnyang_showcase",
+    "showcase_id": "abb26c31-8b56-4b2e-9699-4bb4f454aaf7",
+    "published_at": "2026-07-12T21:29:50.332717+00:00"
+  }
+}

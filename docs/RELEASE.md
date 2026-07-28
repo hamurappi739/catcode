@@ -1,5 +1,7 @@
 # CatCode Windows Release
 
+For Apple Silicon and Intel Mac releases, use `docs/MACOS.md`.
+
 ## Prerequisites
 
 - A clean checkout of the `agent/license-deploy` branch.
@@ -52,5 +54,5 @@ Automatic updates are disabled by default. Do not set `CATCODE_ENABLE_AUTO_UPDAT
 2. Activate a newly issued one-device test license.
 3. Restart the application and verify it launches without an activation window.
 4. Revoke that test license in the private server console, wait for the next online license refresh, and verify the application returns to activation.
-5. Test a network outage: the app may work only until its current signed entitlement expires, currently 24 hours.
+5. Test a network outage: the app may work only until its current signed entitlement expires, currently 7 days in production.
 6. Verify uninstallation keeps and reinstallation restores the local settings; then test the explicit support procedure for removing a device.

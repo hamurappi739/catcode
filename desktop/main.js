@@ -18900,7 +18900,7 @@ Choose which version to keep. The selected version will become the version used 
         accountUnlinkNotLinked: "No license is linked to this account.",
         accountUnlinkSignedOut:
           "Sign in again, then try unlinking the license.",
-        patternEditorTitle: "CatCode Pattern Editor",
+        patternEditorTitle: "CatCode Editor",
         mappingEditorTitle: "CatCode Cell Mapping Editor",
         appMenuAbout: "About CatCode",
         appMenuQuit: "Quit",
@@ -18945,12 +18945,13 @@ Choose which version to keep. The selected version will become the version used 
         pomodoroRestLabel: "Break",
         pomodoroMinutes: (t) => `${t} min`,
         pomodoroCustom: "Custom",
-        patternEditor: "Pattern Editor",
+        patternEditor: "Cat Editor",
         mappingEditor: "Cell Mapping Editor",
-        taskCompleteSound: "Sound",
+        taskCompleteSound: "Sound Volume",
         soundVolumeHeader: "Volume",
         soundMute: "Mute",
         soundLevel: (t) => `${t}`,
+        attentionRequests: "Cat asks for attention",
         launchAtLogin: "Open at Login",
         agentMonitoring: "Agent Monitoring",
         agentMonitoringCursor: "Cursor",
@@ -18982,6 +18983,8 @@ Choose which version to keep. The selected version will become the version used 
           "Some macOS environments also require Input Monitoring. Add CatCode in Input Monitoring, then restart CatCode if typing reactions do not start.",
         openInputMonitoring: "Open Input Monitoring",
         openAccessibility: "Open Accessibility",
+        openScreenRecording: "Open Screen Recording",
+        macPermissions: "macOS permissions",
         shareVideoTitle: "Share video",
         shareVideoSaveTitle: "Save share video",
         shareRecordingFailed: "Could not make the share video.",
@@ -19336,7 +19339,7 @@ Choose which version to keep. The selected version will become the version used 
         accountUnlinkNotLinked: "К этому аккаунту не привязана лицензия.",
         accountUnlinkSignedOut:
           "Войдите снова, затем попробуйте отвязать лицензию.",
-        patternEditorTitle: "Редактор узора CatCode",
+        patternEditorTitle: "Редактор кота CatCode",
         mappingEditorTitle: "Редактор ячеек CatCode",
         appMenuAbout: "О CatCode",
         appMenuQuit: "Выйти",
@@ -19381,12 +19384,13 @@ Choose which version to keep. The selected version will become the version used 
         pomodoroRestLabel: "Перерыв",
         pomodoroMinutes: (t) => `${t} мин`,
         pomodoroCustom: "Свое",
-        patternEditor: "Редактор узора",
+        patternEditor: "Редактор кота",
         mappingEditor: "Редактор ячеек",
-        taskCompleteSound: "Звук",
+        taskCompleteSound: "Громкость звука",
         soundVolumeHeader: "Громкость",
         soundMute: "Без звука",
         soundLevel: (t) => `${t}`,
+        attentionRequests: "Кот просит внимания",
         launchAtLogin: "Открывать при входе",
         agentMonitoring: "Мониторинг агентов",
         agentMonitoringCursor: "Cursor",
@@ -19419,6 +19423,8 @@ Choose which version to keep. The selected version will become the version used 
           "В некоторых окружениях macOS также нужен Input Monitoring. Добавьте CatCode туда и перезапустите приложение.",
         openInputMonitoring: "Открыть Input Monitoring",
         openAccessibility: "Открыть Accessibility",
+        openScreenRecording: "Открыть запись экрана",
+        macPermissions: "Разрешения macOS",
         shareVideoTitle: "Видео для шаринга",
         shareVideoSaveTitle: "Сохранить видео",
         shareRecordingFailed: "Не удалось создать видео.",
@@ -19851,6 +19857,8 @@ var pp = F((rR, fp) => {
               : T.taskCompleteSoundVolume === 0 &&
                 ((T.soundMuted = !0),
                 (T.taskCompleteSoundVolume = g().defaultSoundVolume)),
+            typeof _.attentionRequestsEnabled == "boolean" &&
+              (T.attentionRequestsEnabled = _.attentionRequestsEnabled),
             typeof _.launchAtLogin == "boolean" &&
               (T.launchAtLogin = _.launchAtLogin),
             typeof _.allowAnalysis == "boolean" &&
@@ -19917,6 +19925,7 @@ var pp = F((rR, fp) => {
               catNamePromptShown: m.catNamePromptShown,
               taskCompleteSoundVolume: m.taskCompleteSoundVolume,
               soundMuted: m.soundMuted,
+              attentionRequestsEnabled: m.attentionRequestsEnabled,
               launchAtLogin: m.launchAtLogin,
               allowAnalysis: m.allowAnalysis,
               agentMonitoringOverrides: m.agentMonitoringOverrides,
@@ -20579,6 +20588,7 @@ var Hc = F((cR, Ip) => {
   function kS() {
     return {
       selectedPresetId: null,
+      pixelResolution: 2,
       baseColor: Fc,
       eyeColor: Jr,
       eyeBgColor: qc,
@@ -20613,6 +20623,9 @@ var Hc = F((cR, Ip) => {
     return {
       selectedPresetId:
         typeof e.selectedPresetId == "string" ? e.selectedPresetId : null,
+      // Version 2 skins keep their coordinates on the 64x64 detail grid.
+      // Older files intentionally remain unmarked so the renderer can migrate them.
+      pixelResolution: Number(e.pixelResolution) === 2 ? 2 : 1,
       baseColor: typeof e.baseColor == "string" ? e.baseColor : Fc,
       eyeColor: typeof e.eyeColor == "string" ? e.eyeColor : Jr,
       eyeBgColor: typeof e.eyeBgColor == "string" ? e.eyeBgColor : qc,
@@ -20829,6 +20842,96 @@ var jp = F((lR, Lp) => {
         file: "rusian-blue.json",
         image: "../../assets/img/presets/rusian-blue.png",
       },
+      {
+        id: "community-asexual-v0",
+        label: { en: "Asexual v0", ru: "Асексуал v0" },
+        file: "community/comnyang-pattern-asexual-v0.json",
+        source: "collection",
+      },
+      {
+        id: "community-dalmatian",
+        label: { en: "Dalmatian", ru: "Далматинец" },
+        file: "community/comnyang-pattern-dalmatian.json",
+        source: "collection",
+      },
+      {
+        id: "community-dilute-calico-77",
+        label: { en: "Dilute calico 77", ru: "Разбавленный калико 77" },
+        file: "community/comnyang-pattern-dilute-calico-77.json",
+        source: "collection",
+      },
+      {
+        id: "community-gunbamie",
+        label: { en: "Gunbamie", ru: "Гунбами" },
+        file: "community/comnyang-pattern-gunbamie.json",
+        source: "collection",
+      },
+      {
+        id: "community-jamun",
+        label: { en: "Jamun", ru: "Джамун" },
+        file: "community/comnyang-pattern-jamun.json",
+        source: "collection",
+      },
+      {
+        id: "community-kohaze",
+        label: { en: "Kohaze", ru: "Кохадзэ" },
+        file: "community/comnyang-pattern-kohaze.json",
+        source: "collection",
+      },
+      {
+        id: "community-lazlo",
+        label: { en: "Lazlo", ru: "Лазло" },
+        file: "community/comnyang-pattern-lazlo.json",
+        source: "collection",
+      },
+      {
+        id: "community-mandarino",
+        label: { en: "Mandarino", ru: "Мандарино" },
+        file: "community/comnyang-pattern-mandarino.json",
+        source: "collection",
+      },
+      {
+        id: "community-matcha",
+        label: { en: "Matcha", ru: "Матча" },
+        file: "community/comnyang-pattern-matcha.json",
+        source: "collection",
+      },
+      {
+        id: "community-misty",
+        label: { en: "Misty", ru: "Мисти" },
+        file: "community/comnyang-pattern-misty.json",
+        source: "collection",
+      },
+      {
+        id: "community-pepperino",
+        label: { en: "Pepperino", ru: "Пепперино" },
+        file: "community/comnyang-pattern-pepperino.json",
+        source: "collection",
+      },
+      {
+        id: "community-potato",
+        label: { en: "Potato", ru: "Картошка" },
+        file: "community/comnyang-pattern-potato.json",
+        source: "collection",
+      },
+      {
+        id: "community-tortuga",
+        label: { en: "Tortuga", ru: "Тортуга" },
+        file: "community/comnyang-pattern-tortuga.json",
+        source: "collection",
+      },
+      {
+        id: "community-winter",
+        label: { en: "Winter", ru: "Зима" },
+        file: "community/comnyang-pattern-winter.json",
+        source: "collection",
+      },
+      {
+        id: "community-zorro",
+        label: { en: "Zorro", ru: "Зорро" },
+        file: "community/comnyang-pattern-zorro.json",
+        source: "collection",
+      },
     ],
     Np = {
       "black-cat": "Black",
@@ -20880,9 +20983,9 @@ var jp = F((lR, Lp) => {
             return {
               id: m.id,
               label: m.label,
-              source: "builtin",
+              source: m.source || "builtin",
               image: m.image,
-              pattern: ai(JSON.parse(x)),
+              pattern: ai((JSON.parse(x).preset || {}).pattern || JSON.parse(x)),
             };
           } catch {
             return null;
@@ -23116,6 +23219,10 @@ var pg = F((ER, fg) => {
     setLaunchAtLogin: Te,
     getAllowAnalysis: Je,
     setAllowAnalysis: qe,
+    getAttentionRequestsEnabled: attentionGet,
+    setAttentionRequestsEnabled: attentionSet,
+    openOnboarding: tourOpen,
+    openMacPrivacyPane: openMacPrivacyPane,
     getAgentMonitoringEnabled: kt,
     setAgentMonitoringOverride: xe,
     signOutCurrentAccount: pe,
@@ -23350,7 +23457,10 @@ var pg = F((ER, fg) => {
             label: d("soundLevel", zt),
             type: "radio",
             checked: !ce && I(Ae) === zt,
-            click: () => $(zt),
+            click: () => {
+              let volume = $(zt);
+              Q("sound-preview", { volume });
+            },
           };
         }),
       ];
@@ -23447,6 +23557,37 @@ var pg = F((ER, fg) => {
             },
           ],
         },
+        {
+          label: d("attentionRequests"),
+          type: "checkbox",
+          checked: attentionGet(),
+          click: (Be) => attentionSet(Be.checked),
+        },
+        {
+          label: N() === "ru" ? "Пройти обучение" : "Take the tour",
+          click: () => tourOpen && tourOpen(),
+        },
+        ...(i && openMacPrivacyPane
+          ? [
+              {
+                label: d("macPermissions"),
+                submenu: [
+                  {
+                    label: d("openAccessibility"),
+                    click: () => openMacPrivacyPane("accessibility"),
+                  },
+                  {
+                    label: d("openInputMonitoring"),
+                    click: () => openMacPrivacyPane("inputMonitoring"),
+                  },
+                  {
+                    label: d("openScreenRecording"),
+                    click: () => openMacPrivacyPane("screenRecording"),
+                  },
+                ],
+              },
+            ]
+          : []),
         { label: d("language"), submenu: ke() },
         {
           label: d("launchAtLogin"),
@@ -23816,6 +23957,27 @@ var mg = F((TR, gg) => {
           { ok: !0, imported: N.length, selectedId: N[0]?.id || null }
         );
       }),
+      t.handle("pattern-ai-template-save", async () => {
+        let Y = await e.showSaveDialog(a() || c() || void 0, {
+          title: "Save CatCode AI template",
+          defaultPath: "catcode-my-cat-template.json",
+          filters: [{ name: "JSON", extensions: ["json"] }],
+        });
+        if (Y.canceled || !Y.filePath) return { ok: !1, canceled: !0 };
+        try {
+          let U = i("presets", "patterns", "catcode-ai-template.json"),
+            E = JSON.parse(s.readFileSync(U, "utf8"));
+          return (H(Y.filePath, E), { ok: !0, filePath: Y.filePath });
+        } catch (U) {
+          return (
+            oe(
+              "[CatCode] failed to save AI pattern template:",
+              U && U.message ? U.message : U,
+            ),
+            { ok: !1 }
+          );
+        }
+      }),
       t.on("pattern-set", (Y, U) => {
         if (!U || typeof U != "object") return;
         let E =
@@ -23949,6 +24111,7 @@ var _g = F((CR, yg) => {
     saveLocalUiState: h,
     activateLicenseKey: p,
     startLicensedApp: g,
+    openOnboardingAfterActivation: V,
     licenseRecoveryReasonFromMessage: y,
     landingPageUrl: w,
     licenseResetPageUrl: A,
@@ -23973,6 +24136,7 @@ var _g = F((CR, yg) => {
           let B = await p(D);
           return (
             g(),
+            typeof V == "function" && V(),
             {
               ok: !0,
               productName: B.productName || null,
@@ -24260,12 +24424,6 @@ var Ag = F((OR, kg) => {
         e.buildFromTemplate([
           { label: M ? "Offline" : "Online", enabled: !1 },
           { type: "separator" },
-          ...(B()
-            ? [
-                { label: r("accountLinkMenu"), click: () => R("") },
-                { type: "separator" },
-              ]
-            : []),
           {
             label: r("fixedMessage"),
             click: () => P.webContents.send("fixed-message-edit", _()),
@@ -24445,6 +24603,7 @@ var {
   uk = require("os"),
   dk = require("vm"),
   { spawn: hk } = require("child_process"),
+  { createMacOsSupport: createCatcodeMacOsSupport } = require("./macos-support"),
   Yr = Sh(),
   ui = xh(),
   { createAnalyticsEvents: fk } = Lh(),
@@ -24535,6 +24694,12 @@ var {
   Bg = "--catcode-cleanup-hooks",
   wA = process.argv.includes(Bg),
   catcodeAutoUpdatesEnabled = process.env.CATCODE_ENABLE_AUTO_UPDATES === "1";
+var catcodeMacOsSupport = createCatcodeMacOsSupport({
+  platform: process.platform,
+  shell: Og,
+  systemPreferences: ck,
+  logWarn: Ze,
+});
 on && !process.env.PREBUILDS_ONLY && (process.env.PREBUILDS_ONLY = "1");
 var Hg = Rk(me);
 me.setName(Hg);
@@ -24620,7 +24785,7 @@ var Re = null,
   $s = null,
   Ar = null,
   wt = sn("assets", "catcode-logo.png"),
-  TA = sn("assets", "trayTemplate.png"),
+  TA = sn("assets", rs ? "tray-macTemplate.png" : "trayTemplate.png"),
   Vg = 23456,
   {
     buildEmbeddedNodeHookCommand: CA,
@@ -24922,6 +25087,7 @@ var Re = null,
       catNamePromptShown: Vs,
       taskCompleteSoundVolume: Pr,
       soundMuted: Rr,
+      attentionRequestsEnabled,
       launchAtLogin: Ks,
       allowAnalysis: Or,
       agentMonitoringOverrides: zs,
@@ -24957,6 +25123,8 @@ var Re = null,
           (Pr = t.taskCompleteSoundVolume),
         Object.prototype.hasOwnProperty.call(t, "soundMuted") &&
           (Rr = t.soundMuted),
+        Object.prototype.hasOwnProperty.call(t, "attentionRequestsEnabled") &&
+          (attentionRequestsEnabled = t.attentionRequestsEnabled),
         Object.prototype.hasOwnProperty.call(t, "launchAtLogin") &&
           (Ks = t.launchAtLogin),
         Object.prototype.hasOwnProperty.call(t, "allowAnalysis") &&
@@ -25265,6 +25433,21 @@ var Re = null,
     setLaunchAtLogin: (...t) => vT(...t),
     getAllowAnalysis: () => Or,
     setAllowAnalysis: (...t) => Tl(...t),
+    getAttentionRequestsEnabled: () => attentionRequestsEnabled,
+    setAttentionRequestsEnabled: (enabled) => {
+      attentionRequestsEnabled = !!enabled;
+      cn();
+      Re &&
+        !Re.isDestroyed() &&
+        Re.webContents.send(
+          "attention-requests-enabled",
+          attentionRequestsEnabled,
+        );
+      ir();
+      return attentionRequestsEnabled;
+    },
+    openOnboarding: () => openCatcodeOnboarding({ force: !0 }),
+    openMacPrivacyPane: (pane) => catcodeMacOsSupport.openPrivacyPane(pane),
     getAgentMonitoringEnabled: (...t) => el(...t),
     setAgentMonitoringOverride: (...t) => Rm(...t),
     signOutCurrentAccount: (...t) => fm(...t),
@@ -25415,6 +25598,7 @@ var Xr = Lg(),
   Rr = !1,
   Ks = !1,
   Or = !0,
+  attentionRequestsEnabled = !0,
   zs = {},
   li = "",
   {
@@ -25601,6 +25785,108 @@ var Xr = Lg(),
     t: St,
   });
 BT();
+catcodeTrustedIpcMain.handle("macos-permissions-get", () =>
+  catcodeMacOsSupport.getStatus(),
+);
+catcodeTrustedIpcMain.handle("macos-permissions-open", (event, pane) =>
+  catcodeMacOsSupport.openPrivacyPane(pane),
+);
+catcodeTrustedIpcMain.handle("share-pet-snapshot-save", async () => {
+  let pet = Re;
+  if (!pet || pet.isDestroyed()) return { ok: !1, reason: "pet-unavailable" };
+  try {
+    let image = await pet.capturePage();
+    let defaultPath = nn.join(
+      me.getPath("pictures"),
+      `CatCode-${new Date().toISOString().replace(/[:.]/g, "-")}.png`,
+    );
+    let result = await Js.showSaveDialog(pet, {
+      title: "Сохранить снимок CatCode",
+      defaultPath,
+      filters: [{ name: "PNG", extensions: ["png"] }],
+    });
+    if (result.canceled || !result.filePath) return { ok: !1, canceled: !0 };
+    Ir.writeFileSync(result.filePath, image.toPNG());
+    return { ok: !0, filePath: result.filePath };
+  } catch (error) {
+    Ze("[CatCode] share snapshot fallback failed:", error);
+    return { ok: !1, reason: "snapshot-failed" };
+  }
+});
+let catcodeOnboardingWindow = null;
+function catcodeOnboardingStatePath() {
+  return nn.join(me.getPath("userData"), "onboarding-state.json");
+}
+function catcodeOnboardingCompleted() {
+  try {
+    let state = JSON.parse(Ir.readFileSync(catcodeOnboardingStatePath(), "utf8"));
+    return !!state.completed;
+  } catch {
+    return !1;
+  }
+}
+function setCatcodeOnboardingCompleted() {
+  try {
+    Ir.writeFileSync(
+      catcodeOnboardingStatePath(),
+      JSON.stringify({ completed: !0, completedAt: new Date().toISOString() }),
+    );
+  } catch (error) {
+    Ze("[CatCode] failed to save onboarding state:", error);
+  }
+}
+function openCatcodeOnboarding({ force = !1 } = {}) {
+  if (!force && catcodeOnboardingCompleted()) return { ok: !0, shown: !1 };
+  if (catcodeOnboardingWindow && !catcodeOnboardingWindow.isDestroyed()) {
+    catcodeOnboardingWindow.show();
+    catcodeOnboardingWindow.focus();
+    return { ok: !0, shown: !0 };
+  }
+  let parent = Re && !Re.isDestroyed() ? Re : void 0;
+  catcodeOnboardingWindow = new en({
+    width: 940,
+    height: 670,
+    minWidth: 820,
+    minHeight: 610,
+    title: "CatCode",
+    icon: wt,
+    parent,
+    autoHideMenuBar: !0,
+    backgroundColor: "#11181a",
+    webPreferences: {
+      preload: nn.join(__dirname, "onboarding-preload.js"),
+      contextIsolation: !0,
+      sandbox: !0,
+      nodeIntegration: !1,
+    },
+  });
+  catcodeOnboardingWindow.on("closed", () => {
+    catcodeOnboardingWindow = null;
+  });
+  catcodeOnboardingWindow.loadFile(
+    sn("renderer", "onboarding", "index.html"),
+  );
+  return { ok: !0, shown: !0 };
+}
+function openCatcodeOnboardingAfterActivation() {
+  setTimeout(() => openCatcodeOnboarding(), 300);
+}
+catcodeTrustedIpcMain.handle("onboarding-complete", () => {
+  setCatcodeOnboardingCompleted();
+  let window = catcodeOnboardingWindow;
+  window && !window.isDestroyed() && setTimeout(() => window.close(), 180);
+  return { ok: !0 };
+});
+catcodeTrustedIpcMain.handle("onboarding-skip", () => {
+  setCatcodeOnboardingCompleted();
+  let window = catcodeOnboardingWindow;
+  window && !window.isDestroyed() && window.close();
+  return { ok: !0 };
+});
+catcodeTrustedIpcMain.handle("onboarding-open-cat-editor", () => {
+  wl();
+  return { ok: !0 };
+});
 var { createPetWindow: HT } = Gk({
     BrowserWindow: en,
     screen: Gs,
@@ -25797,6 +26083,7 @@ sA({
   saveLocalUiState: hE,
   activateLicenseKey: IE,
   startLicensedApp: Ol,
+  openOnboardingAfterActivation: openCatcodeOnboardingAfterActivation,
   licenseRecoveryReasonFromMessage: RE,
   landingPageUrl: xA,
   licenseResetPageUrl: NA,
@@ -25831,6 +26118,19 @@ oA({
   retryBackgroundSyncNow: aE,
   clearSyncPolling: yi,
   refreshAppTrayMenu: ir,
+});
+catcodeTrustedIpcMain.handle(
+  "attention-requests-get",
+  () => attentionRequestsEnabled,
+);
+catcodeTrustedIpcMain.handle("attention-requests-set", (event, enabled) => {
+  attentionRequestsEnabled = !!enabled;
+  cn();
+  Re &&
+    !Re.isDestroyed() &&
+    Re.webContents.send("attention-requests-enabled", attentionRequestsEnabled);
+  ir();
+  return attentionRequestsEnabled;
 });
 iA({
   ipcMain: catcodeTrustedIpcMain,

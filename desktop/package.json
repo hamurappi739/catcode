@@ -2,18 +2,23 @@
   "name": "catcode",
   "private": true,
   "productName": "CatCode",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "author": "CatCode",
   "description": "Desktop cat companion for focus, reminders, and healthy work habits.",
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
-    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check share-capture-preload.js && node --check license-client.js",
+    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check onboarding-preload.js && node --check share-capture-preload.js && node --check license-client.js && node --check macos-support.js && node --check scripts/verify-macos-signing-env.js && node --check renderer/pet/custom-behavior.js && node --check renderer/onboarding/renderer.js && node --check renderer/editor/custom-cat-creator.js",
     "test": "node --test test/*.test.js",
     "start": "electron .",
     "smoke": "electron . --catcode-smoke-test",
     "build:dir": "electron-builder --win --dir",
-    "build:installer": "electron-builder --win nsis"
+    "build:installer": "electron-builder --win nsis",
+    "build:mac:dir": "electron-builder --config electron-builder.mac-unsigned.cjs --mac --dir",
+    "build:mac:beta:arm64": "electron-builder --config electron-builder.mac-unsigned.cjs --mac dmg zip --arm64",
+    "build:mac:beta:x64": "electron-builder --config electron-builder.mac-unsigned.cjs --mac dmg zip --x64",
+    "build:mac:release:arm64": "electron-builder --mac dmg zip --arm64",
+    "build:mac:release:x64": "electron-builder --mac dmg zip --x64"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
@@ -35,7 +40,14 @@
     "files": [
       "**/*",
       "!release/**",
-      "!**/.codebase-memory/**"
+      "!**/.codebase-memory/**",
+      "!test/**",
+      "!scripts/**",
+      "!build/**",
+      "!electron-builder.*",
+      "!package-lock.json",
+      "!assets/dmg-background*.png",
+      "!assets/installer-*.bmp"
     ],
     "asar": true,
     "asarUnpack": [
@@ -53,6 +65,48 @@
       ],
       "icon": "assets/catcode-logo.ico"
     },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "assets/catcode-logo-mac.png",
+      "minimumSystemVersion": "12.0",
+      "darkModeSupport": true,
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "binaries": [
+        "Contents/Resources/app.asar.unpacked/node_modules/ffmpeg-static/ffmpeg"
+      ],
+      "notarize": true,
+      "extendInfo": {
+        "NSSupportsAutomaticGraphicsSwitching": true
+      }
+    },
+    "dmg": {
+      "title": "CatCode ${version} (${arch})",
+      "background": "assets/dmg-background.png",
+      "iconSize": 112,
+      "window": {
+        "width": 660,
+        "height": 420
+      },
+      "contents": [
+        {
+          "x": 180,
+          "y": 210,
+          "type": "file"
+        },
+        {
+          "x": 480,
+          "y": 210,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
@@ -60,6 +114,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "CatCode",
+      "installerSidebar": "assets/installer-sidebar.bmp",
+      "uninstallerSidebar": "assets/installer-sidebar.bmp",
+      "installerHeader": "assets/installer-header.bmp",
       "deleteAppDataOnUninstall": false
     }
   }

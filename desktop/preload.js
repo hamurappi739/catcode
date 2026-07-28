@@ -43,6 +43,7 @@ s.exposeInMainWorld("electronAPI", {
   onTaskCompleteSoundVolume: (e) =>
     n.on("task-complete-sound-volume", (t, o) => e(o)),
   onSoundMuted: (e) => n.on("sound-muted", (t, o) => e(o)),
+  onSoundPreview: (e) => n.on("sound-preview", (t, o) => e(o)),
   updateCheck: () => n.invoke("update-check"),
   updateDownload: () => n.invoke("update-download"),
   updateInstall: () => n.invoke("update-install"),
@@ -62,6 +63,7 @@ s.exposeInMainWorld("electronAPI", {
   shareCaptureStarted: () => n.invoke("share-capture-started"),
   shareCaptureOverlayHide: () => n.invoke("share-capture-overlay-hide"),
   shareVideoSave: (e) => n.invoke("share-video-save", e),
+  sharePetSnapshotSave: () => n.invoke("share-pet-snapshot-save"),
   shareErrorDialog: (e) => n.invoke("share-error-dialog", e),
   userNameGet: () => n.invoke("user-name-get"),
   userNameSet: (e) => n.invoke("user-name-set", e),
@@ -80,6 +82,12 @@ s.exposeInMainWorld("electronAPI", {
     n.invoke("task-complete-sound-volume-set", e),
   soundMutedGet: () => n.invoke("sound-muted-get"),
   soundMutedSet: (e) => n.invoke("sound-muted-set", e),
+  attentionRequestsGet: () => n.invoke("attention-requests-get"),
+  attentionRequestsSet: (e) => n.invoke("attention-requests-set", e),
+  onAttentionRequestsEnabled: (e) =>
+    n.on("attention-requests-enabled", (t, o) => e(o)),
+  macosPermissionsGet: () => n.invoke("macos-permissions-get"),
+  macosPermissionsOpen: (e) => n.invoke("macos-permissions-open", e),
   allowAnalysisGet: () => n.invoke("allow-analysis-get"),
   allowAnalysisSet: (e) => n.invoke("allow-analysis-set", e),
   agentMonitoringGet: (e) => n.invoke("agent-monitoring-get", e),
@@ -97,6 +105,7 @@ s.exposeInMainWorld("electronAPI", {
   patternCustomPresetsExport: (e) =>
     n.invoke("pattern-custom-presets-export", e),
   patternCustomPresetsImport: () => n.invoke("pattern-custom-presets-import"),
+  patternAiTemplateSave: () => n.invoke("pattern-ai-template-save"),
   patternConfirmClearAll: (e) => n.invoke("pattern-confirm-clear-all", e),
   patternConfirmDeletePreset: (e) =>
     n.invoke("pattern-confirm-delete-preset", e),

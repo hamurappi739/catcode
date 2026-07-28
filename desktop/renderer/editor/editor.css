@@ -206,6 +206,94 @@ main {
   background: #383838;
 }
 
+.create-cat-entry {
+  width: 100%;
+  min-height: 38px;
+  margin: 0 0 12px;
+  padding: 0 12px;
+  border: 1px solid #4f9b73;
+  border-radius: 5px;
+  background: #24583d;
+  color: #effff5;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.create-cat-entry:hover,
+.creator-button-primary:hover {
+  background: #2f6d4c;
+}
+
+.create-cat-panel {
+  gap: 12px;
+}
+
+.creator-intro {
+  margin: 0;
+  color: #d4d4d4;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.creator-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  color: #b9b9b9;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.creator-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.creator-button {
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid #555;
+  border-radius: 5px;
+  background: #2d2d2d;
+  color: #eee;
+  cursor: pointer;
+  font: 700 11px/1.2 inherit;
+}
+
+.creator-button:hover {
+  background: #383838;
+}
+
+.creator-button-primary {
+  border-color: #4f9b73;
+  background: #24583d;
+}
+
+.creator-prompt {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid #3f3f3f;
+  border-radius: 5px;
+  background: #191919;
+  color: #d6d6d6;
+  font: 10px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.creator-status {
+  min-height: 16px;
+  margin: 0;
+  color: #9bd38f;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .controls h2 {
   margin: 0 0 8px;
   font-size: 11px;

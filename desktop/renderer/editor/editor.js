@@ -9,33 +9,33 @@
       E = "#1A1A1A",
       x = {
         head: {
-          labels: { en: "Head", ko: "\uBA38\uB9AC", ja: "\u982D" },
+          labels: { en: "Head", ru: "\u0413\u043e\u043b\u043e\u0432\u0430", ko: "\uBA38\uB9AC", ja: "\u982D" },
           icon: "\u{1F431}",
-          cells: { x: 22, y: 18 },
+          cells: { x: 44, y: 36 },
           silhouettePath:
             "M4 3H2V5H1V7H0V12H1V16H3V17H4V18H6V19H16V18H18V17H19V16H20V15H21V12H22V8H21V5H20V4H19V3H17V2H15V1H7V2H4V3Z",
           silhouetteTransform: "translate(0 -1)",
         },
         body: {
-          labels: { en: "Body", ko: "\uBAB8\uD1B5", ja: "\u80F4\u4F53" },
+          labels: { en: "Body", ru: "\u0422\u0435\u043b\u043e", ko: "\uBAB8\uD1B5", ja: "\u80F4\u4F53" },
           icon: "\u{1F7EB}",
-          cells: { x: 22, y: 15 },
+          cells: { x: 44, y: 30 },
           silhouettePath:
             "M15 0V1H18V2H20V3H21V6H22V11H21V14H19V15H3V14H1V11H0V6H1V3H2V2H4V1H7V0H15Z",
           silhouetteTransform: "translate(0 0)",
         },
         tail: {
-          labels: { en: "Tail", ko: "\uAF2C\uB9AC", ja: "\u3057\u3063\u307D" },
+          labels: { en: "Tail", ru: "\u0425\u0432\u043e\u0441\u0442", ko: "\uAF2C\uB9AC", ja: "\u3057\u3063\u307D" },
           icon: "\u3030\uFE0F",
-          cells: { x: 13, y: 10 },
+          cells: { x: 26, y: 20 },
           silhouettePath:
             "M0 8V7H6V6H8V5H9V4H8V1H9V0H11V1H12V2H13V7H12V8H11V9H9V10H4V9H1V8H0Z",
           silhouetteTransform: "translate(0 0)",
         },
         legFl: {
-          labels: { en: "Left arm", ko: "\uC67C\uD314", ja: "\u5DE6\u8155" },
+          labels: { en: "Left arm", ru: "\u041b\u0435\u0432\u0430\u044f \u043b\u0430\u043f\u0430", ko: "\uC67C\uD314", ja: "\u5DE6\u8155" },
           icon: "\u{1F9B6}",
-          cells: { x: 8, y: 11 },
+          cells: { x: 16, y: 22 },
           silhouettePath:
             "M6 29V26H7V25H10V26H11V28H12V31H13V32H14V35H13V36H9V35H8V31H7V29H6Z",
           silhouetteTransform: "translate(-6 -25)",
@@ -43,52 +43,56 @@
         legFr: {
           labels: {
             en: "Right arm",
+            ru: "\u041f\u0440\u0430\u0432\u0430\u044f \u043b\u0430\u043f\u0430",
             ko: "\uC624\uB978\uD314",
             ja: "\u53F3\u8155",
           },
           icon: "\u{1F9B6}",
-          cells: { x: 8, y: 11 },
+          cells: { x: 16, y: 22 },
           silhouettePath:
             "M23 29V26H22V25H19V26H18V28H17V31H16V32H15V35H16V36H20V35H21V31H22V29H23Z",
           silhouetteTransform: "translate(-15 -25)",
         },
         legRl: {
-          labels: { en: "Left foot", ko: "\uC67C\uBC1C", ja: "\u5DE6\u8DB3" },
+          labels: { en: "Left foot", ru: "\u041b\u0435\u0432\u0430\u044f \u0437\u0430\u0434\u043d\u044f\u044f \u043b\u0430\u043f\u0430", ko: "\uC67C\uBC1C", ja: "\u5DE6\u8DB3" },
           icon: "\u{1F9B6}",
-          cells: { x: 8, y: 8 },
+          cells: { x: 16, y: 16 },
           silhouettePath: "M10 138V134H18V138H17V140H16V142H12V140H11V138H10Z",
           silhouetteTransform: "translate(-10 -134)",
         },
         legRr: {
           labels: {
             en: "Right foot",
+            ru: "\u041f\u0440\u0430\u0432\u0430\u044f \u0437\u0430\u0434\u043d\u044f\u044f \u043b\u0430\u043f\u0430",
             ko: "\uC624\uB978\uBC1C",
             ja: "\u53F3\u8DB3",
           },
           icon: "\u{1F9B6}",
-          cells: { x: 8, y: 8 },
+          cells: { x: 16, y: 16 },
           silhouettePath: "M22 138V134H30V138H29V140H28V142H24V140H23V138H22Z",
           silhouetteTransform: "translate(-22 -134)",
         },
         earL: {
           labels: {
             en: "Left ear",
+            ru: "\u041b\u0435\u0432\u043e\u0435 \u0443\u0445\u043e",
             ko: "\uC67C\uCABD \uADC0",
             ja: "\u5DE6\u8033",
           },
           icon: "\u{1F442}",
-          cells: { x: 6, y: 8 },
+          cells: { x: 12, y: 16 },
           silhouettePath: "M0 7V4H1V2H2V1H3V0H4V2H5V3H6V7H5V8H1V7H0Z",
           silhouetteTransform: "translate(0 0)",
         },
         earR: {
           labels: {
             en: "Right ear",
+            ru: "\u041f\u0440\u0430\u0432\u043e\u0435 \u0443\u0445\u043e",
             ko: "\uC624\uB978\uCABD \uADC0",
             ja: "\u53F3\u8033",
           },
           icon: "\u{1F442}",
-          cells: { x: 5, y: 8 },
+          cells: { x: 10, y: 16 },
           silhouettePath: "M1 3H0V7H1V8H4V7H5V2H4V1H3V0H2V1H1V3Z",
           silhouetteTransform: "translate(0 0)",
         },
@@ -147,6 +151,7 @@
           changePreset: "Change",
           backToEdit: "Back",
           builtinPresets: "Default presets",
+          collectionPresets: "CatCode skins",
           customPresets: "My presets",
           customPresetEmpty: "No custom presets yet.",
           exportCustomPresets: "Export",
@@ -175,6 +180,67 @@
           paint: "Paint",
           erase: "Eraser",
           spots: "spots",
+        },
+        ru: {
+          title: "Редактор внешности CatCode",
+          help: "Помощь",
+          hint: "Раскрасьте все части кота в одном окне. Изменения сразу появятся у CatCode.",
+          caveat:
+            "Размер кисти закрашивает квадратную область. Некоторые пятна видны только в отдельных позах.",
+          baseColor: "Основной цвет тела",
+          reset: "Сбросить",
+          eyeColor: "Цвет глаз",
+          eyeBgColor: "Фон глаз",
+          eyePupilSize: "Размер зрачка",
+          oddEye: "Разные глаза",
+          bodyColor: "Цвет тела",
+          left: "Левая",
+          right: "Правая",
+          spotColor: "Цвет пятен",
+          custom: "Свой",
+          adjustPatternColors: "Настроить цвета рисунка",
+          hue: "Тон",
+          saturation: "Насыщенность",
+          brightness: "Яркость",
+          undo: "Отменить",
+          redo: "Повторить",
+          shortcutHint: (undo, redo) => `Отменить ${undo} / Повторить ${redo}`,
+          brush: "Кисть",
+          tools: "Инструменты",
+          presets: "Пресеты",
+          currentPreset: "Выбранный пресет",
+          changePreset: "Изменить",
+          backToEdit: "Назад",
+          builtinPresets: "Базовые пресеты",
+          collectionPresets: "Скины CatCode",
+          customPresets: "Мои пресеты",
+          customPresetEmpty: "Сохранённых пресетов пока нет.",
+          exportCustomPresets: "Экспорт",
+          importCustomPresets: "Импорт",
+          renameCustomPreset: "Переименовать",
+          renameCustomPresetPrompt: "Название пресета",
+          morePresetActions: "Ещё",
+          customPresetsExported: (count) =>
+            `Экспортировано пользовательских пресетов: ${count}.`,
+          customPresetsImported: (count) =>
+            `Импортировано пользовательских пресетов: ${count}.`,
+          customPresetsImportFailed: "Не удалось импортировать пресеты.",
+          saveCustomPreset: "Новый пресет",
+          updateCustomPreset: "Сохранить изменения",
+          discardChanges: "Отменить изменения",
+          deleteCustomPreset: "Удалить пресет",
+          syncPendingTooltip:
+            "Нет сети. Этот пресет синхронизируется, когда соединение появится.",
+          customPresetNamePrompt: "Название пресета",
+          save: "Сохранить",
+          cancel: "Отмена",
+          delete: "Удалить",
+          deleteCustomPresetConfirm: "Удалить этот пресет?",
+          discardChangesConfirm: "Отменить несохранённые изменения?",
+          totalSpots: "Всего пятен",
+          paint: "Рисовать",
+          erase: "Ластик",
+          spots: "пятен",
         },
         ko: {
           title: "\uCF64\uB0E5\uC774 \uD328\uD134 \uD3B8\uC9D1\uAE30",
@@ -423,9 +489,9 @@
         let l = d("svg");
         (l.classList.add("part-canvas"),
           (l.dataset.part = e),
-          l.setAttribute("viewBox", `0 0 ${t.cells.x} ${t.cells.y}`),
-          l.setAttribute("width", t.cells.x * 10),
-          l.setAttribute("height", t.cells.y * 10));
+          l.setAttribute("viewBox", `0 0 ${t.cells.x / 2} ${t.cells.y / 2}`),
+          l.setAttribute("width", t.cells.x * 5),
+          l.setAttribute("height", t.cells.y * 5));
         let i = d("g");
         (i.classList.add("grid-lines"), i.setAttribute("stroke-width", "0.05"));
         let c = d("g"),
@@ -472,18 +538,18 @@
       e.textContent = "";
       for (let o = 0; o <= t; o++) {
         let s = d("line");
-        (s.setAttribute("x1", o),
+        (s.setAttribute("x1", o / 2),
           s.setAttribute("y1", 0),
-          s.setAttribute("x2", o),
-          s.setAttribute("y2", n),
+          s.setAttribute("x2", o / 2),
+          s.setAttribute("y2", n / 2),
           e.appendChild(s));
       }
       for (let o = 0; o <= n; o++) {
         let s = d("line");
         (s.setAttribute("x1", 0),
-          s.setAttribute("y1", o),
-          s.setAttribute("x2", t),
-          s.setAttribute("y2", o),
+          s.setAttribute("y1", o / 2),
+          s.setAttribute("x2", t / 2),
+          s.setAttribute("y2", o / 2),
           e.appendChild(s));
       }
     }
@@ -783,7 +849,7 @@
           ];
         for (let [h, B] of u) {
           let v = r.createSVGPoint();
-          if (((v.x = t + h), (v.y = n + B), s.isPointInFill(v))) return !0;
+          if (((v.x = (t + h) / 2), (v.y = (n + B) / 2), s.isPointInFill(v))) return !0;
           let F = r.createSVGPoint();
           if (((F.x = v.x - c), (F.y = v.y - a), s.isPointInFill(F))) return !0;
         }
@@ -825,10 +891,10 @@
         let [s, r] = n.split(",").map(Number);
         if (!_(e, s, r)) continue;
         let l = d("rect");
-        (l.setAttribute("x", s),
-          l.setAttribute("y", r),
-          l.setAttribute("width", 1),
-          l.setAttribute("height", 1),
+        (l.setAttribute("x", s / 2),
+          l.setAttribute("y", r / 2),
+          l.setAttribute("width", 0.5),
+          l.setAttribute("height", 0.5),
           l.setAttribute("fill", o),
           t.spots.appendChild(l));
       }
@@ -850,10 +916,10 @@
         i = Math.min(k, o.cells.x - r),
         c = Math.min(k, o.cells.y - l);
       (n.hover.setAttribute("visibility", "visible"),
-        n.hover.setAttribute("x", r),
-        n.hover.setAttribute("y", l),
-        n.hover.setAttribute("width", i),
-        n.hover.setAttribute("height", c));
+        n.hover.setAttribute("x", r / 2),
+        n.hover.setAttribute("y", l / 2),
+        n.hover.setAttribute("width", i / 2),
+        n.hover.setAttribute("height", c / 2));
     }
     function eo(e, t) {
       (e.addEventListener("mousedown", (n) => {
@@ -877,6 +943,7 @@
     });
     function S() {
       let e = {
+        pixelResolution: 2,
         baseColor: ee,
         eyeColor: M,
         eyeBgColor: Le,
@@ -898,6 +965,7 @@
     function ce(e) {
       let t = e && typeof e == "object" ? e : {},
         n = {
+          pixelResolution: 2,
           baseColor: typeof t.baseColor == "string" ? t.baseColor : E,
           eyeColor: typeof t.eyeColor == "string" ? t.eyeColor : E,
           eyeBgColor:
@@ -912,8 +980,8 @@
         let s = Array.isArray(t[o]) ? t[o] : [];
         n[o] = s
           .map((r) => ({
-            x: Number(r && r.x),
-            y: Number(r && r.y),
+            x: Number(r && r.x) * (t.pixelResolution === 2 ? 1 : 2),
+            y: Number(r && r.y) * (t.pixelResolution === 2 ? 1 : 2),
             color: r && typeof r.color == "string" ? r.color : "",
           }))
           .filter(
@@ -927,6 +995,14 @@
             (r, l) => r.y - l.y || r.x - l.x || r.color.localeCompare(l.color),
           );
       }
+      if (t.pixelResolution !== 2)
+        for (let o of Object.keys(x))
+          n[o] = n[o].flatMap((s) => [
+            { ...s },
+            { ...s, x: s.x + 1 },
+            { ...s, y: s.y + 1 },
+            { ...s, x: s.x + 1, y: s.y + 1 },
+          ]);
       return n;
     }
     function w(e) {
@@ -943,6 +1019,7 @@
     }
     function Z(e) {
       if (!(!e || typeof e != "object")) {
+        e = ce(e);
         (ut(typeof e.baseColor == "string" ? e.baseColor : E),
           dt(typeof e.eyeColor == "string" ? e.eyeColor : E),
           mt(typeof e.eyeBgColor == "string" ? e.eyeBgColor : "#FFFFFF"),
@@ -1169,8 +1246,12 @@
       };
       (e(
         "builtinPresets",
-        C.filter((t) => t.source !== "custom"),
+        C.filter((t) => t.source === "builtin"),
       ),
+        e(
+          "collectionPresets",
+          C.filter((t) => t.source === "collection"),
+        ),
         e(
           "customPresets",
           C.filter((t) => t.source === "custom"),
@@ -1179,6 +1260,7 @@
         ae());
     }
     function no(e) {
+      e = ce(e);
       let t = d("svg");
       (t.classList.add("preset-preview"),
         t.setAttribute("viewBox", "0 0 44 44"),
@@ -1277,10 +1359,10 @@
           )
             continue;
           let K = d("rect");
-          (K.setAttribute("x", be),
-            K.setAttribute("y", Pe),
-            K.setAttribute("width", 1),
-            K.setAttribute("height", 1),
+          (K.setAttribute("x", be / 2),
+            K.setAttribute("y", Pe / 2),
+            K.setAttribute("width", 0.5),
+            K.setAttribute("height", 0.5),
             K.setAttribute("fill", Y.color),
             P.appendChild(K));
         }

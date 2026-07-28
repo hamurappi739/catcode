@@ -11,7 +11,7 @@ const overlayPreload = fs.readFileSync(
   path.join(desktopDir, "share-capture-preload.js"),
   "utf8",
 );
-const rendererHtml = ["license", "editor", "pet"].map((name) =>
+const rendererHtml = ["license", "editor", "pet", "onboarding"].map((name) =>
   fs.readFileSync(path.join(desktopDir, "renderer", name, "index.html"), "utf8"),
 );
 

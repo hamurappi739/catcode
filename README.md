@@ -1,6 +1,7 @@
 # CatCode
 
-CatCode is a desktop companion for focus, reminders, and healthy work habits.
+CatCode is a Windows and macOS desktop companion for focus, reminders, and
+healthy work habits.
 
 This private repository contains two components:
 
@@ -9,9 +10,16 @@ This private repository contains two components:
 
 ## Recovery status
 
-The original source repository was unavailable. The `desktop` directory was recovered from the active installed `app.asar` for CatCode 0.2.0 on 2026-07-22. It is a functional recovery baseline, not yet a production-ready source release.
+The original source repository was unavailable. The `desktop` directory was
+recovered from the active installed `app.asar` for CatCode 0.2.0 on 2026-07-22
+and has since received licensing, security, product, and release engineering
+work.
 
-Do not distribute builds from this repository until the security, licensing, code-signing, and release checklist in `docs/RECOVERY.md` and `docs/RELEASE.md` is complete.
+Use the platform release checklists before distributing a build:
+
+- Windows: `docs/RELEASE.md`
+- macOS: `docs/MACOS.md`
+- Recovery history and residual risks: `docs/RECOVERY.md`
 
 ## Desktop verification
 
@@ -26,6 +34,10 @@ npm run build:installer
 ```
 
 `build:dir` creates an unsigned local folder at `desktop/release/win-unpacked`. `build:installer` creates the NSIS installer. Both are for verification only until the installer is code signed.
+
+macOS packages must be built on macOS or through the included GitHub Actions
+workflows. `macOS Beta` creates unsigned test artifacts. `macOS Production`
+creates signed and notarized Intel and Apple Silicon artifacts.
 
 ## Safety rules
 
