@@ -31,12 +31,12 @@ jobs:
         run: npm run build:installer
       - name: Verify installer
         run: |
-          $installer = Get-ChildItem release -Filter '*-Setup.exe' | Select-Object -First 1
+          $installer = Get-ChildItem release -Filter 'CatCode-*.exe' | Select-Object -First 1
           if (-not $installer) { throw 'Windows NSIS installer was not produced' }
           Get-FileHash $installer.FullName -Algorithm SHA256
       - uses: actions/upload-artifact@v4
         with:
           name: CatCode-Windows-beta-x64
-          path: desktop/release/*-Setup.exe
+          path: desktop/release/CatCode-*.exe
           if-no-files-found: error
           retention-days: 14
