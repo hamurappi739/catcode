@@ -4,7 +4,11 @@
   "productName": "CatCode",
   "desktopName": "ru.catcode.desktop.desktop",
   "version": "0.2.31",
-  "author": "CatCode",
+  "author": {
+    "name": "CatCode",
+    "email": "hamurappi739@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/hamurappi739/catcode",
   "description": "Desktop cat companion for focus, reminders, and healthy work habits.",
   "type": "commonjs",
   "main": "main.js",
