@@ -1,0 +1,46 @@
+name: Linux Beta
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Linux x64
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      npm_config_platform: linux
+      npm_config_arch: x64
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:platform
+      - name: Smoke test under Xvfb
+        run: xvfb-run -a npm run smoke
+      - name: Package Linux beta
+        run: npm run build:linux:beta:x64
+      - name: Verify packages
+        run: |
+          test -n "$(find release -maxdepth 1 -type f -name 'CatCode-*.AppImage' -print -quit)"
+          test -n "$(find release -maxdepth 1 -type f -name 'CatCode-*.deb' -print -quit)"
+          file release/*.AppImage release/*.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CatCode-Linux-beta-x64
+          path: |
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+          if-no-files-found: error
+          retention-days: 14
