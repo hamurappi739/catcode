@@ -28,7 +28,7 @@ jobs:
       - run: npm run check
       - run: npm run test:platform
       - name: Smoke test under Xvfb
-        run: xvfb-run -a npm run smoke
+        run: xvfb-run -a npm run smoke -- --no-sandbox
       - name: Package Linux beta
         run: npm run build:linux:beta:x64
       - name: Verify packages
