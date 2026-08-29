@@ -24,15 +24,105 @@
         transform-origin: 18px 12.5px;
         animation: none;
       }
-      :root.idle-animated .breathe-anim { animation: breathe 3.5s infinite ease-in-out; }
-      :root.idle-animated .tail-sway { animation: tail-sway 4s infinite ease-in-out; }
-      :root.idle-animated .whiskers-flex { animation: whiskers 8s infinite ease-in-out; }
-      :root.idle-animated .ear-twitch-l { animation: ear-twitch-l 11s infinite; }
-      :root.idle-animated .ear-twitch-r { animation: ear-twitch-r 13s infinite; }
-      :root.idle-animated .eye-l-blink,
-      :root.idle-animated .eye-r-blink {
-        animation: blink 4s infinite;
+      :root.idle-breathe-cycle .breathe-anim {
+        animation: breathe 1.9s steps(4, end) 1;
       }
+      :root.idle-tail-cycle .tail-sway {
+        animation: tail-sway 1.7s steps(4, end) 1;
+      }
+      :root.idle-whiskers-cycle .whiskers-flex {
+        animation: idle-whiskers-pulse 0.42s steps(3, end) 1;
+      }
+      :root.idle-ear-left-cycle .ear-twitch-l {
+        animation: idle-ear-left-pulse 0.43s steps(4, end) 1;
+      }
+      :root.idle-ear-right-cycle .ear-twitch-r {
+        animation: idle-ear-right-pulse 0.43s steps(4, end) 1;
+      }
+      :root.idle-blink-cycle .eye-l-blink,
+      :root.idle-blink-cycle .eye-r-blink {
+        animation: idle-blink-pulse 0.32s steps(3, end) 1;
+      }
+      :root.playful-jump #legs,
+      :root.playful-jump .tail-sway {
+        filter: url(#cat-outline);
+      }
+      :root.playful-jump #eye-left,
+      :root.playful-jump #whiskers rect:nth-child(-n+2) {
+        opacity: 0;
+      }
+      :root.playful-jump .ear-twitch-l {
+        opacity: 0.55;
+      }
+      :root.playful-jump .breathe-anim {
+        animation: none;
+      }
+      :root.playful-jump #face-js {
+        transform-origin: 16px 17px;
+        animation: playful-jump-face 0.48s steps(3, end) infinite;
+      }
+      :root.playful-jump #body {
+        transform-origin: 16px 28px;
+        animation: playful-jump-body 0.48s steps(3, end) infinite;
+      }
+      :root.playful-jump #leg-fl,
+      :root.playful-jump #leg-fr {
+        transform-origin: 16px 30px;
+        animation: playful-jump-legs 0.48s steps(3, end) infinite;
+      }
+      :root.playful-jump .tail-sway {
+        animation: playful-jump-tail 0.48s steps(3, end) infinite;
+      }
+      #dance-arms {
+        opacity: 0;
+        pointer-events: none;
+      }
+      :root.music-dance .breathe-anim {
+        animation: none;
+      }
+      :root.music-dance #dance-arms {
+        opacity: 1;
+      }
+      :root.music-dance #face-js {
+        transform-origin: 16px 17px;
+      }
+      :root.music-dance #body {
+        transform-origin: 16px 31px;
+      }
+      :root.music-dance #leg-fl,
+      :root.music-dance #leg-fr {
+        transform-origin: 16px 34px;
+      }
+      :root.music-dance #dance-arm-left {
+        transform-origin: 8px 20px;
+      }
+      :root.music-dance #dance-arm-right {
+        transform-origin: 21px 20px;
+      }
+      :root.music-dance .tail-sway {
+        transform-origin: 24px 31px;
+      }
+      :root.music-dance-1 #face-js { animation: dance-one-face 0.56s ease-in-out infinite; }
+      :root.music-dance-1 #body { animation: dance-one-body 0.56s ease-in-out infinite; }
+      :root.music-dance-1 #dance-arm-left { animation: dance-one-arm-left 0.56s ease-in-out infinite; }
+      :root.music-dance-1 #dance-arm-right { animation: dance-one-arm-right 0.56s ease-in-out infinite; }
+      :root.music-dance-1 #leg-fl { animation: dance-one-foot-left 0.56s ease-in-out infinite; }
+      :root.music-dance-1 #leg-fr { animation: dance-one-foot-right 0.56s ease-in-out infinite; }
+      :root.music-dance-1 .tail-sway { animation: dance-one-tail 0.56s ease-in-out infinite; }
+      :root.music-dance-2 #face-js { animation: dance-two-face 0.64s ease-in-out infinite; }
+      :root.music-dance-2 #body { animation: dance-two-body 0.64s ease-in-out infinite; }
+      :root.music-dance-2 #dance-arm-left { animation: dance-two-arm-left 0.64s ease-in-out infinite; }
+      :root.music-dance-2 #dance-arm-right { animation: dance-two-arm-right 0.64s ease-in-out infinite; }
+      :root.music-dance-2 #leg-fl { animation: dance-two-foot-left 0.64s ease-in-out infinite; }
+      :root.music-dance-2 #leg-fr { animation: dance-two-foot-right 0.64s ease-in-out infinite; }
+      :root.music-dance-2 .tail-sway { animation: dance-two-tail 0.64s ease-in-out infinite; }
+      :root.music-dance-3 #face-js { animation: dance-three-face 0.48s ease-in-out infinite; }
+      :root.music-dance-3 #body { animation: dance-three-body 0.48s ease-in-out infinite; }
+      :root.music-dance-3 #dance-arm-left { animation: dance-three-arm-left 0.48s ease-in-out infinite; }
+      :root.music-dance-3 #dance-arm-right { animation: dance-three-arm-right 0.48s ease-in-out infinite; }
+      :root.music-dance-3 #leg-fl,
+      :root.music-dance-3 #leg-fr { animation: dance-three-feet 0.48s ease-in-out infinite; }
+      :root.music-dance-3 .tail-sway { animation: dance-three-tail 0.48s ease-in-out infinite; }
       .pupil-left {
         transform-box: fill-box;
         transform-origin: center;
@@ -247,6 +337,126 @@
         0%, 96%, 100% { transform: scaleY(1); }
         97.5% { transform: scaleY(0.1); }
       }
+
+      @keyframes playful-jump-face {
+        0%, 100% { transform: translate(4px, 2px) scale(0.72, 0.9) rotate(-3deg); }
+        50% { transform: translate(5px, 0) scale(0.74, 0.88) rotate(4deg); }
+      }
+      @keyframes playful-jump-body {
+        0%, 100% { transform: translate(-3px, 1px) scale(1.24, 0.88) rotate(-3deg); }
+        50% { transform: translate(-1px, -1px) scale(1.12, 0.96) rotate(3deg); }
+      }
+      @keyframes playful-jump-legs {
+        0%, 100% { transform: translate(2px, -2px) scale(0.92, 0.8); }
+        50% { transform: translate(-1px, -4px) scale(0.88, 0.72); }
+      }
+      @keyframes playful-jump-tail {
+        0%, 100% { transform: translate(-12px, -2px) scaleX(-1) rotate(-18deg); }
+        50% { transform: translate(-12px, -3px) scaleX(-1) rotate(10deg); }
+      }
+      @keyframes dance-one-face {
+        0%, 100% { transform: translate(0, -5px) rotate(-2deg); }
+        25% { transform: translate(1px, -7px) rotate(2deg); }
+        50% { transform: translate(0, -6px) rotate(0deg); }
+        75% { transform: translate(-1px, -7px) rotate(-2deg); }
+      }
+      @keyframes dance-one-body {
+        0%, 100% { transform: translateY(-2px) scale(0.92, 1.16); }
+        25%, 75% { transform: translateY(-4px) scale(0.94, 1.18); }
+        50% { transform: translateY(-2px) scale(0.92, 1.16); }
+      }
+      @keyframes dance-one-arm-left {
+        0%, 100% { transform: rotate(150deg); }
+        50% { transform: rotate(168deg); }
+      }
+      @keyframes dance-one-arm-right {
+        0%, 100% { transform: rotate(-168deg); }
+        50% { transform: rotate(-150deg); }
+      }
+      @keyframes dance-one-foot-left {
+        0%, 100% { transform: translate(-1px, 1px) rotate(-5deg); }
+        50% { transform: translate(1px, -2px) rotate(6deg); }
+      }
+      @keyframes dance-one-foot-right {
+        0%, 100% { transform: translate(1px, -2px) rotate(6deg); }
+        50% { transform: translate(-1px, 1px) rotate(-5deg); }
+      }
+      @keyframes dance-one-tail {
+        0%, 100% { transform: rotate(-9deg); }
+        50% { transform: rotate(12deg); }
+      }
+      @keyframes dance-two-face {
+        0%, 100% { transform: translate(-2px, -4px) rotate(-5deg); }
+        50% { transform: translate(2px, -4px) rotate(5deg); }
+      }
+      @keyframes dance-two-body {
+        0%, 100% { transform: translate(-2px, -2px) scale(0.94, 1.12) skewX(-4deg); }
+        50% { transform: translate(2px, -2px) scale(0.94, 1.12) skewX(4deg); }
+      }
+      @keyframes dance-two-arm-left {
+        0%, 100% { transform: rotate(158deg); }
+        50% { transform: rotate(58deg); }
+      }
+      @keyframes dance-two-arm-right {
+        0%, 100% { transform: rotate(-58deg); }
+        50% { transform: rotate(-158deg); }
+      }
+      @keyframes dance-two-foot-left {
+        0%, 100% { transform: translate(-2px, 1px) rotate(-7deg); }
+        50% { transform: translate(2px, -2px) rotate(8deg); }
+      }
+      @keyframes dance-two-foot-right {
+        0%, 100% { transform: translate(2px, -2px) rotate(8deg); }
+        50% { transform: translate(-2px, 1px) rotate(-7deg); }
+      }
+      @keyframes dance-two-tail {
+        0%, 100% { transform: rotate(-14deg); }
+        50% { transform: rotate(16deg); }
+      }
+      @keyframes dance-three-face {
+        0%, 100% { transform: translate(0, -4px) rotate(0deg); }
+        25% { transform: translate(1px, -7px) rotate(4deg); }
+        75% { transform: translate(-1px, -7px) rotate(-4deg); }
+      }
+      @keyframes dance-three-body {
+        0%, 100% { transform: translateY(-1px) scale(0.96, 1.1); }
+        25%, 75% { transform: translateY(-5px) scale(0.92, 1.16); }
+      }
+      @keyframes dance-three-arm-left {
+        0%, 100% { transform: rotate(138deg); }
+        50% { transform: rotate(166deg); }
+      }
+      @keyframes dance-three-arm-right {
+        0%, 100% { transform: rotate(-138deg); }
+        50% { transform: rotate(-166deg); }
+      }
+      @keyframes dance-three-feet {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-1px); }
+      }
+      @keyframes dance-three-tail {
+        0%, 100% { transform: rotate(-8deg); }
+        25% { transform: rotate(16deg); }
+        75% { transform: rotate(-18deg); }
+      }
+      @keyframes idle-blink-pulse {
+        0%, 100% { transform: scaleY(1); }
+        45%, 60% { transform: scaleY(0.1); }
+      }
+      @keyframes idle-whiskers-pulse {
+        0%, 100% { transform: scaleX(1); }
+        45% { transform: scaleX(1.06); }
+      }
+      @keyframes idle-ear-left-pulse {
+        0%, 100% { transform: rotate(0deg); }
+        35% { transform: rotate(-10deg); }
+        70% { transform: rotate(-4deg); }
+      }
+      @keyframes idle-ear-right-pulse {
+        0%, 100% { transform: rotate(0deg); }
+        35% { transform: rotate(10deg); }
+        70% { transform: rotate(4deg); }
+      }
       @keyframes purr-eye-close {
         0% { transform: scaleY(1); }
         100% { transform: scaleY(0.24); }
@@ -428,6 +638,15 @@
         </g>
       </g>
 
+      <g id="dance-arms" fill="var(--cat-color)" filter="url(#cat-outline)" aria-hidden="true">
+        <g id="dance-arm-left">
+          <path d="M7 19H10V27H9V29H6V28H5V22H6V20H7V19Z"/>
+        </g>
+        <g id="dance-arm-right">
+          <path d="M19 19H22V20H23V22H24V28H23V29H20V27H19V19Z"/>
+        </g>
+      </g>
+
       <!-- ===== FACE GROUP ===== -->
       <g id="face-js">
 
@@ -458,25 +677,25 @@
           <g class="eye-l-blink">
             <g id="eye-left">
               <g fill="var(--eye-bg-color, #FFFFFF)">
-                <rect x="7" y="11" width="1" height="3"/>
-                <rect x="11" y="11" width="1" height="3"/>
-                <rect x="8" y="10" width="3" height="5"/>
+                <rect x="7" y="11" width="1" height="4"/>
+                <rect x="11" y="11" width="1" height="4"/>
+                <rect x="8" y="9" width="3" height="7"/>
               </g>
-              <rect id="pupil-left" class="pupil-left" x="8" y="11" width="3" height="3" fill="var(--eye-color-left, var(--eye-color, var(--cat-color)))"/>
+              <rect id="pupil-left" class="pupil-left" x="8.5" y="10.5" width="2" height="4" fill="var(--eye-color-left, var(--eye-color, var(--cat-color)))"/>
             </g>
           </g>
           <g class="eye-r-blink">
             <g id="eye-right">
               <g fill="var(--eye-bg-color, #FFFFFF)">
-                <rect x="16" y="11" width="1" height="3"/>
-                <rect x="20" y="11" width="1" height="3"/>
-                <rect x="17" y="10" width="3" height="5"/>
+                <rect x="16" y="11" width="1" height="4"/>
+                <rect x="20" y="11" width="1" height="4"/>
+                <rect x="17" y="9" width="3" height="7"/>
               </g>
-              <rect id="pupil-right" class="pupil-right" x="17" y="11" width="3" height="3" fill="var(--eye-color-right, var(--eye-color, var(--cat-color)))"/>
+              <rect id="pupil-right" class="pupil-right" x="17.5" y="10.5" width="2" height="4" fill="var(--eye-color-right, var(--eye-color, var(--cat-color)))"/>
             </g>
           </g>
-          <rect class="closed-eye-line" x="7" y="12" width="5" height="1" fill="var(--cat-outline)"/>
-          <rect class="closed-eye-line" x="16" y="12" width="5" height="1" fill="var(--cat-outline)"/>
+          <rect class="closed-eye-line" x="7" y="13" width="5" height="1" fill="var(--cat-outline)"/>
+          <rect class="closed-eye-line" x="16" y="13" width="5" height="1" fill="var(--cat-outline)"/>
         </g>
 
       </g>

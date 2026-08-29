@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'"
+    />
+    <title>Cat skins</title>
+    <link rel="stylesheet" href="skins.css" />
+  </head>
+  <body>
+    <header class="skins-header">
+      <h1 id="skins-title">Cat skins</h1>
+      <p id="skins-subtitle">Choose a built-in coat for the V6 cat.</p>
+    </header>
+    <main id="skins-grid" class="skins-grid" aria-live="polite"></main>
+    <script src="../pet/v6-skin-catalog.js"></script>
+    <script src="skins.js"></script>
+  </body>
+</html>

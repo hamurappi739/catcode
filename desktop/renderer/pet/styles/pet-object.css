@@ -47,6 +47,7 @@ body[data-pet-peek] #reminder-clock-button,
 body[data-pet-peek] #reminder-panel,
 body[data-pet-peek] #cat-name-editor,
 body[data-pet-peek] #user-name-editor,
+body[data-pet-peek] #wellness-interval-editor,
 body[data-pet-peek] #share-duration-editor {
   display: none;
 }
@@ -59,4 +60,49 @@ body[data-pet-peek] #press-left {
 
 body[data-pet-peek="left"] #press-left {
   transform: translateX(-50%) scaleX(-1);
+}
+
+/* The legacy pose library is built from the retired layered mascot. V4 stays
+   visible as one coherent cat until each replacement pose is artist-approved.
+   Stage A: dragging must never hide the V4 cat (legacy stretch-svg-end is retired
+   for this model). Stage B.1: sleep uses #sleep-pose; V4 purr keeps #cat (live
+   idle SVG) with head-only motion — see purr.css / idle SVG. */
+body[data-catcode-model="v4"][data-v4-pose="idle"] #cat,
+body[data-catcode-model="v4"][data-v4-pose="purr"] #cat,
+body[data-catcode-model="v4"].dragging #cat,
+body[data-catcode-model="v4"][data-pet-peek] #cat,
+body[data-catcode-model="v4"][data-press] #cat,
+body[data-catcode-model="v4"][data-scroll] #cat,
+body[data-catcode-model="v4"][data-jump] #cat,
+body[data-catcode-model="v4"][data-stretching] #cat,
+body[data-catcode-model="v4"][data-drinking] #cat {
+  display: block !important;
+  top: var(--cat-top) !important;
+  width: var(--cat-size) !important;
+  transform: translateX(-50%) !important;
+  animation: none !important;
+}
+
+/* While the idle silhouette is authoritative, never leave sleep/purr objects on. */
+body[data-catcode-model="v4"][data-v4-pose="idle"] #sleep-pose,
+body[data-catcode-model="v4"][data-v4-pose="idle"] #purr-pose,
+body[data-catcode-model="v4"][data-v4-pose="purr"] #sleep-pose,
+body[data-catcode-model="v4"][data-v4-pose="purr"] #purr-pose,
+body[data-catcode-model="v4"].dragging #sleep-pose,
+body[data-catcode-model="v4"].dragging #purr-pose {
+  display: none !important;
+  animation: none !important;
+}
+
+body[data-catcode-model="v4"] #press-left,
+body[data-catcode-model="v4"] #press-right,
+body[data-catcode-model="v4"] #scroll-unroll,
+body[data-catcode-model="v4"] #jump-start,
+body[data-catcode-model="v4"] #jump-ing,
+body[data-catcode-model="v4"] #stretch-pose-default,
+body[data-catcode-model="v4"] #stretch-pose-ing,
+body[data-catcode-model="v4"] #stretch-svg-end,
+body[data-catcode-model="v4"] #playful-walk-sprite {
+  display: none !important;
+  animation: none !important;
 }

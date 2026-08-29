@@ -1,0 +1,29 @@
+{
+  "family": "v6-cursor-tease",
+  "mode": "visual-only",
+  "masterSize": "256x256",
+  "source": "art-handoff/V6_CURRENT_POSES_FOR_PISKEL/08_cursor_theft/256",
+  "alpha": "rgba",
+  "frames": [
+    {
+      "file": "tease-f0-stalk.png",
+      "sha256": "fd44d04470f00585ec69e7c34101cc09ee167e9b99c317d2b719c1fcfbc57b93"
+    },
+    {
+      "file": "tease-f1-reach.png",
+      "sha256": "ccadfb90cb02590212ecc648fa7749482420f413f3972ee0d83a0eb55b388b97"
+    },
+    {
+      "file": "tease-f2-catch.png",
+      "sha256": "1302b3bba5709b028a0222310c930c4f68da13585c28aa7451f132dcb1fa9f6c"
+    },
+    {
+      "file": "tease-f3-hold.png",
+      "sha256": "24f84d056dc3c0f5a3ccee65ffa13ca1e55d03148d5a4776b4222517fba33931"
+    },
+    {
+      "file": "tease-f4-release.png",
+      "sha256": "67401fd43c2a83239971e4faf9a256795e09c591b29807e3b22319196e02a402"
+    }
+  ]
+}

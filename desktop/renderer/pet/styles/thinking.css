@@ -1,106 +1,193 @@
-body[data-speech="notice"] #cat,
-body[data-speech="break"] #cat,
-body[data-speech="focus"] #cat,
-body[data-speech="notice"] #press-left,
-body[data-speech="break"] #press-left,
-body[data-speech="focus"] #press-left,
-body[data-speech="notice"] #press-right,
-body[data-speech="break"] #press-right,
-body[data-speech="focus"] #press-right,
-body[data-speech="notice"] #stretch-pose-default,
-body[data-speech="break"] #stretch-pose-default,
-body[data-speech="focus"] #stretch-pose-default {
-  animation: ai-jump 0.42s steps(2, end) 4;
-}
+/* W1 — Waiting </> → star overlay (audit §F). Overlay only; never a V4 pose. */
 
 #cat-thinking-dots {
   position: absolute;
-  left: calc(50% - var(--cat-size) * 0.39 - 19px);
-  top: calc(var(--cat-top) + 7%);
+  /* Left/above-head code slot — clear of #share-name-badge (below cat). */
+  left: calc(50% - var(--cat-size) * 0.42 - 10px);
+  top: calc(var(--cat-top) + 2%);
   transform: translateX(-50%);
   display: none;
-  padding: 5px 7px;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  min-height: 14px;
+  padding: 3px 5px;
   border-radius: 0;
   background: #fff;
   color: #111;
   pointer-events: none;
   z-index: 6;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  font:
+    700 11px/1 "Galmuri11",
+    "NeoDunggeunmo",
+    "DungGeunMo",
+    "Silkscreen",
+    "Press Start 2P",
+    Monaco,
+    Menlo,
+    monospace;
+  letter-spacing: 0;
 }
 
 body[data-thinking] #cat-thinking-dots {
   display: flex;
-  gap: 3px;
 }
 
-#cat-thinking-dots span {
+#cat-thinking-dots .waiting-glyph {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  color: #111;
+  white-space: nowrap;
+  animation: none;
+}
+
+/* W1-fix: immediate readable </> while thinking (cycle is a later pulse). */
+body[data-thinking] #cat-thinking-dots .waiting-full {
+  opacity: 1;
+}
+
+/* Tiny 5×5 pixel star (no emoji, no blur). */
+#cat-thinking-dots .waiting-star {
   width: 5px;
   height: 5px;
-  overflow: hidden;
-  color: transparent;
-  background: #111;
-  animation: thinking-dot 1.05s steps(2, end) infinite;
+  background: transparent;
+  box-shadow:
+    2px 0 0 #111,
+    0 1px 0 #111,
+    1px 1px 0 #111,
+    2px 1px 0 #111,
+    3px 1px 0 #111,
+    0 2px 0 #111,
+    1px 2px 0 #111,
+    2px 2px 0 #111,
+    3px 2px 0 #111,
+    4px 2px 0 #111,
+    1px 3px 0 #111,
+    2px 3px 0 #111,
+    3px 3px 0 #111,
+    2px 4px 0 #111;
 }
 
-#cat-thinking-dots span:nth-child(2) {
-  animation-delay: 0.16s;
+/*
+  One calm cycle (~2140ms), discrete steps only:
+  < 180 · </ 180 · </> 180 · hold </> 420 · snap star 120 · hold star 360 · gap 700
+*/
+body[data-thinking].thinking-dots-cycle #cat-thinking-dots .waiting-lt {
+  animation: waiting-show-lt 2140ms steps(1, end) 1 both;
 }
-#cat-thinking-dots span:nth-child(3) {
-  animation-delay: 0.32s;
+body[data-thinking].thinking-dots-cycle #cat-thinking-dots .waiting-ltslash {
+  animation: waiting-show-ltslash 2140ms steps(1, end) 1 both;
+}
+body[data-thinking].thinking-dots-cycle #cat-thinking-dots .waiting-full {
+  animation: waiting-show-full 2140ms steps(1, end) 1 both;
+}
+body[data-thinking].thinking-dots-cycle #cat-thinking-dots .waiting-star {
+  animation: waiting-show-star 2140ms steps(1, end) 1 both;
 }
 
+@keyframes waiting-show-lt {
+  0%,
+  8.411% {
+    opacity: 1;
+  }
+  8.412%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes waiting-show-ltslash {
+  0%,
+  8.411% {
+    opacity: 0;
+  }
+  8.412%,
+  16.822% {
+    opacity: 1;
+  }
+  16.823%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes waiting-show-full {
+  0%,
+  16.822% {
+    opacity: 0;
+  }
+  16.823%,
+  44.859% {
+    opacity: 1;
+  }
+  44.86%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes waiting-show-star {
+  0%,
+  44.859% {
+    opacity: 0;
+  }
+  44.86%,
+  67.289% {
+    opacity: 1;
+  }
+  67.29%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
+  Pause / hide matrix — soft status cue yields to high-priority chrome.
+  Fixed/base speech motto (data-speech=notice|timer|…) must NOT hide waiting.
+*/
 body[data-press] #cat-thinking-dots,
 body[data-scroll] #cat-thinking-dots,
+body[data-jump] #cat-thinking-dots,
 body.dragging #cat-thinking-dots,
 body[data-stretching] #cat-thinking-dots,
-body[data-drinking] #cat-thinking-dots {
-  display: none;
+body[data-drinking] #cat-thinking-dots,
+body[data-idle-sleep] #cat-thinking-dots,
+body[data-purring] #cat-thinking-dots,
+body[data-speech="reminder"] #cat-thinking-dots,
+body[data-speech="agent-notification"] #cat-thinking-dots,
+body[data-speech="complete"] #cat-thinking-dots,
+body[data-music-dance] #cat-thinking-dots,
+body[data-v4-dance-active] #cat-thinking-dots,
+body[data-pet-peek] #cat-thinking-dots,
+body[data-pet-roaming] #cat-thinking-dots,
+body[data-hunting] #cat-thinking-dots,
+body[data-hunting-return] #cat-thinking-dots,
+body[data-sharing] #cat-thinking-dots,
+body[data-editing-name] #cat-thinking-dots,
+body[data-reminder-panel] #cat-thinking-dots,
+body[data-reminder-form] #cat-thinking-dots {
+  display: none !important;
 }
 
-/* 타이핑 중이라도 에이전트가 생각중이면 생각중 점은 계속 보여준다
-   (위 data-press 숨김보다 구체적이라 우선 적용). 화면 덮기(스트레칭/물마시기) 때는 유지 숨김. */
-body[data-thinking][data-press] #cat-thinking-dots {
-  display: flex;
-}
+@media (prefers-reduced-motion: reduce) {
+  body[data-thinking] #cat-thinking-dots .waiting-lt,
+  body[data-thinking] #cat-thinking-dots .waiting-ltslash,
+  body[data-thinking] #cat-thinking-dots .waiting-star {
+    opacity: 0 !important;
+    animation: none !important;
+  }
 
-@keyframes ai-jump {
-  0%,
-  100% {
-    transform: translateX(-50%) translateY(0) scale(1);
+  body[data-thinking] #cat-thinking-dots .waiting-full {
+    opacity: 1 !important;
+    animation: none !important;
   }
-  50% {
-    transform: translateX(-50%) translateY(-18px) scale(1.04);
-  }
-}
 
-@keyframes ai-bubble-pop {
-  0% {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  15%,
-  85% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-
-@keyframes thinking-dot {
-  0%,
-  25% {
-    opacity: 0.25;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-2px);
-  }
-  75%,
-  100% {
-    opacity: 0.45;
-    transform: translateY(0);
+  body[data-thinking].thinking-dots-cycle #cat-thinking-dots .waiting-glyph {
+    animation: none !important;
   }
 }

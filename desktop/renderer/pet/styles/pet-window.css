@@ -22,14 +22,14 @@ body.dragging #drag-handle {
   top: calc(var(--cat-top) + var(--cat-size) + 5px);
   transform: translateX(-50%);
   display: none;
-  max-width: 80%;
+  max-width: min(90%, calc(var(--cat-size) * 1.8));
   padding: 4px 8px;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: #171717;
   font:
-    700 11px/1.1 "Galmuri11",
+    700 clamp(11px, calc(var(--cat-size) * 0.12), 18px) / 1.1 "Galmuri11",
     "NeoDunggeunmo",
     "DungGeunMo",
     "Silkscreen",
@@ -62,6 +62,14 @@ body.dragging #drag-handle {
   font-smooth: never;
   pointer-events: none;
   z-index: 5;
+}
+
+body[data-cat-name-length="medium"] #share-name-badge {
+  font-size: clamp(11px, calc(var(--cat-size) * 0.105), 16px);
+}
+
+body[data-cat-name-length="long"] #share-name-badge {
+  font-size: clamp(10px, calc(var(--cat-size) * 0.085), 13px);
 }
 
 body[data-sharing] #share-name-badge,

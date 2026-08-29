@@ -36,7 +36,16 @@ function createSvgTracking({
       return;
     }
     trackingInitializedDocs.add(doc);
-    registerSvgDoc(doc, "cat-idle-follow-v2");
+    const isV4 =
+      !!doc.documentElement &&
+      doc.documentElement.matches("svg[data-catcode-model='v4']");
+    registerSvgDoc(doc, isV4 ? "catcode-v4-idle" : "cat-idle-follow-v2");
+    if (isV4) {
+      // V4 is one dense pixel silhouette. The V2 tracker moves nested body
+      // layers independently, which tears this model apart on cursor moves.
+      layers = null;
+      return;
+    }
     if (doc.documentElement) {
       doc.documentElement.classList.toggle(
         "idle-animated",
@@ -51,6 +60,7 @@ function createSvgTracking({
   function initPeekEyeTracking() {
     const doc = ensureSvgObjectReady("press-left");
     if (!doc) return null;
+    if (doc.documentElement?.matches("svg[data-catcode-model='v4']")) return null;
     setPressLeftPeekFaceOnly(!!getPetPeekState(), doc);
     if (!peekLayers) {
       peekLayers = createTrackingLayers(doc, {
@@ -65,6 +75,7 @@ function createSvgTracking({
     doc = ensureSvgObjectReady("press-left"),
   ) {
     if (!doc) return;
+    if (doc.documentElement?.matches("svg[data-catcode-model='v4']")) return;
     const content = doc.getElementById("cat-content");
     const head = doc.getElementById("head");
     if (!content || !head) return;

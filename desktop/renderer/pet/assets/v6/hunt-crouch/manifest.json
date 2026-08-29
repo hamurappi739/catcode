@@ -1,0 +1,60 @@
+{
+  "family": "v6-hunt-crouch",
+  "privacyContractVersion": "m8-crouch-v1",
+  "sourceDrop": "art-handoff/owner-masters/v6/approved-hunt-crouch-1024",
+  "supersedes": "assets/v6/hunt (M8 pounce/recover 08_hunt mapping)",
+  "dimensions": { "width": 1024, "height": 1024 },
+  "frames": [
+    {
+      "key": "f0",
+      "role": "alert",
+      "fileName": "hunt-crouch-f0-alert.png",
+      "ownerSource": "hunt-crouch-f0-alert-1024.png",
+      "durationMs": 180,
+      "anchorNote": "Alert / notice before lowering"
+    },
+    {
+      "key": "f1",
+      "role": "lower",
+      "fileName": "hunt-crouch-f1-lower.png",
+      "ownerSource": "hunt-crouch-f1-lower-1024.png",
+      "durationMs": 180,
+      "anchorNote": "Lowering into stalk"
+    },
+    {
+      "key": "f2",
+      "role": "deep",
+      "fileName": "hunt-crouch-f2-deep.png",
+      "ownerSource": "hunt-crouch-f2-deep-1024.png",
+      "durationMs": 220,
+      "anchorNote": "Deep crouch"
+    },
+    {
+      "key": "f3",
+      "role": "hold",
+      "fileName": "hunt-crouch-f3-hold.png",
+      "ownerSource": "hunt-crouch-f3-hold-1024.png",
+      "durationMs": null,
+      "holdMaxMs": 0,
+      "anchorNote": "Final stalking hold; code owns gaze gate + subtle whole-layer head response"
+    }
+  ],
+  "timing": {
+    "cooldownMs": 0,
+    "armOuterPx": 420,
+    "triggerInnerPx": 260,
+    "holdNearDistancePx": 320,
+    "minApproachSpeedPxS": 420,
+    "rearmDebounceMs": 1000,
+    "holdMaxMs": 0,
+    "cursorPollNearBandPx": 480,
+    "cursorPollNearMs": 60,
+    "cursorPollFarMs": 500,
+    "reducedMotionHoldMs": 520,
+    "headMaxRotateDeg": 2.2,
+    "headMaxTranslatePx": 2,
+    "rationale": "Re-arm + velocity hysteresis replaces 45s cooldown. Entry alert→lower→deep→hold; never pounce/recover; never OS cursor manipulation."
+  },
+  "neverManipulatesOsCursor": true,
+  "noPounceOrRecoverFrames": true
+}

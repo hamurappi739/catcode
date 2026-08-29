@@ -7,8 +7,12 @@
 @import "./styles/thinking.css";
 @import "./styles/editors.css";
 @import "./styles/pet-object.css";
+@import "./styles/v6-idle-preview.css";
+@import "./styles/v6-visual-pose.css";
 @import "./styles/purr.css";
 @import "./styles/sleep.css";
 @import "./styles/poses.css";
 @import "./styles/heat.css";
 @import "./styles/drag-stretch.css";
+@import "./styles/playful-movement.css";
+@import "./styles/music-dance.css";

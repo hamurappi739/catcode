@@ -1,0 +1,487 @@
+/* V6-M1: exclusive V6 pose hosts. Model latch stays V6-M0. */
+
+.v6-pose-host {
+  display: none;
+  position: absolute;
+  top: var(--cat-top);
+  left: 50%;
+  width: var(--cat-size);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  z-index: 3;
+}
+
+/* Idle host visibility is also owned by v6-idle-preview.css for M0 loading.
+   Pose owner narrows to exactly one host via data-v6-pose. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"]:not([data-v6-pose]) #v6-idle-preview {
+  display: block;
+}
+
+/* A reminder can briefly make the V6 cat angry without changing the active
+   pose family. Keep the complete red idle raster exclusive over authored idle
+   head layers, then let the whole reaction disappear cleanly. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"][data-v6-angry="1"] #v6-angry-idle {
+  display: block;
+  z-index: 7;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"][data-v6-angry="1"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"][data-v6-angry="1"] #v6-idle-body-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"][data-v6-angry="1"] #v6-idle-head-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"][data-v6-angry="1"] #v6-head-motion-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"][data-v6-angry="1"] #v6-gaze-layer {
+  display: none !important;
+}
+
+#v6-angry-steam {
+  display: none;
+  position: absolute;
+  top: var(--cat-top);
+  left: 50%;
+  width: var(--cat-size);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 8;
+}
+
+#v6-angry-steam i {
+  position: absolute;
+  display: block;
+  width: 4.4%;
+  height: 13%;
+  background: #ffb0a4;
+  clip-path: polygon(28% 100%, 0 76%, 52% 59%, 12% 34%, 70% 17%, 42% 0, 100% 22%, 56% 48%, 100% 72%, 58% 100%);
+  filter: drop-shadow(0 0 2px #ff342a);
+  animation: v6-angry-steam 720ms steps(2, end) infinite alternate;
+}
+
+#v6-angry-steam i:nth-child(1) { left: 31%; top: 10%; animation-delay: 0ms; }
+#v6-angry-steam i:nth-child(2) { left: 48%; top: 5%; animation-delay: 180ms; }
+#v6-angry-steam i:nth-child(3) { left: 65%; top: 11%; animation-delay: 360ms; }
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"][data-v6-angry="1"] #v6-angry-steam {
+  display: block;
+}
+
+@keyframes v6-angry-steam {
+  from { opacity: .55; transform: translateY(2%) scaleX(.85); }
+  to { opacity: 1; transform: translateY(-5%) scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #v6-angry-steam i { animation: none; opacity: .85; }
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-settle"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-peek"] #v6-sleep-peek {
+  display: block;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f0"] #v6-purr-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f1"] #v6-purr-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f2"] #v6-purr-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f3"] #v6-purr-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f4"] #v6-purr-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f5"] #v6-purr-f5,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f6"] #v6-purr-f6,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f7"] #v6-purr-f7,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"][data-v6-purr-frame="f8"] #v6-purr-f8 {
+  display: block;
+}
+
+/* M18 keeps nine purr hosts in the DOM. They stay exclusive to purr so a
+   late image load cannot surface above another V6 pose family. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose]:not([data-v6-pose="purr"]) [id^="v6-purr-"] {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"][data-v6-celebrate-frame="f0"] #v6-celebrate-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"][data-v6-celebrate-frame="f1"] #v6-celebrate-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"][data-v6-celebrate-frame="f2"] #v6-celebrate-f2 {
+  display: block;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"][data-v6-typing-frame="f0"] #v6-typing-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"][data-v6-typing-frame="f1"] #v6-typing-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"][data-v6-typing-frame="f2"] #v6-typing-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"][data-v6-typing-frame="f3"] #v6-typing-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"][data-v6-typing-frame="f4"] #v6-typing-f4 {
+  display: block;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"][data-v6-scroll-frame="f0"] #v6-scroll-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"][data-v6-scroll-frame="f1"] #v6-scroll-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"][data-v6-scroll-frame="f2"] #v6-scroll-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"][data-v6-scroll-frame="f3"] #v6-scroll-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"][data-v6-scroll-frame="f4"] #v6-scroll-f4 {
+  display: block;
+}
+
+/* Hunt hosts ship with the HTML `hidden` attribute. UA `[hidden]{display:none
+   !important}` beats a plain `display:block`, so the active crouch frame must
+   win with !important (same pattern as edge-peek). */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f0"] #v6-hunt-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f1"] #v6-hunt-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f2"] #v6-hunt-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f3"] #v6-hunt-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f4"] #v6-hunt-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f5"] #v6-hunt-f5,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f6"] #v6-hunt-f6,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f7"] #v6-hunt-f7,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f8"] #v6-hunt-f8 {
+  display: block !important;
+}
+
+/* Idle head-layer composite must never sit above the crouch sequence. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-idle-body-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-idle-head-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-head-motion-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-gaze-layer {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="tease"][data-v6-tease-frame="f0"] #v6-tease-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="tease"][data-v6-tease-frame="f1"] #v6-tease-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="tease"][data-v6-tease-frame="f2"] #v6-tease-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="tease"][data-v6-tease-frame="f3"] #v6-tease-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="tease"][data-v6-tease-frame="f4"] #v6-tease-f4 {
+  display: block;
+}
+
+/* Tease is a self-contained, visual-only V6 pose. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="tease"] #v6-gaze-layer {
+  display: none !important;
+}
+
+/* The window itself is clipped by main at the chosen screen edge. V6 supplies
+   the matching half-cat, rather than letting the legacy SVG appear there. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="edge-peek"] .v6-pose-host {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="edge-peek"][data-v6-edge-peek="left"] #v6-edge-peek-left,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="edge-peek"][data-v6-edge-peek="right"] #v6-edge-peek-right {
+  display: block !important;
+}
+
+/* Main's edge controller keeps only the outer 40% of the original cat
+   canvas on-screen. The paw in the supplied art extends 36 source pixels
+   beyond the ear/head plane, so crop that protrusion and align the remaining
+   silhouette from ear to paw on one clean desktop-edge line. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="edge-peek"][data-v6-edge-peek="left"] #v6-edge-peek-left {
+  clip-path: inset(0 0 0 4.6875%);
+  transform: translateX(5.3125%);
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="edge-peek"][data-v6-edge-peek="right"] #v6-edge-peek-right {
+  clip-path: inset(0 4.6875% 0 0);
+  transform: translateX(-105.2148%);
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="edge-peek"] #v6-gaze-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="edge-peek"] #v6-head-motion-layer {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="twist"][data-v6-dance-frame="f0"] #v6-dance-twist-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="twist"][data-v6-dance-frame="f1"] #v6-dance-twist-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="twist"][data-v6-dance-frame="f2"] #v6-dance-twist-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="twist"][data-v6-dance-frame="f3"] #v6-dance-twist-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="twist"][data-v6-dance-frame="f4"] #v6-dance-twist-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="twist"][data-v6-dance-frame="f5"] #v6-dance-twist-f5,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="twist"][data-v6-dance-frame="f6"] #v6-dance-twist-f6,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="twist"][data-v6-dance-frame="f7"] #v6-dance-twist-f7,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="march"][data-v6-dance-frame="f0"] #v6-dance-march-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="march"][data-v6-dance-frame="f1"] #v6-dance-march-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="march"][data-v6-dance-frame="f2"] #v6-dance-march-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="march"][data-v6-dance-frame="f3"] #v6-dance-march-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="march"][data-v6-dance-frame="f4"] #v6-dance-march-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="march"][data-v6-dance-frame="f5"] #v6-dance-march-f5,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="march"][data-v6-dance-frame="f6"] #v6-dance-march-f6,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="march"][data-v6-dance-frame="f7"] #v6-dance-march-f7 {
+  display: block;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="paw-groove"][data-v6-dance-frame="f0"] #v6-dance-paw-groove-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="paw-groove"][data-v6-dance-frame="f1"] #v6-dance-paw-groove-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="paw-groove"][data-v6-dance-frame="f2"] #v6-dance-paw-groove-f2 {
+  display: block;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f00"] #v6-dance-drill-f00,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f01"] #v6-dance-drill-f01,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f02"] #v6-dance-drill-f02,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f03"] #v6-dance-drill-f03,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f04"] #v6-dance-drill-f04,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f05"] #v6-dance-drill-f05,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f06"] #v6-dance-drill-f06,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f07"] #v6-dance-drill-f07,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f08"] #v6-dance-drill-f08,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="drill"][data-v6-dance-frame="f09"] #v6-dance-drill-f09,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f00"] #v6-dance-hip-hop-f00,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f01"] #v6-dance-hip-hop-f01,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f02"] #v6-dance-hip-hop-f02,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f03"] #v6-dance-hip-hop-f03,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f04"] #v6-dance-hip-hop-f04,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f05"] #v6-dance-hip-hop-f05,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f06"] #v6-dance-hip-hop-f06,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f07"] #v6-dance-hip-hop-f07,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f08"] #v6-dance-hip-hop-f08,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"][data-v6-dance-variant="hip-hop"][data-v6-dance-frame="f09"] #v6-dance-hip-hop-f09 {
+  display: block;
+}
+
+#v6-idle-body-layer,
+#v6-idle-head-layer,
+#v6-head-motion-layer,
+#v6-gaze-layer,
+#v6-hunt-gaze-layer {
+  display: none;
+  position: absolute;
+  top: var(--cat-top);
+  left: 50%;
+  width: var(--cat-size);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+}
+
+#v6-idle-body-layer,
+#v6-head-motion-layer {
+  z-index: 3;
+}
+
+#v6-idle-head-layer,
+#v6-gaze-layer {
+  z-index: 4;
+}
+
+#v6-gaze-layer {
+  z-index: 5;
+}
+
+#v6-hunt-gaze-layer {
+  z-index: 6;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-head-motion-ready="1"][data-v6-pose="idle"] #v6-idle-body-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-head-motion-ready="1"][data-v6-pose="idle"] #v6-idle-head-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"] #v6-gaze-layer {
+  display: block;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"][data-v6-hunt-frame="f8"][data-v6-hunt-gaze="1"] #v6-hunt-gaze-layer {
+  display: block;
+}
+
+/* These authored layers replace the flattened idle raster only after both
+   assets are loaded. The master stays in the layout for alpha hit-testing
+   but must not paint: otherwise the unmoved master ears/tail ghost beside
+   the transformed head layer. */
+body[data-catcode-model="v6-idle-preview"][data-v6-head-motion-ready="1"][data-v6-pose="idle"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-idle-split="1"][data-v6-pose="idle"] #v6-idle-preview {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-head-motion-ready="1"][data-v6-pose="idle"] #v6-idle-head-layer,
+body[data-catcode-model="v6-idle-preview"][data-v6-head-motion-ready="1"][data-v6-pose="idle"] #v6-gaze-layer {
+  transform: translateX(-50%) translate(var(--v6-head-motion-x, 0px), var(--v6-head-motion-y, 0px)) rotate(var(--v6-head-motion-rotate, 0deg));
+  transform-origin: 50% 55.2734375%;
+  will-change: transform;
+}
+
+/* Body stays locked; head-attention vars must never move the torso. */
+body[data-catcode-model="v6-idle-preview"][data-v6-head-motion-ready="1"][data-v6-pose="idle"] #v6-idle-body-layer {
+  transform: translateX(-50%);
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-settle"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-peek"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="idle"] #v6-sleep-peek,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-settle"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-settle"] #v6-sleep-peek,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep"] #v6-sleep-peek,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-peek"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-peek"] #v6-sleep {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"] #v6-sleep-peek {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-sleep-peek,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-purr-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-purr-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-purr-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-purr-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-purr-f4 {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-sleep-peek,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-purr-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-purr-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-purr-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-purr-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-purr-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-celebrate-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-celebrate-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-celebrate-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-scroll-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-scroll-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-scroll-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-scroll-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-scroll-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-hunt-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-hunt-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-hunt-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-hunt-f3 {
+  display: none !important;
+}
+
+/* Hold host: preserve base translateX(-50%); JS may append bounded head response.
+   Overflow stays visible so a tiny rotate never crops the 1:1 canvas. */
+#v6-hunt-f8.v6-hunt-hold-host {
+  overflow: visible;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-hunt-gaze="1"] #v6-hunt-f8 {
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-catcode-model="v6-idle-preview"][data-v6-hunt-gaze="1"] #v6-hunt-f8 {
+    will-change: auto;
+  }
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-sleep-peek,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-purr-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-purr-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-purr-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-purr-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-purr-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-celebrate-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-celebrate-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-celebrate-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-typing-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-typing-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-typing-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-typing-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-typing-f4 {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-sleep-peek,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-purr-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-purr-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-purr-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-purr-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-purr-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-celebrate-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-celebrate-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-celebrate-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-typing-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-typing-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-typing-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-typing-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-typing-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-scroll-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-scroll-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-scroll-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-scroll-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-scroll-f4 {
+  display: none !important;
+}
+
+/* Sleep asset failure: keep white idle; never reveal V4. */
+body[data-catcode-model="v6-idle-preview"][data-v6-sleep-status="error"]:not([data-v6-pose="purr"]):not([data-v6-pose="celebrate"]):not([data-v6-pose="typing"]):not([data-v6-pose="scroll"]):not([data-v6-pose="hunt"]) #v6-idle-preview {
+  display: block !important;
+  opacity: 1;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-sleep-status="error"]:not([data-v6-pose="purr"]) #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-sleep-status="error"]:not([data-v6-pose="purr"]) #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-sleep-status="error"]:not([data-v6-pose="purr"]) #v6-sleep-peek {
+  display: none !important;
+}
+
+/* V6-M1: no V4 Zzz while latched (placement not proven for curled frames). */
+body[data-catcode-model="v6-idle-preview"][data-idle-sleep] #sleep-zzz,
+body[data-catcode-model-latched="1"][data-idle-sleep] #sleep-zzz {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="left"][data-v6-walk-frame="f0"] #v6-walk-left-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="left"][data-v6-walk-frame="f1"] #v6-walk-left-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="left"][data-v6-walk-frame="f2"] #v6-walk-left-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="left"][data-v6-walk-frame="f3"] #v6-walk-left-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="left"][data-v6-walk-frame="f4"] #v6-walk-left-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="right"][data-v6-walk-frame="f0"] #v6-walk-right-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="right"][data-v6-walk-frame="f1"] #v6-walk-right-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="right"][data-v6-walk-frame="f2"] #v6-walk-right-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="right"][data-v6-walk-frame="f3"] #v6-walk-right-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"][data-v6-walk-dir="right"][data-v6-walk-frame="f4"] #v6-walk-right-f4 {
+  display: block;
+}
+
+/* While walking, hide every other V6 family host. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-sleep-settle,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-sleep,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-sleep-peek,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-purr-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-purr-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-purr-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-purr-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-purr-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-celebrate-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-celebrate-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-celebrate-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-typing-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-typing-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-typing-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-typing-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-typing-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-scroll-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-scroll-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-scroll-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-scroll-f3,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-scroll-f4,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-hunt-f0,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-hunt-f1,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-hunt-f2,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-hunt-f3 {
+  display: none !important;
+}
+
+/* Bilateral art is authored; never scaleX-mirror walk hosts. */

@@ -201,6 +201,11 @@ function createTypingScrollMotion({
   function handleKeyPressed() {
     const now = Date.now();
     if (typeof wakeIdleSleep === "function" && wakeIdleSleep()) return;
+    if (domDocument.body.dataset.petRoaming) {
+      clearPress();
+      stopScrollAnimation();
+      return;
+    }
     if (getPetPeekState()) return;
     if (isStretching()) return;
     if (!isDragging()) {
@@ -221,7 +226,12 @@ function createTypingScrollMotion({
   }
 
   function handlePomodoroFocusStart() {
-    if (isDragging() || isStretching()) return;
+    if (
+      isDragging() ||
+      isStretching() ||
+      domDocument.body.dataset.petRoaming
+    )
+      return;
     setPomodoroPoseMarker("focus", 1600);
     if (focusStartTypingTimer) clearInterval(focusStartTypingTimer);
     stopCompletionJump();
@@ -249,6 +259,7 @@ function createTypingScrollMotion({
     if (
       isStretching() ||
       isDragging() ||
+      domDocument.body.dataset.petRoaming ||
       domDocument.body.dataset.press ||
       domDocument.body.dataset.jump
     )

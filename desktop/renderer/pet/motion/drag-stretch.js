@@ -5,6 +5,8 @@
 const DEFAULT_MAX_UP_OFFSET = 140;
 const DEFAULT_DRAG_START_THRESHOLD_PX = 4;
 const DEFAULT_PURR_LEAVE_GRACE_MS = 260;
+const PURR_STROKE_MIN_DISTANCE_PX = 10;
+const PURR_STROKE_WINDOW_MS = 450;
 
 function createDragStretch({
   win = window,
@@ -23,6 +25,7 @@ function createDragStretch({
   scheduleStopPurring,
   stopPurring,
   stopHuntingPose,
+  wakeSleeping,
   maxUpOffset = DEFAULT_MAX_UP_OFFSET,
   dragStartThresholdPx = DEFAULT_DRAG_START_THRESHOLD_PX,
   purrLeaveGraceMs = DEFAULT_PURR_LEAVE_GRACE_MS,
@@ -41,24 +44,43 @@ function createDragStretch({
   let lastDragMoveAt = 0;
   let pointerDownScreenX = 0;
   let pointerDownScreenY = 0;
+  let purrStrokeAnchor = null;
+
+  function isV4Model() {
+    return body.dataset.catcodeModel === "v4";
+  }
+
+  function isStableVisualModel() {
+    return isV4Model() || body.dataset.catcodeModel === "v6-idle-preview";
+  }
 
   function stretchChain() {
     return getStretchChain && getStretchChain();
   }
 
   function startChain() {
+    // Stage A: V4 keeps a complete idle silhouette while the window moves.
+    // Legacy rubber-band stretch art (#stretch-svg-end) must not run.
+    if (isStableVisualModel()) return;
     const chain = stretchChain();
     if (chain) chain.start();
   }
 
   function resetChainMotion() {
+    if (isStableVisualModel()) return;
     const chain = stretchChain();
     if (chain) chain.resetMotion();
   }
 
   function applyChain() {
+    if (isStableVisualModel()) return;
     const chain = stretchChain();
     if (chain) chain.apply();
+  }
+
+  function clearDraggingClass() {
+    body.classList.remove("dragging");
+    electronAPI.setStretchMode(false);
   }
 
   function flushDragWindowMove() {
@@ -86,6 +108,8 @@ function createDragStretch({
 
   function beginDragStretch(startEvent, currentEvent = startEvent) {
     if (dragging || !startEvent || isStretching()) return;
+    if (typeof wakeSleeping === "function") wakeSleeping();
+    resetPurrStroke();
     stopPurring();
     stopHuntingPose();
     dragging = true;
@@ -99,15 +123,41 @@ function createDragStretch({
     resetChainMotion();
     body.classList.add("dragging");
     electronAPI.setStretchMode(true);
-    startChain();
+    if (!isStableVisualModel()) startChain();
   }
 
   function clearPendingDrag() {
     pendingDrag = null;
   }
 
+  function resetPurrStroke() {
+    purrStrokeAnchor = null;
+  }
+
+  function isCompletedHeadStroke(event) {
+    const now = Date.now();
+    const point = { x: event.clientX, y: event.clientY, at: now };
+    if (
+      !purrStrokeAnchor ||
+      now - purrStrokeAnchor.at > PURR_STROKE_WINDOW_MS
+    ) {
+      purrStrokeAnchor = point;
+      return false;
+    }
+
+    const moved = Math.hypot(
+      point.x - purrStrokeAnchor.x,
+      point.y - purrStrokeAnchor.y,
+    );
+    if (moved < PURR_STROKE_MIN_DISTANCE_PX) return false;
+
+    purrStrokeAnchor = point;
+    return true;
+  }
+
   function finishDragStretch(event) {
     clearPendingDrag();
+    resetPurrStroke();
     if (dragging) {
       if (dragWindowMoveRafId !== null) {
         cancelAnimationFrame(dragWindowMoveRafId);
@@ -115,15 +165,22 @@ function createDragStretch({
       }
       dragging = false;
       electronAPI.dragWindowEnded();
-      if (stretchT > 0) {
+      // Stage A / V4: never enter stretch release — always clear dragging.
+      if (!isStableVisualModel() && stretchT > 0) {
         releasing = true;
         startChain();
       } else {
-        body.classList.remove("dragging");
-        electronAPI.setStretchMode(false);
+        stretchT = 0;
+        releasing = false;
+        clearDraggingClass();
       }
     } else {
       dragging = false;
+      // Belt-and-suspenders: stale class must never survive mouseup/blur.
+      if (body.classList.contains("dragging") && !releasing) {
+        stretchT = 0;
+        clearDraggingClass();
+      }
     }
     updateMouseEventPassthrough(event);
   }
@@ -176,9 +233,15 @@ function createDragStretch({
         clearPendingDrag();
       }
     }
+    // Dragging may start on any painted part of the cat, but purring needs a
+    // real head stroke. Hovering is not enough, and paws, body, tail, or
+    // empty space must never promote a V6 silhouette hit into purring.
     if (isIdleHeadPoint(event.clientX, event.clientY)) {
-      startPurring(event.clientX, event.clientY);
+      if (isCompletedHeadStroke(event)) {
+        startPurring(event.clientX, event.clientY);
+      }
     } else if (!pendingDrag) {
+      resetPurrStroke();
       scheduleStopPurring(purrLeaveGraceMs);
     }
     if (!dragging) return;
@@ -207,6 +270,7 @@ function createDragStretch({
     if (!dragging && !releasing && !pendingDrag)
       setPetMouseEventsEnabled(!!body.dataset.accountNudge);
     clearPendingDrag();
+    resetPurrStroke();
     stopPurring();
   }
 
@@ -223,14 +287,14 @@ function createDragStretch({
   function cancel() {
     dragging = false;
     pendingDrag = null;
+    resetPurrStroke();
     releasing = false;
     stretchT = 0;
     stopPurring();
     stopHuntingPose();
     resetChainMotion();
-    body.classList.remove("dragging");
+    clearDraggingClass();
     applyChain();
-    electronAPI.setStretchMode(false);
     updateMouseEventPassthrough();
   }
 

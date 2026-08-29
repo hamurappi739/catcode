@@ -2,282 +2,266 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'self'" />
-    <title>CatCode Pattern Editor</title>
-    <link rel="stylesheet" href="editor.css" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'self'"
+    />
+    <title>CatCode Appearance</title>
+    <link rel="stylesheet" href="v4-appearance-editor.css" />
   </head>
-  <body>
-    <main>
-      <section class="parts-area">
-        <div class="parts-grid-container">
-          <div id="parts-grid" aria-label="Pattern parts"></div>
+  <body data-editor="v4">
+    <main class="v4-studio">
+      <section class="studio-preview" aria-label="V4 cat preview">
+        <div class="preview-stage">
+          <object
+            id="v4-editor-preview"
+            type="image/svg+xml"
+            data="../../svg/catcode-v4-idle.svg"
+          ></object>
+        </div>
+        <p class="preview-caption" data-i18n="previewCaption">
+          Live V4 cat — same model as the desktop pet
+        </p>
+        <div class="marking-workspace">
+          <div class="marking-toolbar">
+            <span data-i18n="markings">Markings</span>
+            <button type="button" class="tool active" data-tool="paint" data-i18n="paint">Paint</button>
+            <button type="button" class="tool" data-tool="erase" data-i18n="erase">Erase</button>
+            <button type="button" class="tool" data-tool="fill" data-mode="fill" data-i18n="fill">Fill</button>
+            <label class="brush-label"
+              ><span data-i18n="brush">Brush</span>
+              <select id="brush-size">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+              </select>
+            </label>
+            <button type="button" id="undo-markings" data-i18n="undo">Undo</button>
+            <button type="button" id="redo-markings" data-i18n="redo">Redo</button>
+            <button type="button" id="reset-markings" data-i18n="resetMarkings">Reset markings</button>
+          </div>
+          <canvas id="marking-canvas" width="64" height="64" aria-label="V4 marking canvas"></canvas>
+          <p class="marking-hint" data-i18n="markingHint">
+            Paint on the whole-cat 64×64 silhouette. Markings project onto the live V4 preview.
+          </p>
         </div>
       </section>
 
-      <aside class="controls">
-        <div id="pattern-edit-panel" class="control-panel active">
-          <h2 data-i18n="currentPreset">Current preset</h2>
-          <div class="current-preset-row">
-            <div id="current-preset-card" class="current-preset-card"></div>
-            <button
-              id="change-preset"
-              class="panel-switch"
-              type="button"
-              data-i18n="changePreset"
-            >
-              Change preset
-            </button>
+      <aside class="studio-side">
+        <section class="side-block">
+          <div class="side-heading">
+            <h1 data-i18n="title">Appearances</h1>
+            <button type="button" id="open-gallery" data-i18n="gallery">Gallery</button>
           </div>
-          <h2 data-i18n="baseColor">Base body color</h2>
-          <div class="base-color-row">
-            <input type="color" id="base-color" value="#1A1A1A" />
-            <span class="hex" id="base-color-hex">#1A1A1A</span>
-          </div>
-
-          <h2 style="margin-top: 12px" data-i18n="eyeBgColor">
-            Eye background
-          </h2>
-          <div class="base-color-row" id="eye-bg-color-row">
-            <input type="color" id="eye-bg-color" value="#FFFFFF" />
-            <span class="hex" id="eye-bg-color-hex">#FFFFFF</span>
-          </div>
-          <h2 style="margin-top: 12px" data-i18n="eyePupilSize">Pupil size</h2>
-          <div class="range-row" id="eye-pupil-size-row">
-            <input
-              type="range"
-              id="eye-pupil-scale"
-              min="40"
-              max="140"
-              step="5"
-              value="100"
-            />
-            <span class="range-value" id="eye-pupil-scale-value">100%</span>
-          </div>
-          <h2 style="margin-top: 12px">
-            <span data-i18n="eyeColor">Eye color</span>
-            <label class="odd-eye-toggle"
-              ><input type="checkbox" id="odd-eye" />
-              <span data-i18n="oddEye">Odd eyes</span></label
-            >
-          </h2>
-          <div class="base-color-row" id="eye-color-row">
-            <input type="color" id="eye-color" value="#1A1A1A" />
-            <span class="hex" id="eye-color-hex">#1A1A1A</span>
-          </div>
-          <div
-            class="base-color-row odd-eye-row"
-            id="eye-color-left-row"
-            style="display: none"
-          >
-            <span class="eye-label" data-i18n="left">Left</span>
-            <input type="color" id="eye-color-left" value="#1A1A1A" />
-            <span class="hex" id="eye-color-left-hex">#1A1A1A</span>
-          </div>
-          <div
-            class="base-color-row odd-eye-row"
-            id="eye-color-right-row"
-            style="display: none"
-          >
-            <span class="eye-label" data-i18n="right">Right</span>
-            <input type="color" id="eye-color-right" value="#1A1A1A" />
-            <span class="hex" id="eye-color-right-hex">#1A1A1A</span>
-          </div>
-
-          <h2 style="margin-top: 24px" data-i18n="tools">Tools</h2>
-          <div class="mode-row">
-            <button class="mode active" data-mode="paint"></button>
-            <button class="mode" data-mode="erase"></button>
-          </div>
-
-          <h2 style="margin-top: 24px" data-i18n="brush">Brush</h2>
-          <div class="brush-row" id="brush-row">
-            <button class="brush active" data-size="1">1</button>
-            <button class="brush" data-size="2">2</button>
-            <button class="brush" data-size="3">3</button>
-            <button class="brush" data-size="5">5</button>
-          </div>
-
-          <div id="spot-color-section">
-            <div class="spot-color-header">
-              <h2 data-i18n="spotColor">Spot color</h2>
-              <label class="custom-color"
-                ><span data-i18n="custom">Custom</span>
-                <input type="color" id="custom-color" value="#ffaa55"
-              /></label>
-            </div>
-            <div id="palette"></div>
-            <div class="pattern-color-adjust" id="pattern-color-adjust">
-              <div class="pattern-color-adjust-header">
-                <span data-i18n="adjustPatternColors"
-                  >Adjust pattern colors</span
-                >
-              </div>
-              <div class="pattern-color-adjust-row">
-                <span data-i18n="hue">Hue</span>
-                <button type="button" data-color-adjust="hue" data-delta="-10">
-                  -
-                </button>
-                <button type="button" data-color-adjust="hue" data-delta="10">
-                  +
-                </button>
-              </div>
-              <div class="pattern-color-adjust-row">
-                <span data-i18n="saturation">Saturation</span>
-                <button
-                  type="button"
-                  data-color-adjust="saturation"
-                  data-delta="-10"
-                >
-                  -
-                </button>
-                <button
-                  type="button"
-                  data-color-adjust="saturation"
-                  data-delta="10"
-                >
-                  +
-                </button>
-              </div>
-              <div class="pattern-color-adjust-row">
-                <span data-i18n="brightness">Brightness</span>
-                <button
-                  type="button"
-                  data-color-adjust="brightness"
-                  data-delta="-10"
-                >
-                  -
-                </button>
-                <button
-                  type="button"
-                  data-color-adjust="brightness"
-                  data-delta="10"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="preset-actions">
-            <div class="pattern-shortcut-footer">
-              <span
-                id="pattern-shortcut-hint"
-                class="pattern-shortcut-hint"
-              ></span>
-            </div>
-            <div id="preset-change-actions" class="preset-change-actions">
-              <button
-                id="discard-pattern-changes"
-                type="button"
-                data-i18n="discardChanges"
-              >
-                Discard changes
-              </button>
-              <button
-                id="update-custom-preset"
-                type="button"
-                data-i18n="updateCustomPreset"
-              >
-                Save changes
-              </button>
-            </div>
-            <button
-              id="save-custom-preset"
-              type="button"
-              data-i18n="saveCustomPreset"
-            >
-              New Preset
-            </button>
-            <div id="custom-preset-name-form" class="custom-preset-name-form">
-              <input
-                id="custom-preset-name"
-                type="text"
-                maxlength="60"
-                autocomplete="off"
-                spellcheck="false"
-                data-i18n-placeholder="customPresetNamePrompt"
-              />
-              <div class="custom-preset-name-actions">
-                <button
-                  id="cancel-custom-preset"
-                  type="button"
-                  data-i18n="cancel"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="confirm-custom-preset"
-                  type="button"
-                  data-i18n="save"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="preset-select-panel" class="control-panel">
-          <div class="panel-heading">
-            <h2 data-i18n="presets">Presets</h2>
-            <button
-              id="back-to-edit"
-              class="panel-back"
-              type="button"
-              data-i18n="backToEdit"
-            >
-              Back
-            </button>
-          </div>
-          <button id="create-your-cat" class="create-cat-entry" type="button">
-            Create your cat
-          </button>
-          <div
-            id="preset-file-status"
-            class="preset-file-status"
-            aria-live="polite"
-          ></div>
-          <div
-            id="pattern-preset-list"
-            class="preset-list"
-            aria-label="Pattern presets"
-          ></div>
-        </div>
-
-        <div id="create-cat-panel" class="control-panel create-cat-panel">
-          <div class="panel-heading">
-            <h2 data-creator-i18n="title">Create your cat</h2>
-            <button id="back-to-presets" class="panel-back" type="button" data-creator-i18n="back">
-              Back
-            </button>
-          </div>
-          <p class="creator-intro" data-creator-i18n="intro">
-            Turn a photo of your cat into a CatCode skin with an AI assistant.
+          <div id="current-appearance" class="current-card"></div>
+          <p id="save-status" class="save-status" aria-live="polite"></p>
+          <p id="builtin-save-hint" class="retire-note" hidden data-i18n="builtinSaveHint">
+            Built-in cats stay unchanged until you save a personal copy.
           </p>
-          <ol class="creator-steps">
-            <li data-creator-i18n="stepPhoto">Attach a photo of your cat to an AI assistant.</li>
-            <li data-creator-i18n="stepTemplate">Download and attach the CatCode JSON template.</li>
-            <li data-creator-i18n="stepPrompt">Copy the prompt below and ask the assistant to return a JSON file only.</li>
-            <li data-creator-i18n="stepImport">Save the answer as a .json file and import it here.</li>
-          </ol>
-          <div class="creator-actions">
-            <button id="download-cat-template" class="creator-button" type="button" data-creator-i18n="downloadTemplate">
-              Download JSON template
+          <div class="action-row">
+            <button type="button" id="save-custom" class="primary-save" data-i18n="saveAsMyCat">
+              Save as my cat
             </button>
-            <button id="copy-cat-prompt" class="creator-button" type="button" data-creator-i18n="copyPrompt">
-              Copy prompt
-            </button>
+            <button type="button" id="duplicate-appearance" data-i18n="duplicate">Duplicate</button>
+            <button type="button" id="discard-changes" data-i18n="discard">Discard</button>
           </div>
-          <textarea id="cat-ai-prompt" class="creator-prompt" readonly spellcheck="false"></textarea>
-          <button id="import-ai-cat" class="creator-button creator-button-primary" type="button" data-creator-i18n="importJson">
-            Import finished cat
-          </button>
-          <p id="cat-creator-status" class="creator-status" aria-live="polite"></p>
-        </div>
+          <label class="name-row" id="cat-name-row"
+            ><span data-i18n="catName">Cat name</span>
+            <input type="text" id="cat-name" maxlength="48" autocomplete="off" />
+          </label>
+        </section>
+
+        <section class="side-block workflow-block">
+          <h2 data-i18n="workflowTitle">How to edit</h2>
+          <ol class="workflow-steps">
+            <li data-i18n="workflowStep1">Step 1: Select a body part.</li>
+            <li data-i18n="workflowStep2">Step 2: Set its coat color or paint markings.</li>
+            <li data-i18n="workflowStep3">Step 3: Save your cat.</li>
+          </ol>
+        </section>
+
+        <section class="side-block">
+          <h2 data-i18n="bodyParts">Body parts</h2>
+          <p class="part-selected-label" id="selected-part-label"></p>
+          <div class="part-grid" role="listbox" aria-label="Body parts">
+            <button type="button" class="part-btn active" data-region="all" data-i18n="partAll">Whole cat</button>
+            <button type="button" class="part-btn" data-region="head" data-i18n="partHead">Head</button>
+            <button type="button" class="part-btn" data-region="ears" data-i18n="partEars">Outer ear colour</button>
+            <button type="button" class="part-btn" data-region="body" data-i18n="partBody">Body</button>
+            <button type="button" class="part-btn" data-region="frontPaws" data-i18n="partFrontPaws">Front paws</button>
+            <button type="button" class="part-btn" data-region="hindPaws" data-i18n="partHindPaws">Hind paws</button>
+            <button type="button" class="part-btn" data-region="tail" data-i18n="partTail">Tail</button>
+          </div>
+          <label class="color-row" id="region-color-row"
+            ><span id="region-color-label" data-i18n="partCoatColor">Part coat color</span>
+            <input type="color" id="region-color" value="#20242D" />
+            <span class="hex" id="region-color-hex">#20242D</span>
+          </label>
+          <button type="button" id="clear-region-color" data-i18n="clearPartColor">Reset color</button>
+          <p class="parts-explain" id="clear-part-helper" hidden></p>
+          <p class="parts-explain" id="parts-explain" data-i18n="partsHint">
+            Select a part to highlight it and paint only that silhouette. Eyes stay protected.
+          </p>
+        </section>
+
+        <section class="side-block">
+          <h2 data-i18n="coatGroup">Coat and markings</h2>
+          <label class="color-row"
+            ><span data-i18n="baseColor">Whole-cat coat</span>
+            <input type="color" id="base-color" value="#20242D" />
+            <span class="hex" id="base-color-hex">#20242D</span>
+          </label>
+          <label class="color-row"
+            ><span data-i18n="earInnerColor">Inner ear colour</span>
+            <input type="color" id="ear-inner-color" value="#F18AA5" />
+            <span class="hex" id="ear-inner-color-hex">#F18AA5</span>
+          </label>
+          <label class="color-row"
+            ><span data-i18n="noseColor">Nose colour</span>
+            <input type="color" id="nose-color" value="#304055" />
+            <span class="hex" id="nose-color-hex">#304055</span>
+          </label>
+          <label class="color-row"
+            ><span data-i18n="markingColor">Brush color for markings</span>
+            <input type="color" id="marking-color" value="#3A4559" />
+            <span class="hex" id="marking-color-hex">#3A4559</span>
+          </label>
+          <p class="active-paint-swatch" id="active-paint-swatch"></p>
+          <p class="parts-explain" id="marking-howto" data-i18n="markingHowTo">
+            Select a body part, choose a brush color, then paint or fill on the canvas.
+          </p>
+        </section>
+
+        <section class="side-block">
+          <h2 data-i18n="eyesGroup">Eyes</h2>
+          <label class="color-row"
+            ><span data-i18n="eyeStyle">Eye style</span>
+            <select id="eye-style">
+              <option value="natural" data-i18n="eyeStyleNatural">Natural</option>
+              <option value="solid" data-i18n="eyeStyleSolid">Solid color</option>
+            </select>
+          </label>
+          <label class="color-row" id="eye-bg-color-row"
+            ><span id="eye-bg-label" data-i18n="eyeFillColor">Eye fill</span>
+            <input type="color" id="eye-bg-color" value="#EDF4F5" />
+            <span class="hex" id="eye-bg-color-hex">#EDF4F5</span>
+          </label>
+          <label class="color-row" id="eye-color-row"
+            ><span data-i18n="irisColor">Iris color</span>
+            <input type="color" id="eye-color" value="#A7EFF0" />
+            <span class="hex" id="eye-color-hex">#A7EFF0</span>
+          </label>
+          <label class="color-row" id="eye-pupil-color-row"
+            ><span data-i18n="pupilColor">Pupil color</span>
+            <input type="color" id="eye-pupil-color" value="#141820" />
+            <span class="hex" id="eye-pupil-color-hex">#141820</span>
+          </label>
+          <label class="check-row"
+            ><input type="checkbox" id="odd-eye" />
+            <span data-i18n="oddEye">Odd eyes</span>
+          </label>
+          <label class="color-row odd-only" id="eye-color-left-row" hidden
+            ><span data-i18n="leftIris">Left iris</span>
+            <input type="color" id="eye-color-left" value="#A7EFF0" />
+            <span class="hex" id="eye-color-left-hex">#A7EFF0</span>
+          </label>
+          <label class="color-row odd-only" id="eye-color-right-row" hidden
+            ><span data-i18n="rightIris">Right iris</span>
+            <input type="color" id="eye-color-right" value="#A7EFF0" />
+            <span class="hex" id="eye-color-right-hex">#A7EFF0</span>
+          </label>
+          <label class="color-row"
+            ><span data-i18n="eyeOutlineColor">Eye outline</span>
+            <input type="color" id="eye-outline-color" value="#1C1C1C" />
+            <span class="hex" id="eye-outline-color-hex">#1C1C1C</span>
+          </label>
+        </section>
+
+        <p class="retire-note" data-i18n="legacyRetired">
+          The old head/body/arm/foot grids are retired. This editor paints one complete V4 cat.
+        </p>
       </aside>
     </main>
 
-    <script src="editor.js"></script>
+    <div id="gallery-overlay" class="gallery-overlay" hidden>
+      <div class="gallery-panel" role="dialog" aria-modal="true">
+        <div class="gallery-header">
+          <h2 data-i18n="galleryTitle">Cat gallery</h2>
+          <button type="button" id="close-gallery" data-i18n="close">Close</button>
+        </div>
+        <div class="gallery-actions">
+          <button type="button" id="import-presets" data-i18n="import">Import</button>
+          <button type="button" id="export-presets" data-i18n="export">Export</button>
+          <button type="button" id="open-ai-creator" data-i18n="createFromPhoto">Create from photo</button>
+        </div>
+        <div id="gallery-builtin" class="gallery-section"></div>
+        <div id="gallery-custom" class="gallery-section"></div>
+        <div id="gallery-imported" class="gallery-section"></div>
+        <div id="gallery-archive" class="gallery-section"></div>
+      </div>
+    </div>
+
+    <div id="manage-cat-overlay" class="gallery-overlay" hidden>
+      <div class="gallery-panel manage-panel" role="dialog" aria-modal="true">
+        <div class="gallery-header">
+          <h2 id="manage-cat-title" data-i18n="manageCustom">Manage this cat</h2>
+          <button type="button" id="manage-cat-cancel" data-i18n="manageCancel">Cancel</button>
+        </div>
+        <label class="name-row"
+          ><span data-i18n="renameCat">Rename cat</span>
+          <input type="text" id="manage-cat-name" maxlength="48" autocomplete="off" />
+        </label>
+        <div class="action-row">
+          <button type="button" id="manage-cat-rename" class="primary-save" data-i18n="manageRename">
+            Rename
+          </button>
+          <button type="button" id="manage-cat-delete" data-i18n="manageDelete">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="create-cat-panel" class="creator-overlay" hidden>
+      <div class="creator-panel">
+        <div class="panel-heading">
+          <h2 data-creator-i18n="title">Create your cat</h2>
+          <button id="back-to-presets" class="panel-back" type="button" data-creator-i18n="back">
+            Back
+          </button>
+        </div>
+        <p class="creator-intro" data-creator-i18n="intro">
+          Turn a photo of your cat into a CatCode skin with an AI assistant.
+        </p>
+        <ol class="creator-steps">
+          <li data-creator-i18n="stepPhoto">Attach a photo of your cat to an AI assistant.</li>
+          <li data-creator-i18n="stepTemplate">Download and attach the CatCode JSON template.</li>
+          <li data-creator-i18n="stepPrompt">Copy the prompt below and ask the assistant to return a JSON file only.</li>
+          <li data-creator-i18n="stepImport">Save the answer as a .json file and import it here.</li>
+        </ol>
+        <div class="creator-actions">
+          <button id="download-cat-template" class="creator-button" type="button" data-creator-i18n="downloadTemplate">
+            Download JSON template
+          </button>
+          <button id="copy-cat-prompt" class="creator-button" type="button" data-creator-i18n="copyPrompt">
+            Copy prompt
+          </button>
+        </div>
+        <textarea id="cat-ai-prompt" class="creator-prompt" readonly spellcheck="false"></textarea>
+        <button id="import-ai-cat" class="creator-button creator-button-primary" type="button" data-creator-i18n="importJson">
+          Import finished cat
+        </button>
+        <p id="cat-creator-status" class="creator-status" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <!-- Compatibility hooks for custom-cat-creator.js -->
+    <div id="pattern-preset-list" hidden></div>
+    <button id="create-your-cat" type="button" hidden></button>
+
+    <script src="../../pattern-coordinate-normalizer.js"></script>
+    <script src="../../v4-pattern-schema.js"></script>
+    <script src="../pet/v4-palette-runtime.js"></script>
+    <script src="v4-editor-preview.js"></script>
+    <script src="v4-appearance-editor.js"></script>
     <script src="custom-cat-creator.js"></script>
   </body>
 </html>

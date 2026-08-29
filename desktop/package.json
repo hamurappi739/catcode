@@ -2,23 +2,27 @@
   "name": "catcode",
   "private": true,
   "productName": "CatCode",
-  "version": "0.2.5",
+  "desktopName": "ru.catcode.desktop.desktop",
+  "version": "0.2.31",
   "author": "CatCode",
   "description": "Desktop cat companion for focus, reminders, and healthy work habits.",
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
-    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check onboarding-preload.js && node --check share-capture-preload.js && node --check license-client.js && node --check macos-support.js && node --check scripts/verify-macos-signing-env.js && node --check renderer/pet/custom-behavior.js && node --check renderer/onboarding/renderer.js && node --check renderer/editor/custom-cat-creator.js",
+    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check onboarding-preload.js && node --check share-capture-preload.js && node --check license-client.js && node --check macos-support.js && node --check scripts/verify-macos-signing-env.js && node --check tools/migrate-v6-art-to-256.js && node --check tools/build-v6-custom-palette-contracts.js && node --check renderer/pet/custom-behavior.js && node --check renderer/pet/v6-custom-palette-core.js && node --check renderer/pet/v6-skin-runtime.js && node --check renderer/onboarding/renderer.js && node --check renderer/editor/custom-cat-creator.js && node --check renderer/v6-editor/editor.js",
     "test": "node --test test/*.test.js",
+    "test:platform": "node --test test/macos-build.test.js test/linux-build.test.js",
     "start": "electron .",
     "smoke": "electron . --catcode-smoke-test",
-    "build:dir": "electron-builder --win --dir",
-    "build:installer": "electron-builder --win nsis",
-    "build:mac:dir": "electron-builder --config electron-builder.mac-unsigned.cjs --mac --dir",
-    "build:mac:beta:arm64": "electron-builder --config electron-builder.mac-unsigned.cjs --mac dmg zip --arm64",
-    "build:mac:beta:x64": "electron-builder --config electron-builder.mac-unsigned.cjs --mac dmg zip --x64",
-    "build:mac:release:arm64": "electron-builder --mac dmg zip --arm64",
-    "build:mac:release:x64": "electron-builder --mac dmg zip --x64"
+    "build:windows-helpers": "node scripts/build-windows-cursor-helper.js && node scripts/build-windows-fullscreen-helper.js && node scripts/build-windows-audio-helper.js && node scripts/build-windows-native-input-bridge.js",
+    "build:dir": "npm run build:windows-helpers && electron-builder --win --dir",
+    "build:installer": "npm run build:windows-helpers && electron-builder --win nsis",
+    "build:linux:beta:x64": "electron-builder --linux AppImage deb --x64",
+    "build:mac:dir": "node scripts/build-macos-cursor-helper.js && electron-builder --config electron-builder.mac-unsigned.cjs --mac --dir",
+    "build:mac:beta:arm64": "node scripts/build-macos-cursor-helper.js && electron-builder --config electron-builder.mac-unsigned.cjs --mac dmg zip --arm64",
+    "build:mac:beta:x64": "node scripts/build-macos-cursor-helper.js && electron-builder --config electron-builder.mac-unsigned.cjs --mac dmg zip --x64",
+    "build:mac:release:arm64": "node scripts/build-macos-cursor-helper.js && electron-builder --mac dmg zip --arm64",
+    "build:mac:release:x64": "node scripts/build-macos-cursor-helper.js && electron-builder --mac dmg zip --x64"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
@@ -52,7 +56,12 @@
     "asar": true,
     "asarUnpack": [
       "node_modules/ffmpeg-static/**",
-      "node_modules/uiohook-napi/**"
+      "node_modules/uiohook-napi/**",
+      "native/windows/audio-meter.exe",
+      "native/windows/cursor-warp.exe",
+      "native/windows/fullscreen-detector.exe",
+      "native/windows/native-input-bridge.exe",
+      "native/macos/cursor-warp"
     ],
     "win": {
       "target": [
@@ -63,7 +72,25 @@
           ]
         }
       ],
-      "icon": "assets/catcode-logo.ico"
+      "icon": "assets/catcode-v6-logo.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Utility",
+      "syncDesktopName": true
     },
     "mac": {
       "target": [
@@ -71,14 +98,15 @@
         "zip"
       ],
       "category": "public.app-category.productivity",
-      "icon": "assets/catcode-logo-mac.png",
+      "icon": "assets/catcode-v6-logo-mac.png",
       "minimumSystemVersion": "12.0",
       "darkModeSupport": true,
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.inherit.plist",
       "binaries": [
-        "Contents/Resources/app.asar.unpacked/node_modules/ffmpeg-static/ffmpeg"
+        "Contents/Resources/app.asar.unpacked/node_modules/ffmpeg-static/ffmpeg",
+        "Contents/Resources/app.asar.unpacked/native/macos/cursor-warp"
       ],
       "notarize": true,
       "extendInfo": {

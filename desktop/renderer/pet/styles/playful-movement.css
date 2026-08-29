@@ -1,0 +1,204 @@
+body[data-pet-roaming-direction="left"] {
+  --catcode-roam-facing: -1;
+  --catcode-sprite-facing: -1;
+}
+
+body[data-pet-roaming-direction="right"] {
+  --catcode-roam-facing: 1;
+  --catcode-sprite-facing: 1;
+}
+
+#playful-walk-sprite {
+  position: absolute;
+  top: calc(var(--cat-top) - var(--cat-size) * 0.15);
+  left: 50%;
+  display: none;
+  width: calc(var(--cat-size) * 1.3);
+  height: calc(var(--cat-size) * 1.3);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 400% 100%;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  pointer-events: none;
+  will-change: transform, background-position;
+}
+
+body[data-pet-roaming] #cat {
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+body[data-pet-roaming] #cat-thinking-dots,
+body[data-pet-roaming] #sleep-zzz,
+body[data-pet-roaming] #heat-steam,
+body[data-pet-roaming] #purr-hearts {
+  display: none !important;
+}
+
+body[data-pet-roaming] #press-left,
+body[data-pet-roaming] #press-right,
+body[data-pet-roaming] #scroll-unroll {
+  display: none !important;
+}
+
+body[data-pet-roaming="walk"] #cat,
+body[data-pet-roaming="cursor"][data-pet-motion-phase="stalk"] #cat,
+body[data-pet-roaming="cursor"][data-pet-motion-phase="pounce"] #cat,
+body[data-pet-roaming="cursor"][data-pet-motion-phase="caught"] #cat,
+body[data-pet-roaming="cursor"][data-pet-motion-phase="carry"] #cat {
+  display: none;
+}
+
+body[data-pet-roaming="walk"] #playful-walk-sprite[data-dynamic-skin-ready],
+body[data-pet-roaming="cursor"][data-pet-motion-phase="stalk"] #playful-walk-sprite[data-dynamic-skin-ready],
+body[data-pet-roaming="cursor"][data-pet-motion-phase="pounce"] #playful-walk-sprite[data-dynamic-skin-ready],
+body[data-pet-roaming="cursor"][data-pet-motion-phase="caught"] #playful-walk-sprite[data-dynamic-skin-ready],
+body[data-pet-roaming="cursor"][data-pet-motion-phase="carry"] #playful-walk-sprite[data-dynamic-skin-ready] {
+  display: block;
+  animation: catcode-walk-sprite 0.72s linear infinite;
+}
+
+body[data-pet-roaming="cursor"][data-pet-motion-phase="stalk"] #playful-walk-sprite {
+  animation-duration: 0.82s;
+}
+
+body[data-pet-roaming="cursor"][data-pet-motion-phase="pounce"] #playful-walk-sprite {
+  animation-duration: 0.48s;
+}
+
+body[data-pet-roaming="jump"][data-pet-motion-phase="crouch"] #cat {
+  animation: catcode-jump-crouch 0.18s steps(2, end) forwards;
+}
+
+body[data-pet-roaming="jump"][data-pet-motion-phase="flight"] #cat {
+  animation: catcode-jump-flight 0.56s steps(4, end) infinite;
+}
+
+body[data-pet-roaming="jump"][data-pet-motion-phase="landing"] #cat {
+  animation: catcode-jump-land 0.3s steps(3, end) forwards;
+}
+
+body[data-cursor-stolen],
+body[data-cursor-stolen] * {
+  cursor: none !important;
+}
+
+/* Independent feedback: an idle motto cannot hide cursor-theft copy. */
+#cursor-theft-copy {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - var(--cat-top) + 4px - var(--bubble-overflow-y, 0px));
+  z-index: 7;
+  display: none;
+  box-sizing: border-box;
+  max-width: min(100vw - 16px, 220px);
+  padding: 6px 8px;
+  border: 1px solid #000;
+  background: #fff;
+  color: #111;
+  font: 700 13px/1.1 "Galmuri11", "NeoDunggeunmo", "DungGeunMo", "Silkscreen", Monaco, Menlo, monospace;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+body[data-cursor-theft-copy] #cursor-theft-copy {
+  display: block;
+  animation: ai-bubble-pop 0.28s steps(2, end);
+}
+
+body[data-drinking] #cursor-theft-copy,
+body[data-stretching] #cursor-theft-copy,
+body[data-pet-peek] #cursor-theft-copy {
+  display: none !important;
+}
+
+@keyframes catcode-walk-sprite {
+  0%,
+  24.99% {
+    background-position: 0 0;
+    transform: translateX(-50%) translateY(0)
+      scaleX(var(--catcode-sprite-facing, 1));
+  }
+  25%,
+  49.99% {
+    background-position: 33.333% 0;
+    transform: translateX(-50%) translateY(-2px)
+      scaleX(var(--catcode-sprite-facing, 1));
+  }
+  50%,
+  74.99% {
+    background-position: 66.667% 0;
+    transform: translateX(-50%) translateY(-1px)
+      scaleX(var(--catcode-sprite-facing, 1));
+  }
+  75%,
+  99.99% {
+    background-position: 100% 0;
+    transform: translateX(-50%) translateY(-3px)
+      scaleX(var(--catcode-sprite-facing, 1));
+  }
+  100% {
+    background-position: 0 0;
+    transform: translateX(-50%) translateY(0)
+      scaleX(var(--catcode-sprite-facing, 1));
+  }
+}
+
+@keyframes catcode-jump-crouch {
+  from {
+    transform: translateX(-50%) translateY(0)
+      scaleX(var(--catcode-roam-facing, 1)) scaleY(1);
+  }
+  to {
+    transform: translateX(-50%) translateY(3px)
+      scaleX(var(--catcode-roam-facing, 1)) scaleY(0.9);
+  }
+}
+
+@keyframes catcode-jump-flight {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0)
+      scaleX(var(--catcode-roam-facing, 1)) rotate(-4deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-2px)
+      scaleX(var(--catcode-roam-facing, 1)) rotate(4deg);
+  }
+}
+
+@keyframes catcode-jump-land {
+  0% {
+    transform: translateX(-50%) translateY(-2px)
+      scaleX(var(--catcode-roam-facing, 1)) scaleY(1.04);
+  }
+  55% {
+    transform: translateX(-50%) translateY(3px)
+      scaleX(var(--catcode-roam-facing, 1)) scaleY(0.88);
+  }
+  100% {
+    transform: translateX(-50%) translateY(0)
+      scaleX(var(--catcode-roam-facing, 1)) scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-pet-roaming] #playful-walk-sprite {
+    animation-duration: 0.9s;
+  }
+}
+
+/* Side-view movement is still being redrawn for V4. Stage A disables roam /
+   cursor-theft visuals entirely rather than crop or tear the V4 silhouette. */
+body[data-catcode-model="v4"][data-pet-roaming] #playful-walk-sprite {
+  display: none !important;
+  animation: none !important;
+}
+
+body[data-catcode-model="v4"][data-pet-roaming] #cat {
+  display: block !important;
+  animation: none !important;
+  transform: translateX(-50%) !important;
+}

@@ -25,6 +25,8 @@
         startFocus: (e) => `${e || "Human"}, back to focus!`,
         drinkPrompt: (e) => `${e || "Human"}, time to drink water, meow!`,
         stretchPrompt: (e) => `${e || "Human"}, time to stretch, meow!`,
+        stretchIgnored: (e) =>
+          `${e || "Human"}, don't ignore your health. Get up and stretch!`,
         updateChecking: "Checking...",
         updateAvailable: "Update",
         updateNone: "No updates",
@@ -205,13 +207,15 @@
           "\u81EA\u6162\u52D5\u753B\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002",
       },
       ru: {
+        stretchIgnored: (e) =>
+          `${e || "\u0427\u0435\u043b\u043e\u0432\u0435\u043a"}, \u043d\u0435 \u0437\u0430\u0431\u0438\u0432\u0430\u0439 \u043d\u0430 \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435. \u0412\u0441\u0442\u0430\u043d\u044c \u0438 \u0440\u0430\u0437\u043e\u043c\u043d\u0438\u0441\u044c!`,
         agentComplete: "Задача выполнена!",
         needsAttention: (e) => `${e || "Человек"}, нужно внимание!`,
         focusLabel: "Фокус",
         restLabel: "Перерыв",
         startBreak: (e) => `${e || "Человек"}, пора отдохнуть!`,
         startFocus: (e) => `${e || "Человек"}, возвращаемся к фокусу!`,
-        drinkPrompt: (e) => `${e || "Человек"}, пора попить воды!`,
+        drinkPrompt: (e) => `${e || "Человек"}, пора попить воды, хорошо?`,
         stretchPrompt: (e) => `${e || "Человек"}, пора размяться!`,
         updateChecking: "Проверяю...",
         updateAvailable: "Обновить",
@@ -433,7 +437,8 @@
       let e = new Audio("../../assets/sound/meow.m4a"),
         t = new Audio("../../assets/sound/meow-alert.m4a"),
         o = new Audio("../../assets/sound/purring.m4a"),
-        u = 0.1,
+        angrySound = new Audio("../../assets/sound/angry-growl.m4a"),
+        u = 0.65,
         y = !1,
         T = null;
       ((e.volume = u),
@@ -442,27 +447,44 @@
         (t.preload = "auto"),
         (o.loop = !0),
         (o.preload = "auto"),
-        (o.volume = u));
+        (o.volume = u),
+        (angrySound.preload = "auto"),
+        (angrySound.playbackRate = 1),
+        (angrySound.volume = u));
       function g() {
-        for (let s of [e, t, o])
+        for (let s of [e, t, o, angrySound])
           try {
             s.load();
           } catch {}
       }
       g();
+      function signalInternalSound(durationMs) {
+        if (typeof window == "undefined" || typeof window.dispatchEvent != "function")
+          return;
+        window.dispatchEvent(
+          new CustomEvent("catcode-internal-sound", {
+            detail: { durationMs: Math.max(0, Number(durationMs) || 0) },
+          }),
+        );
+      }
       function m(s) {
         ((u = Math.max(0, Math.min(1, Number(s) || 0))),
           (e.volume = u),
           (t.volume = u),
-          (o.volume = u));
+          (o.volume = u),
+          (angrySound.volume = u));
       }
       function f(s) {
-        ((y = !!s), y && (e.pause(), t.pause(), o.pause()));
+        ((y = !!s),
+          y && (e.pause(), t.pause(), o.pause(), angrySound.pause()));
       }
       function i() {
         y ||
           u <= 0 ||
-          ((e.volume = u), (e.currentTime = 0), e.play().catch(() => {}));
+          (signalInternalSound(2400),
+          (e.volume = u),
+          (e.currentTime = 0),
+          e.play().catch(() => {}));
       }
       function r(s = {}) {
         if (y || u <= 0) return;
@@ -470,7 +492,8 @@
           b = () => {
             ((t.volume = u), (t.currentTime = 0), t.play().catch(() => {}));
           };
-        (b(), c >= 2 && setTimeout(b, 1500), c >= 3 && setTimeout(b, 3e3));
+        (signalInternalSound(2400 + (c - 1) * 1500),
+          b(), c >= 2 && setTimeout(b, 1500), c >= 3 && setTimeout(b, 3e3));
       }
       function n({ isPurrWanted: s, onPurrUnwanted: c } = {}) {
         y ||
@@ -494,11 +517,21 @@
       function a() {
         (o.pause(), (o.currentTime = 0));
       }
+      function playAngryGrowl() {
+        if (y || u <= 0) return;
+        (signalInternalSound(2400),
+          angrySound.pause(),
+          (angrySound.playbackRate = 1),
+          (angrySound.volume = Math.min(1, u * 1.25)),
+          (angrySound.currentTime = 0),
+          angrySound.play().catch(() => {}));
+      }
       return {
         applySoundMuted: f,
         applyTaskCompleteSoundVolume: m,
         playCompletionMeow: i,
         playReminderMeow: r,
+        playAngryGrowl,
         startPurringSound: n,
         stopPurringSound: a,
         warmAudio: g,
@@ -616,6 +649,7 @@
       scheduleStopPurring: s,
       stopPurring: c,
       stopHuntingPose: b,
+      wakeSleeping: wakeSleep,
       maxUpOffset: w = 140,
       dragStartThresholdPx: d = 4,
       purrLeaveGraceMs: p = 260,
@@ -633,21 +667,30 @@
         F = null,
         L = 0,
         P = 0,
-        B = 0;
+        B = 0,
+        purrStrokeAnchor = null;
+      function Z() {
+        return t.dataset.catcodeModel === "v4" || t.dataset.catcodeModel === "v6-idle-preview";
+      }
       function k() {
         return y && y();
       }
       function N() {
-        let x = k();
-        x && x.start();
+        !Z() &&
+          ((x = k()), x && x.start());
       }
       function U() {
+        if (Z()) return;
         let x = k();
         x && x.resetMotion();
       }
       function I() {
+        if (Z()) return;
         let x = k();
         x && x.apply();
+      }
+      function clearDraggingClass() {
+        (t.classList.remove("dragging"), o.setStretchMode(!1));
       }
       function X() {
         H = null;
@@ -666,7 +709,9 @@
         h ||
           !x ||
           T() ||
-          (c(),
+          (typeof wakeSleep == "function" && wakeSleep(),
+          resetPurrStroke(),
+          c(),
           b(),
           (h = !0),
           (l = !1),
@@ -684,16 +729,34 @@
       function K() {
         F = null;
       }
+      function resetPurrStroke() {
+        purrStrokeAnchor = null;
+      }
+      function isCompletedHeadStroke(x) {
+        let G = Date.now(),
+          re = { x: x.clientX, y: x.clientY, at: G };
+        if (!purrStrokeAnchor || G - purrStrokeAnchor.at > 450)
+          return ((purrStrokeAnchor = re), !1);
+        let oe = Math.hypot(
+          re.x - purrStrokeAnchor.x,
+          re.y - purrStrokeAnchor.y,
+        );
+        return oe < 10 ? !1 : ((purrStrokeAnchor = re), !0);
+      }
       function ie(x) {
         (K(),
+          resetPurrStroke(),
           h
             ? (H !== null && (cancelAnimationFrame(H), X()),
               (h = !1),
               o.dragWindowEnded(),
-              C > 0
+              !Z() && C > 0
                 ? ((l = !0), N())
-                : (t.classList.remove("dragging"), o.setStretchMode(!1)))
-            : (h = !1),
+                : ((C = 0), (l = !1), clearDraggingClass()))
+            : ((h = !1),
+              t.classList.contains("dragging") &&
+                !l &&
+                ((C = 0), clearDraggingClass())),
           r(x));
       }
       function ne(x) {
@@ -727,7 +790,12 @@
           let xe = Math.hypot(x.screenX - F.screenX, x.screenY - F.screenY);
           x.buttons & 1 && xe > d ? (q(F, x), K()) : x.buttons & 1 || K();
         }
-        if ((m(x.clientX, x.clientY) ? a(x.clientX, x.clientY) : F || s(p), !h))
+        if (
+          (m(x.clientX, x.clientY)
+            ? isCompletedHeadStroke(x) && a(x.clientX, x.clientY)
+            : F || (resetPurrStroke(), s(p)),
+          !h)
+        )
           return;
         if (!(x.buttons & 1)) {
           ie(x);
@@ -745,7 +813,11 @@
         We > C && (C = We);
       }
       function le() {
-        (n(), !h && !l && !F && i(!!t.dataset.accountNudge), K(), c());
+        (n(),
+          !h && !l && !F && i(!!t.dataset.accountNudge),
+          K(),
+          resetPurrStroke(),
+          c());
       }
       function D() {
         h && ie();
@@ -758,14 +830,14 @@
       function O() {
         ((h = !1),
           (F = null),
+          resetPurrStroke(),
           (l = !1),
           (C = 0),
           c(),
           b(),
           U(),
-          t.classList.remove("dragging"),
+          clearDraggingClass(),
           I(),
-          o.setStretchMode(!1),
           r());
       }
       function $() {
@@ -798,6 +870,8 @@
   });
   var Gt = V((Ua, Yt) => {
     "use strict";
+    // Mirrors desktop/water-reminders-gate.js (temporary water feature gate).
+    var WATER_REMINDERS_TEMPORARILY_DISABLED = !1;
     function Or({
       electronAPI: e,
       body: t = document.body,
@@ -812,6 +886,7 @@
         m && (clearTimeout(m), (m = null));
       }
       function i() {
+        if (WATER_REMINDERS_TEMPORARILY_DISABLED) return;
         t.dataset.drinking ||
           (typeof y == "function" && y(),
           typeof T == "function" && T(),
@@ -923,78 +998,287 @@
   });
   var Vt = V((Ga, $t) => {
     "use strict";
+    function isSleepPoseDocumentReady(doc) {
+      if (!doc || !doc.documentElement) return !1;
+      let root = doc.documentElement;
+      if (
+        typeof root.getAttribute == "function" &&
+        root.getAttribute("data-v4-sleep-pose") === "1"
+      )
+        return !0;
+      if (
+        typeof root.getAttribute == "function" &&
+        root.getAttribute("data-catcode-model") === "v4" &&
+        typeof doc.querySelector == "function" &&
+        doc.querySelector("rect.v4-pixel, #cat-content")
+      )
+        return !0;
+      return typeof doc.querySelector == "function"
+        ? !!doc.querySelector(
+            'rect.v4-pixel, #cat-content, [data-v4-sleep-pose="1"]',
+          )
+        : !1;
+    }
+    function readObjectSvgDocument(el) {
+      if (!el) return null;
+      try {
+        if (el.contentDocument && el.contentDocument.documentElement)
+          return el.contentDocument;
+      } catch (_) {}
+      try {
+        if (typeof el.getSVGDocument == "function") {
+          let doc = el.getSVGDocument();
+          if (doc && doc.documentElement) return doc;
+        }
+      } catch (_) {}
+      return null;
+    }
     function Yr({
       body: e = document.body,
       ensureSvgObjectReady: t,
+      getSvgObjectElement: getEl,
       shouldBlockSleep: o,
       setIdleSvgClass: u,
       stopHuntingPose: y,
       stopPurring: T,
+      sleepPoseReadyTimeoutMs: readyTimeoutMs = 8e3,
     } = {}) {
       let g = null,
         m = null,
-        f = !1;
+        f = !1,
+        waitEpoch = 0,
+        pendingCleanup = null,
+        pendingTimeout = null;
+      function isV4() {
+        return !!(e && e.dataset && e.dataset.catcodeModel === "v4");
+      }
+      function isV6Latched() {
+        return !!(
+          e &&
+          e.dataset &&
+          (e.dataset.catcodeModelLatched === "1" ||
+            e.dataset.catcodeModel === "v6-idle-preview")
+        );
+      }
+      function getV6Pose() {
+        return typeof window != "undefined" ? window.CatCodeV6VisualPose : null;
+      }
+      function syncPose() {
+        let owner = typeof window != "undefined" ? window.CatCodeV4VisualState : null;
+        owner && typeof owner.syncV4VisualState == "function" && owner.syncV4VisualState(e);
+      }
+      function cancelSleepPeek() {
+        let peek = typeof window != "undefined" ? window.CatCodeV4SleepPeek : null;
+        peek && typeof peek.cancel == "function" && peek.cancel("idle-sleep");
+      }
+      function hasPendingSleepWait() {
+        return pendingCleanup !== null || pendingTimeout !== null;
+      }
+      function cancelPendingSleepWait() {
+        (waitEpoch += 1,
+          pendingCleanup && (pendingCleanup(), (pendingCleanup = null)),
+          pendingTimeout && (clearTimeout(pendingTimeout), (pendingTimeout = null)));
+      }
+      function settlePendingSleepWait() {
+        (pendingCleanup && (pendingCleanup(), (pendingCleanup = null)),
+          pendingTimeout && (clearTimeout(pendingTimeout), (pendingTimeout = null)),
+          (waitEpoch += 1));
+      }
+      function resolveSleepPoseElement() {
+        return typeof getEl == "function"
+          ? getEl("sleep-pose")
+          : typeof document != "undefined" && document.getElementById
+            ? document.getElementById("sleep-pose")
+            : null;
+      }
+      function readSleepPoseDocument() {
+        if (typeof t == "function") {
+          let ensured = t("sleep-pose");
+          if (isSleepPoseDocumentReady(ensured)) return ensured;
+        }
+        return readObjectSvgDocument(resolveSleepPoseElement());
+      }
       function i() {
         g && (clearTimeout(g), (g = null));
       }
-      function r(b = 5e3) {
+      function r(b = 15e3) {
         (i(),
           (g = setTimeout(() => {
             ((g = null), n());
           }, b)));
       }
+      function commitV4Sleep() {
+        (clearTimeout(m),
+          (m = null),
+          delete e.dataset.idleWake,
+          (e.dataset.idleSleep = "1"),
+          typeof u == "function" &&
+            (u("idle-sleep-return", !1), u("idle-sleep", !1)),
+          syncPose(),
+          (f = !0));
+      }
+      function commitV6Sleep() {
+        (clearTimeout(m),
+          (m = null),
+          delete e.dataset.idleWake,
+          (e.dataset.idleSleep = "1"),
+          typeof u == "function" &&
+            (u("idle-sleep-return", !1), u("idle-sleep", !1)),
+          (f = !0));
+        let pose = getV6Pose();
+        pose && typeof pose.enterSleep == "function" && pose.enterSleep();
+      }
+      function attachSleepPoseReadyWait(epoch) {
+        let el = resolveSleepPoseElement(),
+          settled = !1,
+          rafIds = [];
+        function cleanup() {
+          if (settled) return;
+          settled = !0;
+          el &&
+            typeof el.removeEventListener == "function" &&
+            el.removeEventListener("load", onLoad);
+          if (typeof cancelAnimationFrame == "function")
+            for (let id of rafIds) cancelAnimationFrame(id);
+          rafIds.length = 0;
+        }
+        function tryCommitFromReady() {
+          if (epoch !== waitEpoch || f) return;
+          if (typeof o == "function" && o())
+            return (cancelPendingSleepWait(), void r(1e3));
+          let doc = readSleepPoseDocument();
+          if (!isSleepPoseDocumentReady(doc)) return;
+          (settlePendingSleepWait(), commitV4Sleep());
+        }
+        function scheduleReadyPolls() {
+          if (typeof requestAnimationFrame != "function")
+            return void tryCommitFromReady();
+          let frames = 0;
+          let step = () => {
+            if (epoch !== waitEpoch || settled) return;
+            tryCommitFromReady();
+            frames += 1;
+            frames < 4 &&
+              epoch === waitEpoch &&
+              !settled &&
+              rafIds.push(requestAnimationFrame(step));
+          };
+          rafIds.push(requestAnimationFrame(step));
+        }
+        function onLoad() {
+          (tryCommitFromReady(), scheduleReadyPolls());
+        }
+        (el && typeof el.addEventListener == "function" && el.addEventListener("load", onLoad),
+          typeof t == "function" && t("sleep-pose"),
+          scheduleReadyPolls(),
+          (pendingTimeout = setTimeout(() => {
+            epoch === waitEpoch && (cancelPendingSleepWait(), r(1e3));
+          }, readyTimeoutMs)),
+          (pendingCleanup = cleanup));
+      }
       function n() {
-        return f
-          ? !1
-          : typeof o == "function" && o()
+        if (f) return !1;
+        if ((cancelPendingSleepWait(), typeof o == "function" && o()))
+          return (r(1e3), !1);
+        if ((typeof y == "function" && y(), typeof T == "function" && T(), isV6Latched())) {
+          let pose = getV6Pose();
+          return !pose ||
+            typeof pose.areSleepAssetsReady != "function" ||
+            !pose.areSleepAssetsReady()
             ? (r(1e3), !1)
-            : (typeof y == "function" && y(),
-              typeof T == "function" && T(),
-              t("cat"),
-              clearTimeout(m),
-              (m = null),
-              delete e.dataset.idleWake,
-              (e.dataset.idleSleep = "1"),
-              typeof u == "function" &&
-                (u("idle-sleep-return", !1), u("idle-sleep", !0)),
-              (f = !0),
-              !0);
+            : (commitV6Sleep(), !0);
+        }
+        if (isV4()) {
+          // Stage S-base / S-base.1: keep #cat visible until #sleep-pose SVG is usable.
+          typeof t == "function" && (t("sleep-pose"), t("cat"));
+          let readyDoc = readSleepPoseDocument();
+          return isSleepPoseDocumentReady(readyDoc)
+            ? (commitV4Sleep(), !0)
+            : (attachSleepPoseReadyWait(waitEpoch), !1);
+        }
+        return (
+          typeof t == "function" && t("cat"),
+          clearTimeout(m),
+          (m = null),
+          delete e.dataset.idleWake,
+          (e.dataset.idleSleep = "1"),
+          typeof u == "function" &&
+            (u("idle-sleep-return", !1), u("idle-sleep", !0)),
+          (f = !0),
+          !0
+        );
       }
       function a() {
         return (
+          cancelPendingSleepWait(),
+          cancelSleepPeek(),
           i(),
           f
             ? ((f = !1),
               delete e.dataset.idleSleep,
-              (e.dataset.idleWake = "1"),
-              typeof u == "function" &&
-                (u("idle-sleep", !1), u("idle-sleep-return", !0)),
-              clearTimeout(m),
-              (m = setTimeout(() => {
-                ((m = null),
+              isV6Latched()
+                ? (delete e.dataset.idleWake,
+                  typeof u == "function" &&
+                    (u("idle-sleep", !1), u("idle-sleep-return", !1)),
+                  ((pose) => {
+                    pose &&
+                      typeof pose.wakeToIdle == "function" &&
+                      pose.wakeToIdle("activity");
+                  })(getV6Pose()),
+                  r(),
+                  !0)
+                : isV4()
+                ? (typeof t == "function" && t("cat"),
                   delete e.dataset.idleWake,
-                  typeof u == "function" && u("idle-sleep-return", !1));
-              }, 620)),
-              r(),
-              !0)
+                  typeof u == "function" &&
+                    (u("idle-sleep", !1), u("idle-sleep-return", !1)),
+                  syncPose(),
+                  r(),
+                  !0)
+                : ((e.dataset.idleWake = "1"),
+                  typeof u == "function" &&
+                    (u("idle-sleep", !1), u("idle-sleep-return", !0)),
+                  clearTimeout(m),
+                  (m = setTimeout(() => {
+                    ((m = null),
+                      delete e.dataset.idleWake,
+                      typeof u == "function" && u("idle-sleep-return", !1));
+                  }, 620)),
+                  r(),
+                  !0))
             : (r(), !1)
         );
       }
-      function s() {
-        return f ? a() : (r(), !1);
+      function s(b = {}) {
+        let { wakeSleeping: w = !0 } = b;
+        return (
+          cancelPendingSleepWait(),
+          f ? (w ? a() : !1) : (r(), !1)
+        );
       }
       function c() {
-        (i(),
+        (cancelPendingSleepWait(),
+          cancelSleepPeek(),
+          i(),
           clearTimeout(m),
           (m = null),
           (f = !1),
           delete e.dataset.idleSleep,
           delete e.dataset.idleWake,
           typeof u == "function" &&
-            (u("idle-sleep", !1), u("idle-sleep-return", !1)));
+            (u("idle-sleep", !1), u("idle-sleep-return", !1)),
+          isV6Latched()
+            ? ((pose) => {
+                pose &&
+                  typeof pose.wakeToIdle == "function" &&
+                  pose.wakeToIdle("stop");
+              })(getV6Pose())
+            : syncPose());
       }
       return {
         isSleeping: () => f,
+        isSleepPending: () => hasPendingSleepWait(),
+        recordPassiveActivity: () => s(),
         recordActivity: s,
         schedule: r,
         sleep: n,
@@ -1002,7 +1286,11 @@
         wake: a,
       };
     }
-    $t.exports = { createIdleSleepMotion: Yr };
+    $t.exports = {
+      createIdleSleepMotion: Yr,
+      isSleepPoseDocumentReady,
+      readObjectSvgDocument,
+    };
   });
   var jt = V((Wa, Xt) => {
     "use strict";
@@ -1164,6 +1452,14 @@
   });
   var zt = V((qa, Jt) => {
     "use strict";
+    var V4_FALLBACK_BOUNDS = {
+        minX: 0.14,
+        minY: 0.02,
+        maxX: 0.86,
+        maxY: 0.98,
+      },
+      silhouetteBoundsCache = new WeakMap(),
+      opaqueHitCache = new WeakMap();
     function Kt(e, t, o) {
       return t >= e.left && t <= e.right && o >= e.top && o <= e.bottom;
     }
@@ -1171,6 +1467,188 @@
       let g = (e - o) / y,
         m = (t - u) / T;
       return g * g + m * m <= 1;
+    }
+    function clamp01(e) {
+      return Math.max(0, Math.min(1, e));
+    }
+    function parseViewBox(root) {
+      let g = String(root.getAttribute("viewBox") || "0 0 64 64")
+        .trim()
+        .split(/[\s,]+/)
+        .map(Number);
+      return {
+        vx: Number.isFinite(g[0]) ? g[0] : 0,
+        vy: Number.isFinite(g[1]) ? g[1] : 0,
+        vw: Number.isFinite(g[2]) && g[2] > 0 ? g[2] : 64,
+        vh: Number.isFinite(g[3]) && g[3] > 0 ? g[3] : 64,
+      };
+    }
+    function isV4PixelVisible(rect) {
+      let node = rect;
+      while (node && node.nodeType === 1) {
+        let displayAttr =
+            typeof node.getAttribute === "function"
+              ? node.getAttribute("display")
+              : null,
+          visAttr =
+            typeof node.getAttribute === "function"
+              ? node.getAttribute("visibility")
+              : null,
+          opAttr =
+            typeof node.getAttribute === "function"
+              ? node.getAttribute("opacity")
+              : null;
+        if (displayAttr === "none") return !1;
+        if (visAttr === "hidden") return !1;
+        if (opAttr !== null && opAttr !== "" && Number(opAttr) === 0) return !1;
+        try {
+          let view = node.ownerDocument && node.ownerDocument.defaultView;
+          if (view && typeof view.getComputedStyle === "function") {
+            let cs = view.getComputedStyle(node);
+            if (cs) {
+              if (cs.display === "none" || cs.visibility === "hidden") return !1;
+              if (cs.opacity !== "" && Number(cs.opacity) === 0) return !1;
+            }
+          }
+        } catch {}
+        node = node.parentElement || node.parentNode;
+      }
+      return !0;
+    }
+    function visibilityCacheKey(poseEl, body) {
+      let root =
+          poseEl &&
+          poseEl.contentDocument &&
+          poseEl.contentDocument.documentElement,
+        cls =
+          root && typeof root.getAttribute === "function"
+            ? root.getAttribute("class") || ""
+            : "",
+        ds = (body && body.dataset) || {};
+      return `${cls}|${ds.v4Pose || ""}|${ds.purring || ""}|${ds.idleSleep || ""}|${
+        poseEl && poseEl.dataset ? poseEl.dataset.v4HitRev || "0" : "0"
+      }`;
+    }
+    function computeV4NormBounds(e) {
+      if (!e) return V4_FALLBACK_BOUNDS;
+      let t = silhouetteBoundsCache.get(e),
+        o = e.dataset ? e.dataset.v4HitRev || "0" : "0";
+      if (t && t.rev === o) return t.bounds;
+      let u = V4_FALLBACK_BOUNDS;
+      try {
+        let y = e.contentDocument,
+          T = y && y.documentElement;
+        if (T && T.matches && T.matches('svg[data-catcode-model="v4"]')) {
+          let { vx: m, vy: f, vw: i, vh: r } = parseViewBox(T),
+            n = Infinity,
+            a = Infinity,
+            s = -Infinity,
+            c = -Infinity;
+          for (let b of y.querySelectorAll("rect.v4-pixel")) {
+            if (!isV4PixelVisible(b)) continue;
+            let w = Number(b.getAttribute("x")),
+              d = Number(b.getAttribute("y")),
+              p = Number(b.getAttribute("width") || 1),
+              h = Number(b.getAttribute("height") || 1);
+            Number.isFinite(w) &&
+              Number.isFinite(d) &&
+              ((n = Math.min(n, w)),
+              (a = Math.min(a, d)),
+              (s = Math.max(s, w + (Number.isFinite(p) ? p : 1))),
+              (c = Math.max(c, d + (Number.isFinite(h) ? h : 1))));
+          }
+          if (Number.isFinite(n) && s > n && c > a) {
+            let b = 1;
+            u = {
+              minX: clamp01((n - b - m) / i),
+              minY: clamp01((a - b - f) / r),
+              maxX: clamp01((s + b - m) / i),
+              maxY: clamp01((c + b - f) / r),
+            };
+          }
+        }
+      } catch {
+        u = V4_FALLBACK_BOUNDS;
+      }
+      return (silhouetteBoundsCache.set(e, { bounds: u, rev: o }), u);
+    }
+    function buildV4OpaqueHitCache(poseEl, body) {
+      let key = visibilityCacheKey(poseEl, body),
+        cached = opaqueHitCache.get(poseEl);
+      if (cached && cached.key === key) return cached;
+      let entry = { key, keys: new Set(), vx: 0, vy: 0, vw: 64, vh: 64 };
+      try {
+        let doc = poseEl.contentDocument,
+          root = doc && doc.documentElement;
+        if (root && root.matches && root.matches('svg[data-catcode-model="v4"]')) {
+          let vb = parseViewBox(root);
+          entry = { ...entry, ...vb, keys: new Set() };
+          for (let rect of doc.querySelectorAll("rect.v4-pixel")) {
+            if (!isV4PixelVisible(rect)) continue;
+            let x = Number(rect.getAttribute("x")),
+              y = Number(rect.getAttribute("y")),
+              w = Math.max(
+                1,
+                Math.floor(Number(rect.getAttribute("width") || 1)),
+              ),
+              h = Math.max(
+                1,
+                Math.floor(Number(rect.getAttribute("height") || 1)),
+              );
+            if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+            let x0 = Math.floor(x),
+              y0 = Math.floor(y);
+            for (let yy = y0; yy < y0 + h; yy++)
+              for (let xx = x0; xx < x0 + w; xx++) entry.keys.add(`${xx},${yy}`);
+          }
+        }
+      } catch {
+        entry.keys = new Set();
+      }
+      return (opaqueHitCache.set(poseEl, entry), entry);
+    }
+    function isV4OpaqueHitPoint(poseEl, clientX, clientY, body) {
+      if (!poseEl) return !1;
+      let rect = poseEl.getBoundingClientRect();
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        !Kt(rect, clientX, clientY)
+      )
+        return !1;
+      let cache = buildV4OpaqueHitCache(poseEl, body);
+      if (!cache.keys.size) {
+        let nx = (clientX - rect.left) / rect.width,
+          ny = (clientY - rect.top) / rect.height,
+          bounds = computeV4NormBounds(poseEl);
+        return (
+          nx >= bounds.minX &&
+          nx <= bounds.maxX &&
+          ny >= bounds.minY &&
+          ny <= bounds.maxY
+        );
+      }
+      let { vx, vy, vw, vh } = cache,
+        scale = Math.min(rect.width / vw, rect.height / vh),
+        contentW = vw * scale,
+        contentH = vh * scale,
+        offsetX = (rect.width - contentW) / 2,
+        offsetY = (rect.height - contentH) / 2,
+        localX = clientX - rect.left - offsetX,
+        localY = clientY - rect.top - offsetY;
+      if (localX < 0 || localY < 0 || localX >= contentW || localY >= contentH)
+        return !1;
+      let cellX = Math.floor(vx + (localX / contentW) * vw),
+        cellY = Math.floor(vy + (localY / contentH) * vh);
+      return cache.keys.has(`${cellX},${cellY}`);
+    }
+    function invalidateV4HitBounds(poseEl) {
+      if (poseEl && poseEl.dataset) {
+        let next = String((Number(poseEl.dataset.v4HitRev) || 0) + 1);
+        poseEl.dataset.v4HitRev = next;
+      }
+      poseEl &&
+        (silhouetteBoundsCache.delete(poseEl), opaqueHitCache.delete(poseEl));
     }
     function Wr({
       domDocument: e = document,
@@ -1188,39 +1666,80 @@
       let n = 0,
         a = null;
       function s() {
-        return t.classList.contains("dragging")
-          ? (T("stretch-svg-end"), u)
-          : g()
-            ? (T("press-left"), e.getElementById("press-left"))
-            : t.dataset.stretching
-              ? (T("stretch-pose-default"),
-                e.getElementById("stretch-pose-default"))
-              : t.dataset.hunting
-                ? (T("cat"), e.getElementById("cat"))
-                : t.dataset.jump === "start"
-                  ? (T("jump-start"), e.getElementById("jump-start"))
-                  : t.dataset.jump === "ing"
-                    ? (T("jump-ing"), e.getElementById("jump-ing"))
-                    : t.dataset.scroll
-                      ? (T("scroll-unroll"), e.getElementById("scroll-unroll"))
-                      : t.dataset.press === "left"
-                        ? (T("press-left"), e.getElementById("press-left"))
-                        : t.dataset.press === "right"
-                          ? (T("press-right"), e.getElementById("press-right"))
-                          : (T("cat"), o);
+        let isV4 = t.dataset.catcodeModel === "v4",
+          useCat = () => (T("cat"), o);
+        if (t.dataset.catcodeModel === "v6-idle-preview") {
+          let v6Pose = e.defaultView && e.defaultView.CatCodeV6VisualPose;
+          if (v6Pose && typeof v6Pose.getActiveHost == "function") {
+            let host = v6Pose.getActiveHost();
+            if (host) return host;
+          }
+          return e.getElementById("v6-idle-preview");
+        }
+        if (t.classList.contains("dragging"))
+          return isV4 ? useCat() : (T("stretch-svg-end"), u);
+        if (isV4) {
+          let pose = t.dataset.v4Pose;
+          if (pose === "sleep" || t.dataset.idleSleep)
+            return (
+              T("sleep-pose"),
+              e.getElementById("sleep-pose") || o
+            );
+          // V4 purr keeps live #cat visible; #purr-pose is display:none.
+          if (pose === "purr" || t.dataset.purring) return useCat();
+          return useCat();
+        }
+        return g()
+          ? (T("press-left"), e.getElementById("press-left"))
+          : t.dataset.stretching
+            ? (T("stretch-pose-default"),
+              e.getElementById("stretch-pose-default"))
+            : t.dataset.hunting
+              ? (T("cat"), e.getElementById("cat"))
+              : t.dataset.jump === "start"
+                ? (T("jump-start"), e.getElementById("jump-start"))
+                : t.dataset.jump === "ing"
+                  ? (T("jump-ing"), e.getElementById("jump-ing"))
+                  : t.dataset.scroll
+                    ? (T("scroll-unroll"), e.getElementById("scroll-unroll"))
+                    : t.dataset.press === "left"
+                      ? (T("press-left"), e.getElementById("press-left"))
+                      : t.dataset.press === "right"
+                        ? (T("press-right"), e.getElementById("press-right"))
+                        : useCat();
       }
       function c(l, S) {
         let M = s();
         if (!M) return !1;
         let _ = M.getBoundingClientRect();
         if (_.width <= 0 || _.height <= 0 || !Kt(_, l, S)) return !1;
+        if (t.dataset.catcodeModel === "v6-idle-preview") {
+          let v6Pose = e.defaultView && e.defaultView.CatCodeV6VisualPose;
+          if (v6Pose && typeof v6Pose.isOpaqueHitPoint == "function")
+            return !!v6Pose.isOpaqueHitPoint(l, S);
+          let v6Preview = e.defaultView && e.defaultView.CatCodeV6IdlePreview;
+          return !!(v6Preview && v6Preview.isOpaqueHitPoint(l, S));
+        }
         let A = (l - _.left) / _.width,
           E = (S - _.top) / _.height;
-        return M === u
-          ? Ve(A, E, 0.5, 0.2, 0.2, 0.14) || Ve(A, E, 0.5, 0.52, 0.18, 0.38)
-          : Ve(A, E, 0.4, 0.3, 0.24, 0.22) ||
-              Ve(A, E, 0.55, 0.62, 0.3, 0.3) ||
-              (A >= 0.28 && A <= 0.72 && E >= 0.3 && E <= 0.78);
+        if (M === u)
+          return (
+            Ve(A, E, 0.5, 0.2, 0.2, 0.14) || Ve(A, E, 0.5, 0.52, 0.18, 0.38)
+          );
+        let isV4Pose =
+          t.dataset.catcodeModel === "v4" ||
+          (M.contentDocument &&
+            M.contentDocument.documentElement &&
+            M.contentDocument.documentElement.matches &&
+            M.contentDocument.documentElement.matches(
+              'svg[data-catcode-model="v4"]',
+            ));
+        if (isV4Pose) return isV4OpaqueHitPoint(M, l, S, t);
+        return (
+          Ve(A, E, 0.4, 0.3, 0.24, 0.22) ||
+          Ve(A, E, 0.55, 0.62, 0.3, 0.3) ||
+          (A >= 0.28 && A <= 0.72 && E >= 0.3 && E <= 0.78)
+        );
       }
       function b(l, S, M) {
         return (
@@ -1254,9 +1773,21 @@
       function h() {
         requestAnimationFrame(() => r(!1));
       }
-      return { clearLastPoint: p, init: h, isCatHitPoint: c, update: d };
+      return {
+        clearLastPoint: p,
+        init: h,
+        isCatHitPoint: c,
+        currentPoseElement: s,
+        update: d,
+        invalidateV4HitBounds,
+      };
     }
-    Jt.exports = { createMousePassthrough: Wr };
+    Jt.exports = {
+      createMousePassthrough: Wr,
+      computeV4NormBounds,
+      invalidateV4HitBounds,
+      isV4OpaqueHitPoint,
+    };
   });
   var Qt = V(($a, Zt) => {
     "use strict";
@@ -1726,7 +2257,15 @@
       }
       function R() {
         if (!a) {
-          h = null;
+          if (((h = null), m())) {
+            (T(0),
+              f(!1),
+              A(),
+              e.classList.remove("dragging"),
+              t.setStretchMode(!1),
+              i(),
+              (h = null));
+          }
           return;
         }
         if (m()) {
@@ -1996,6 +2535,10 @@
       }
       function ae() {
         let O = Date.now();
+        if (t.body.dataset.petRoaming) {
+          (H(), ce());
+          return;
+        }
         (typeof n == "function" && n()) ||
           g() ||
           m() ||
@@ -2012,7 +2555,7 @@
           s());
       }
       function le() {
-        if (f() || m()) return;
+        if (f() || m() || t.body.dataset.petRoaming) return;
         (L("focus", 1600), E && clearInterval(E), r(), ce(), clearTimeout(w));
         let O = 0;
         E = setInterval(() => {
@@ -2034,6 +2577,7 @@
           g() ||
           m() ||
           f() ||
+          t.body.dataset.petRoaming ||
           t.body.dataset.press ||
           t.body.dataset.jump
         )
@@ -2465,6 +3009,18 @@
   });
   var Pn = V((ts, Cn) => {
     "use strict";
+    function co(e, t) {
+      if (!Array.isArray(e)) return !1;
+      let o = String(t || "");
+      return e.some(
+        (u) =>
+          !!u &&
+          u.enabled !== !1 &&
+          (u.repeat && u.repeat !== "none"
+            ? !0
+            : !o || String(u.time || "") >= o),
+      );
+    }
     function uo({
       clockButton: e,
       panel: t,
@@ -2570,9 +3126,8 @@
         (w && w.bringPetIntoView && w.bringPetIntoView(),
           (document.body.dataset.reminderPanel = "1"));
       }
-      function B(D) {
-        let Y = !!(D && D.showButtonOutside);
-        document.body.toggleAttribute("data-reminder-button", Y);
+      function B() {
+        se();
       }
       function k() {
         if (
@@ -2637,8 +3192,11 @@
       function ie(D) {
         return D ? D.repeat === "none" && String(D.time || "") < K() : !1;
       }
+      function se() {
+        document.body.toggleAttribute("data-reminder-button", co(M, K()));
+      }
       function ne(D) {
-        if (((M = Array.isArray(D) ? D : []), !!s)) {
+        if (((M = Array.isArray(D) ? D : []), se(), !!s)) {
           if (((s.textContent = ""), !M.length)) {
             let Y = document.createElement("div");
             ((Y.className = "reminder-empty"),
@@ -2765,7 +3323,7 @@
         resetForm: W,
       };
     }
-    Cn.exports = { createReminderPanel: uo };
+    Cn.exports = { createReminderPanel: uo, hasActiveReminders: co };
   });
   var Rn = V((ns, Mn) => {
     "use strict";
@@ -2804,7 +3362,7 @@
   });
   var _n = V((rs, xn) => {
     "use strict";
-    var mo = { antigravity: 3e3 },
+    var mo = { antigravity: 3e3, preview: 24 * 60 * 60 * 1e3 },
       po = 1600;
     function go({
       bubble: e,
@@ -3071,6 +3629,11 @@
       };
     function ho(n) {
       let a = n && typeof n == "object" ? n : {};
+      if (
+        typeof window != "undefined" &&
+        window.CatCodePatternCoordinates
+      )
+        return window.CatCodePatternCoordinates.normalizePatternCoordinates(a);
       if (a.pixelResolution === So) return a;
       let s = { ...a, pixelResolution: So };
       for (let [c, b] of Object.entries(Ao)) {
@@ -3374,6 +3937,7 @@
                 !l.id
               ),
           );
+        i.documentElement.matches("svg[data-catcode-model='v4']") && w.push(n);
         for (let l of w) {
           let S = i.createElementNS(Q, "use");
           (S.setAttribute("href", `#${l.id}`),
@@ -3824,22 +4388,30 @@
             u("cat");
             return;
           }
-          (f.add(L),
-            o(L, "cat-idle-follow-v2"),
-            L.documentElement &&
-              L.documentElement.classList.toggle("idle-animated", c),
-            (i = S(L, Yn)),
-            A());
+          f.add(L);
+          let isV4 =
+            !!(L.documentElement &&
+              L.documentElement.matches("svg[data-catcode-model='v4']"));
+          (o(L, isV4 ? "catcode-v4-idle" : "cat-idle-follow-v2"),
+            isV4
+              ? (i = null)
+              : (L.documentElement &&
+                  L.documentElement.classList.toggle("idle-animated", c),
+                (i = S(L, Yn)),
+                A()));
         }
       }
       function w() {
         let L = u("press-left");
         return L
-          ? (d(!!y(), L), r || (r = S(L, { pupils: Yn.pupils })), r)
+          ? L.documentElement.matches("svg[data-catcode-model='v4']")
+            ? null
+            : (d(!!y(), L), r || (r = S(L, { pupils: Yn.pupils })), r)
           : null;
       }
       function d(L, P = u("press-left")) {
         if (!P) return;
+        if (P.documentElement.matches("svg[data-catcode-model='v4']")) return;
         let B = P.getElementById("cat-content"),
           k = P.getElementById("head");
         if (!B || !k) return;
@@ -4011,7 +4583,7 @@
       { createHuntingMotion: No } = qt(),
       { createIdleSleepMotion: Io } = Vt(),
       { createJumpMotion: Do } = jt(),
-      { createMousePassthrough: ko } = zt(),
+      { createMousePassthrough: ko, isV4OpaqueHitPoint: hitOpaque, invalidateV4HitBounds: hitInvalidate } = zt(),
       { createPeekState: Ho } = Qt(),
       { createPurrInteraction: Fo } = tn(),
       { createStretchChain: Bo, STRETCH_SEGMENT_COUNT: Oo } = an(),
@@ -4047,6 +4619,8 @@
       si = document.getElementById("fixed-message-input"),
       ci = document.getElementById("fixed-message-cancel"),
       er = document.getElementById("reminder-clock-button"),
+      wellnessCompleteOverlay = document.getElementById("cat-wellness-complete"),
+      reminderAcknowledgeOverlay = document.getElementById("cat-reminder-ack"),
       li = document.getElementById("account-nudge"),
       ui = document.getElementById("account-nudge-button"),
       di = document.getElementById("account-nudge-close"),
@@ -4066,6 +4640,9 @@
       nr = document.getElementById("pomodoro-focus-editor"),
       Ci = document.getElementById("pomodoro-focus-input"),
       Pi = document.getElementById("pomodoro-focus-cancel"),
+      wellnessEditor = document.getElementById("wellness-interval-editor"),
+      wellnessInput = document.getElementById("wellness-interval-input"),
+      wellnessCancel = document.getElementById("wellness-interval-cancel"),
       rr = document.getElementById("share-duration-editor"),
       Mi = document.getElementById("share-duration-input"),
       Ri = document.getElementById("share-duration-cancel"),
@@ -4085,6 +4662,7 @@
         applyTaskCompleteSoundVolume: ir,
         playCompletionMeow: _i,
         playReminderMeow: vi,
+        playAngryGrowl: angryGrowlPlay,
         startPurringSound: Li,
         stopPurringSound: Ni,
         warmAudio: Ii,
@@ -4184,14 +4762,118 @@
       setCatOutlineAllSvgs: Gi,
       setHeatOverlayAllSvgs: Vi,
     });
+    let healthAngryActive = !1,
+      healthAngryTimer = null,
+      healthAngryGrowlTimers = [];
+    function clearHealthAngryGrowls() {
+      for (let timer of healthAngryGrowlTimers) clearTimeout(timer);
+      healthAngryGrowlTimers = [];
+    }
+    function playHealthAngryGrowls() {
+      clearHealthAngryGrowls();
+      angryGrowlPlay();
+      // Keep the sound arc aligned with the 12-second angry pose: opening,
+      // sustained warning, then a final grumble before the cat calms down.
+      for (let delay of [3800, 7600]) {
+        healthAngryGrowlTimers.push(
+          setTimeout(() => {
+            if (healthAngryTimer) angryGrowlPlay();
+          }, delay),
+        );
+      }
+    }
+    function applyHealthAngryToSvg(e) {
+      if (!e || !e.documentElement) return;
+      let t = e.getElementById("health-angry-style");
+      (t ||
+        ((t = e.createElementNS("http://www.w3.org/2000/svg", "style")),
+        (t.id = "health-angry-style"),
+        (t.textContent = `
+          :root.health-angry {
+            --eye-color: #ff2838 !important;
+            --eye-color-left: #ff2838 !important;
+            --eye-color-right: #ff2838 !important;
+            --eye-bg-color: #280006 !important;
+          }
+          :root.health-angry .pupil-left,
+          :root.health-angry .pupil-right {
+            fill: #ff2838 !important;
+            filter: drop-shadow(0 0 1px #ff001a);
+          }
+          :root.health-angry #eyes-js {
+            animation: health-angry-glare 160ms steps(2, end) 6;
+            transform-box: fill-box;
+            transform-origin: center;
+          }
+          @keyframes health-angry-glare {
+            0%, 100% { transform: translateX(-0.35px); }
+            50% { transform: translateX(0.35px); }
+          }
+        `),
+        e.documentElement.appendChild(t)),
+        e.documentElement.classList.toggle(
+          "health-angry",
+          healthAngryActive,
+        ));
+    }
+    function setHealthAngry(e) {
+      ((healthAngryActive = !!e), Ce.forEach(applyHealthAngryToSvg));
+    }
+    function showIgnoredStretchReaction() {
+      if (Pe && Pe()) return;
+      ke();
+      De();
+      Ge();
+      if (
+        window.CatCodeV6ExclusivePoseReset &&
+        typeof window.CatCodeV6ExclusivePoseReset.resetForReturn === "function"
+      ) {
+        window.CatCodeV6ExclusivePoseReset.resetForReturn("wellness-angry");
+      }
+      if (
+        window.CatCodeV6VisualPose &&
+        typeof window.CatCodeV6VisualPose.wakeToIdle === "function"
+      ) {
+        window.CatCodeV6VisualPose.wakeToIdle("wellness-angry");
+      }
+      let v6Angry =
+        window.CatCodeV6Angry &&
+        typeof window.CatCodeV6Angry.enter == "function" &&
+        window.CatCodeV6Angry.enter(12e3);
+      (healthAngryTimer && clearTimeout(healthAngryTimer),
+        setHealthAngry(!v6Angry),
+        playHealthAngryGrowls(),
+        ft(ue("stretchIgnored", ye), { duration: 12e3, kind: "reminder" }),
+        (healthAngryTimer = setTimeout(() => {
+          (healthAngryTimer = null,
+            clearHealthAngryGrowls(),
+            setHealthAngry(!1),
+            window.CatCodeV6Angry &&
+              typeof window.CatCodeV6Angry.leave == "function" &&
+              window.CatCodeV6Angry.leave());
+        }, 12e3)));
+    }
+    let v4Pattern = null;
+    function applyV4Palette(pattern, svgDocument = null) {
+      const palette = window.CatCodeV4Palette;
+      if (!palette || typeof palette.applyPalette !== "function") return;
+      if (svgDocument && svgDocument.documentElement) {
+        palette.applyPalette(svgDocument.documentElement, pattern || {});
+        return;
+      }
+      Ce.forEach((document) => palette.applyPalette(document.documentElement, pattern || {}));
+    }
     Ce.onNewDoc((e) => {
-      (Ji(e), cr(e), lr(e), Ki(e), Je.applyToSvg(e));
+      (Ji(e), cr(e), lr(e), Ki(e), Je.applyToSvg(e), applyHealthAngryToSvg(e));
+      v4Pattern && applyV4Palette(v4Pattern, e);
     });
     Ce.onExistingDoc((e) => {
-      ji(e) && (cr(e), lr(e), pt(e), Je.applyToSvg(e));
+      (ji(e) && (cr(e), lr(e), pt(e), Je.applyToSvg(e)),
+        applyHealthAngryToSvg(e));
     });
     window.electronAPI.onPatternChanged((e) => {
       let t = e || {};
+      v4Pattern = t;
       (Ae.applyPatternBaseColor(t.baseColor),
         typeof t.eyeBgColor == "string" && Wi(t.eyeBgColor),
         $i(t.eyePupilScale),
@@ -4201,7 +4883,8 @@
           : (Xn(null),
             jn(null),
             typeof t.eyeColor == "string" && qi(t.eyeColor)),
-        zi(t));
+        zi(t),
+        applyV4Palette(t));
     });
     function Me() {
       return !!document.body.dataset.stretching;
@@ -4210,10 +4893,11 @@
       return !!document.body.dataset.drinking;
     }
     function Zi(e, t) {
-      if (ke()) {
-        ur();
+      if (Be && Be.isSleeping()) {
+        (Be.recordActivity(), ur());
         return;
       }
+      ke({ wakeSleeping: !1 });
       be && be.updateShakeDetection(e, t);
     }
     function ur() {
@@ -4251,6 +4935,12 @@
         ((je = (e.name || "CatCode").trim() || "CatCode"),
         ($n = !!e.visible),
         lt && (lt.textContent = je),
+        (document.body.dataset.catNameLength =
+          Array.from(je).length > 16
+            ? "long"
+            : Array.from(je).length > 10
+              ? "medium"
+              : "short"),
         document.body.toggleAttribute("data-show-name", $n));
     }
     function Et(e) {
@@ -4267,6 +4957,7 @@
             document.body.dataset.editingUserName ||
             document.body.dataset.editingFixedMessage ||
             document.body.dataset.editingPomodoroFocus ||
+            document.body.dataset.editingWellnessInterval ||
             document.body.dataset.editingShareDuration ||
             document.body.dataset.reminderForm
           ),
@@ -4370,6 +5061,38 @@
       ms = Ue.openPanel,
       la = Ue.closePanel,
       yr = Ue.resetForm;
+    let wellnessKind = "stretch";
+    function openWellnessIntervalEditor(payload = {}) {
+      if (!wellnessEditor || !wellnessInput) return;
+      wellnessKind = payload.kind === "drink" ? "drink" : "stretch";
+      wellnessInput.value = String(
+        Math.max(1, Math.min(360, Math.round(Number(payload.minutes) || 30))),
+      );
+      document.body.dataset.editingWellnessInterval = "1";
+      Ie.focusInput(wellnessInput);
+    }
+    function closeWellnessIntervalEditor() {
+      delete document.body.dataset.editingWellnessInterval;
+      Ie.update();
+    }
+    wellnessEditor &&
+      wellnessInput &&
+      wellnessEditor.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        let minutes = Math.max(
+          1,
+          Math.min(360, Math.round(Number(wellnessInput.value) || 30)),
+        );
+        try {
+          await window.electronAPI.wellnessIntervalSet({
+            kind: wellnessKind,
+            minutes,
+          });
+          closeWellnessIntervalEditor();
+        } catch {}
+      });
+    wellnessCancel &&
+      wellnessCancel.addEventListener("click", closeWellnessIntervalEditor);
     function ua() {
       return document.body.dataset.editingName
         ? (na(), !0)
@@ -4379,12 +5102,42 @@
             ? (ia(), !0)
             : document.body.dataset.editingPomodoroFocus
               ? (aa(), !0)
-              : document.body.dataset.editingShareDuration
-                ? (ca(), !0)
-                : document.body.dataset.reminderForm
-                  ? (yr(), !0)
-                  : !1;
+              : document.body.dataset.editingWellnessInterval
+                ? (closeWellnessIntervalEditor(), !0)
+                : document.body.dataset.editingShareDuration
+                  ? (ca(), !0)
+                  : document.body.dataset.reminderForm
+                    ? (yr(), !0)
+                    : !1;
     }
+    function dismissTransientUi() {
+      let closed = ua();
+      if (document.body.dataset.reminderPanel) {
+        (la(), yr(), (closed = !0));
+      }
+      return closed;
+    }
+    window.electronAPI.onDismissTransientUi &&
+      window.electronAPI.onDismissTransientUi(dismissTransientUi);
+    document.addEventListener(
+      "pointerdown",
+      (e) => {
+        let target = e.target;
+        if (
+          target &&
+          target.closest &&
+          target.closest(
+              "#cat-name-editor, #user-name-editor, #fixed-message-editor, " +
+              "#pomodoro-focus-editor, #wellness-interval-editor, " +
+              "#share-duration-editor, " +
+              "#reminder-panel, #reminder-clock-button",
+          )
+        )
+          return;
+        dismissTransientUi();
+      },
+      true,
+    );
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         if (ua()) {
@@ -4418,6 +5171,8 @@
     window.electronAPI.onFixedMessageEdit((e) => pr(e));
     window.electronAPI.onPomodoroFocusEdit((e) => gr(e));
     window.electronAPI.onPomodoroRestEdit((e) => gr(e, "rest"));
+    window.electronAPI.onWellnessIntervalEdit &&
+      window.electronAPI.onWellnessIntervalEdit(openWellnessIntervalEditor);
     if (window.electronAPI.networkOnline) {
       let e = () => {
         (window.electronAPI.networkStatus &&
@@ -4490,7 +5245,7 @@
     var Qe = ko({
       catObject: ve,
       stretchEndObject: dt,
-      overlays: [Kn, Jn, Qn, nr, rr, er, li, tr, Le],
+      overlays: [Kn, Jn, Qn, nr, wellnessEditor, rr, er, wellnessCompleteOverlay, reminderAcknowledgeOverlay, li, tr, Le],
       ensureSvgObjectReady: me,
       getPetPeekState: te,
       isDragging: Pe,
@@ -4499,6 +5254,14 @@
       setPetMouseEventsEnabled: Ye,
     });
     Qe.init();
+    if (typeof window != "undefined") {
+      window.CatCodeV4HitTest = {
+        isOpaqueHit: (poseEl, x, y) =>
+          hitOpaque(poseEl, x, y, document.body),
+        isCatHitPoint: (x, y) => Qe.isCatHitPoint(x, y),
+        invalidate: hitInvalidate,
+      };
+    }
     function ma(e, t, o) {
       return t >= e.left && t <= e.right && o >= e.top && o <= e.bottom;
     }
@@ -4524,8 +5287,6 @@
         !document.body.dataset.press &&
         !document.body.dataset.scroll &&
         !document.body.dataset.jump &&
-        !document.body.dataset.idleSleep &&
-        !document.body.dataset.idleWake &&
         !document.body.dataset.hunting &&
         !document.body.dataset.huntingReturn &&
         !document.body.dataset.drinking
@@ -4533,6 +5294,26 @@
     }
     function ha(e, t) {
       if (!Ar()) return !1;
+      // V4: whole painted silhouette (ears/head/body/paws/tail), not legacy
+      // head-only ellipse that only covered ~half the head.
+      if (document.body.dataset.catcodeModel === "v4")
+        return Qe.isCatHitPoint(e, t);
+      // V6 purr is intentionally head-only. The frame has no semantic PNG
+      // layers, so use a strict face-and-ear profile rather than a rectangle
+      // that accidentally includes the chest, paws, or tail.
+      if (document.body.dataset.catcodeModel === "v6-idle-preview") {
+        let u = window.CatCodeV6VisualPose,
+          y = u && typeof u.getActiveHost == "function" ? u.getActiveHost() : ve,
+          T = ga(y, e, t);
+        if (!T) return !1;
+        let face = pa(T.nx, T.ny, 0.48, 0.37, 0.29, 0.19) && T.ny <= 0.55,
+          earWidth = 0.04 + Math.max(0, Math.min(1, (T.ny - 0.08) / 0.29)) * 0.12,
+          leftEar =
+            T.ny >= 0.08 && T.ny <= 0.37 && Math.abs(T.nx - 0.31) <= earWidth,
+          rightEar =
+            T.ny >= 0.08 && T.ny <= 0.37 && Math.abs(T.nx - 0.65) <= earWidth;
+        return face || leftEar || rightEar;
+      }
       let o = ga(ve, e, t);
       return o ? pa(o.nx, o.ny, 0.4, 0.33, 0.25, 0.23) : !1;
     }
@@ -4546,6 +5327,8 @@
     }
     function Ea() {
       return (
+        document.body.dataset.catcodeModel !== "v6-idle-preview" &&
+        document.body.dataset.catcodeModelLatched !== "1" &&
         !Pe() &&
         !te() &&
         !Ze() &&
@@ -4571,6 +5354,17 @@
     }
     function Sa() {
       let e = document.body.dataset.speech || "";
+      let v6Pose = document.body.dataset.v6Pose || "";
+      let v6ExclusivePose =
+        v6Pose === "purr" ||
+        v6Pose === "celebrate" ||
+        v6Pose === "typing" ||
+        v6Pose === "scroll" ||
+        v6Pose === "hunt" ||
+        v6Pose === "tease" ||
+        v6Pose === "walk" ||
+        v6Pose === "dance" ||
+        v6Pose === "edge-peek";
       return (
         Pe() ||
         !!te() ||
@@ -4582,30 +5376,43 @@
         !!document.body.dataset.jump ||
         !!document.body.dataset.hunting ||
         !!document.body.dataset.huntingReturn ||
+        v6ExclusivePose ||
+        !!document.body.dataset.petRoaming ||
         !!document.body.dataset.drinking ||
         !!document.body.dataset.stretching ||
         !!document.body.dataset.purring ||
-        !!document.body.dataset.thinking ||
+        !!document.body.dataset.musicActive ||
+        !!document.body.dataset.musicDance ||
         !!(e && e !== "fixed") ||
         !!document.body.dataset.editingName ||
         !!document.body.dataset.editingUserName ||
         !!document.body.dataset.editingFixedMessage ||
         !!document.body.dataset.editingPomodoroFocus ||
+        !!document.body.dataset.editingWellnessInterval ||
         !!document.body.dataset.editingShareDuration ||
         !!document.body.dataset.reminderForm
       );
     }
     Be = Io({
       ensureSvgObjectReady: me,
+      getSvgObjectElement: (id) => document.getElementById(id),
       shouldBlockSleep: Sa,
       setIdleSvgClass: et,
       stopHuntingPose: De,
       stopPurring: Ge,
     });
-    function ke() {
-      return Be ? Be.recordActivity() : !1;
+    function ke(e) {
+      return Be ? Be.recordActivity(e) : !1;
     }
     Be && Be.schedule();
+    window.electronAPI.onPetWakeForPlay &&
+      window.electronAPI.onPetWakeForPlay(() => {
+        Be && Be.recordActivity();
+      });
+    window.addEventListener("catcode-music-activity", (e) => {
+      if (!Be) return;
+      e && e.detail && e.detail.active ? Be.recordActivity() : Be.schedule();
+    });
     we = Fo({
       catObject: ve,
       isIdlePoseInteractive: Ar,
@@ -4615,7 +5422,7 @@
       stopPurringSound: Ni,
     });
     function Aa(e, t) {
-      we && we.start(e, t);
+      (Be && Be.isSleeping() && Be.wake(), we && we.start(e, t));
     }
     function ba(e) {
       we && we.scheduleStop(e);
@@ -4643,6 +5450,9 @@
       scheduleStopPurring: ba,
       stopPurring: Ge,
       stopHuntingPose: De,
+      wakeSleeping: () => {
+        Be && Be.isSleeping() && Be.wake();
+      },
     });
     he = Bo({
       patternRenderer: gt,
@@ -4746,6 +5556,8 @@
           (Pa(e, t === "jump-start" ? "start" : "ing"), Ma(!0)));
     }
     for (let e of [
+      "purr-pose",
+      "sleep-pose",
       "press-left",
       "press-right",
       "scroll-unroll",
@@ -4755,6 +5567,8 @@
       "stretch-pose-ing",
     ])
       Oi(e, va);
+    me("purr-pose");
+    me("sleep-pose");
     me("stretch-pose-default");
     function La(e, t = 1200) {
       if (typeof window.requestIdleCallback == "function") {
@@ -4807,6 +5621,16 @@
         e && (e.textContent = ue("drinkPrompt", ye));
       },
     }).bind();
+    window.electronAPI.onWellnessNotification &&
+      window.electronAPI.onWellnessNotification((payload = {}) => {
+        let kind = payload.kind === "drink" ? "drink" : "stretch",
+          messageKey = kind === "drink" ? "drinkPrompt" : "stretchPrompt";
+        (ke(), Sr(), ft(ue(messageKey, ye), { duration: 8e3, kind: "reminder" }));
+      });
+    window.electronAPI.onWellnessStretchIgnored &&
+      window.electronAPI.onWellnessStretchIgnored(showIgnoredStretchReaction);
+    window.electronAPI.onPreviewAngryReaction &&
+      window.electronAPI.onPreviewAngryReaction(showIgnoredStretchReaction);
     var ot = Go({
       button: ui,
       closeButton: di,

@@ -65,6 +65,16 @@ function createLicenseService({ app, isMac, isWindows, logWarn, t, fetchImpl = g
     return id;
   }
 
+  function networkErrorDetails(cause) {
+    if (!cause || typeof cause !== "object") return String(cause || "unknown_error");
+    const fields = [
+      ["name", cause.name],
+      ["code", cause.code],
+      ["message", cause.message],
+    ].filter(([, value]) => typeof value === "string" && value.trim());
+    return fields.length ? fields.map(([name, value]) => `${name}=${JSON.stringify(value)}`).join(" ") : "unknown_error";
+  }
+
   function loadStoredLicense() {
     const value = readJson(licensePath());
     return value && value.v === 2 && typeof value.deviceId === "string" && typeof value.refreshToken === "string" && typeof value.entitlement === "string" ? value : null;
@@ -98,6 +108,8 @@ function createLicenseService({ app, isMac, isWindows, logWarn, t, fetchImpl = g
         signal: AbortSignal.timeout(15000),
       });
     } catch (cause) {
+      // Do not log request data: it contains the customer's license key.
+      logWarn && logWarn(`[CatCode] license request failed for ${endpoint}: ${networkErrorDetails(cause)}`);
       const error = new Error(translate("licenseNetworkFailed"));
       error.code = "LICENSE_NETWORK_FAILED";
       error.cause = cause;

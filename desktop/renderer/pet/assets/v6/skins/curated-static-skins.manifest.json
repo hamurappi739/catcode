@@ -1,0 +1,29 @@
+{
+  "schema": "catcode.v6.curated-static-skins.v1",
+  "skins": [
+    {
+      "id": "ginger-owner-v1.1",
+      "mappedAssets": 101,
+      "includesHuntFinalGaze": true,
+      "includesIdleHeadLayers": true,
+      "exactOwnerArt": true
+    },
+    {
+      "id": "black-owner-v1",
+      "mappedAssets": 78,
+      "includesHuntFinalGaze": false,
+      "includesIdleHeadLayers": true,
+      "exactOwnerArt": true,
+      "stillEyes": true
+    },
+    {
+      "id": "deep-black-owner-v1",
+      "mappedAssets": 78,
+      "includesHuntFinalGaze": false,
+      "includesIdleHeadLayers": true,
+      "exactOwnerArt": true,
+      "stillEyes": true
+    }
+  ],
+  "retiredFromSelector": ["midnight-owner-v1"]
+}

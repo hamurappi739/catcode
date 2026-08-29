@@ -1,0 +1,8 @@
+{
+  "schema": "catcode.v6.skin-candidate-manifest.v1",
+  "candidateId": "midnight-owner-v1",
+  "mappedAssets": 78,
+  "includesHuntFinalGaze": true,
+  "includesIdleHeadLayers": true,
+  "idleGazeBase": "idle-master.png"
+}

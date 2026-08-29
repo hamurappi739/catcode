@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
       - run: npm run check
-      - run: npm test
+      - run: npm run test:platform
       - name: Package unsigned beta
         run: npm run build:mac:beta:${{ matrix.arch }}
       - name: Verify architecture and native runtime

@@ -1,0 +1,10 @@
+{
+  "schema": "catcode.v6.skin-candidate-manifest.v1",
+  "candidateId": "ginger-owner-v1.1",
+  "mappedAssets": 101,
+  "acceptedCandidateHosts": 73,
+  "includesHuntFinalGaze": true,
+  "includesIdleHeadLayers": true,
+  "idleGazeBase": "idle/idle-master.png",
+  "idleGazeBaseNote": "Accepted ginger idle master in candidate layout; runtime alias idle-master.png is byte-identical."
+}

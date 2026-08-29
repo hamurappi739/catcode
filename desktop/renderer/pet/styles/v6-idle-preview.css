@@ -1,0 +1,84 @@
+#v6-idle-preview {
+  display: none;
+  position: absolute;
+  top: var(--cat-top);
+  left: 50%;
+  width: var(--cat-size);
+  aspect-ratio: 1;
+  /* The idle master is one flattened PNG. Attention must never rotate or
+     translate this whole silhouette; the gaze canvas owns that motion. */
+  transform: translateX(-50%);
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+}
+
+body[data-catcode-model="v6-idle-preview"] #v6-idle-preview {
+  display: block;
+}
+
+/* Pose owner (V6-M1) may hide idle while a sleep host is exclusive. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-settle"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-peek"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="celebrate"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="typing"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="scroll"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="hunt"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="tease"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="edge-peek"] #v6-idle-preview,
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="walk"] #v6-idle-preview {
+  display: none !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="dance"] #v6-idle-preview {
+  display: none !important;
+}
+
+/* Keep the V6 host visible even when the PNG failed — never reveal V4. */
+body[data-catcode-model="v6-idle-preview"][data-v6-idle-status="error"] #v6-idle-preview {
+  display: block;
+  opacity: 0;
+}
+
+/* The preview is intentionally idle-only. V4 poses and effects cannot become
+   visible over the V6 art while its semantic-mask contract is unfinished.
+   V6-M0: also latch via data-catcode-model-latched so pose CSS cannot win. */
+body[data-catcode-model="v6-idle-preview"] #cat,
+body[data-catcode-model="v6-idle-preview"] #purr-pose,
+body[data-catcode-model="v6-idle-preview"] #sleep-pose,
+body[data-catcode-model="v6-idle-preview"] #press-left,
+body[data-catcode-model="v6-idle-preview"] #press-right,
+body[data-catcode-model="v6-idle-preview"] #scroll-unroll,
+body[data-catcode-model="v6-idle-preview"] #jump-start,
+body[data-catcode-model="v6-idle-preview"] #jump-ing,
+body[data-catcode-model="v6-idle-preview"] #stretch-svg-end,
+body[data-catcode-model="v6-idle-preview"] #stretch-pose-default,
+body[data-catcode-model="v6-idle-preview"] #stretch-pose-ing,
+body[data-catcode-model="v6-idle-preview"] #playful-walk-sprite,
+body[data-catcode-model="v6-idle-preview"] #sleep-zzz,
+body[data-catcode-model="v6-idle-preview"] #heat-steam,
+body[data-catcode-model-latched="1"] #cat,
+body[data-catcode-model-latched="1"] #purr-pose,
+body[data-catcode-model-latched="1"] #sleep-pose,
+body[data-catcode-model-latched="1"] #press-left,
+body[data-catcode-model-latched="1"] #press-right,
+body[data-catcode-model-latched="1"] #scroll-unroll,
+body[data-catcode-model-latched="1"] #jump-start,
+body[data-catcode-model-latched="1"] #jump-ing,
+body[data-catcode-model-latched="1"] #stretch-svg-end,
+body[data-catcode-model-latched="1"] #stretch-pose-default,
+body[data-catcode-model-latched="1"] #stretch-pose-ing,
+body[data-catcode-model-latched="1"] #playful-walk-sprite,
+body[data-catcode-model-latched="1"] #sleep-zzz,
+body[data-catcode-model-latched="1"] #heat-steam {
+  display: none !important;
+}
+
+/* Hearts are UI chrome, not V4 artwork. Reuse them only while the V6 purr
+   pose is visibly active; every legacy SVG host remains hidden above. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="purr"] #purr-hearts,
+body[data-catcode-model-latched="1"][data-v6-pose="purr"] #purr-hearts {
+  display: block !important;
+}

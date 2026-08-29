@@ -7,7 +7,69 @@
   transform: translateX(-50%);
   pointer-events: none;
   display: none;
-  z-index: 4;
+  z-index: 12;
+}
+
+#purr-pose {
+  position: absolute;
+  top: var(--cat-top);
+  left: 50%;
+  width: var(--cat-size);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  display: none;
+  z-index: 3;
+}
+
+/* Non-V4 / fallback: hide idle while purring. V4 visibility is owned by
+   body[data-v4-pose] so sleep and purr cannot both show. */
+body[data-purring]:not([data-catcode-model="v4"]) #cat {
+  display: none;
+}
+
+body[data-purring]:not([data-catcode-model="v4"]) #purr-pose {
+  display: block;
+  animation: v4-purr-pose-breathe 0.72s steps(2, end) infinite;
+}
+
+/* V4 purr: keep the live idle SVG (current palette) and hide the separate
+   purr asset so recoloring never snaps to a lighter fallback cat. */
+body[data-catcode-model="v4"][data-v4-pose="purr"] #purr-pose {
+  display: none !important;
+  animation: none !important;
+}
+
+body[data-catcode-model="v4"][data-v4-pose="purr"] #cat {
+  display: block !important;
+  top: var(--cat-top) !important;
+  width: var(--cat-size) !important;
+  transform: translateX(-50%) !important;
+  animation: none !important;
+}
+
+body[data-catcode-model="v4"][data-v4-pose="purr"] #sleep-pose {
+  display: none !important;
+  animation: none !important;
+}
+
+body[data-catcode-model="v4"][data-v4-pose="idle"] #purr-pose {
+  display: none !important;
+  animation: none !important;
+}
+
+@keyframes v4-purr-pose-breathe {
+  0%, 100% { transform: translateX(-50%) translateY(0) scale(1); }
+  50% { transform: translateX(-50%) translateY(-1px) scale(1.012); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-purring]:not([data-catcode-model="v4"]) #purr-pose {
+    animation: none !important;
+    transform: translateX(-50%) translateY(1px);
+  }
 }
 
 body[data-purring] #purr-hearts {
@@ -19,7 +81,7 @@ body[data-purring] #purr-hearts {
   left: 42%;
   top: 18%;
   display: block;
-  width: 14.8%;
+  width: 18%;
   aspect-ratio: 8 / 6;
   background: url("../../../assets/svg/heart.svg") center / contain no-repeat;
   image-rendering: pixelated;
@@ -34,16 +96,16 @@ body[data-purring] #purr-hearts span {
 }
 
 #purr-hearts span:nth-child(2) {
-  left: 53%;
-  top: 16%;
-  width: 11.8%;
+  left: 55%;
+  top: 14%;
+  width: 14%;
   animation-delay: 0.24s;
 }
 
 #purr-hearts span:nth-child(3) {
-  left: 36%;
-  top: 23%;
-  width: 10%;
+  left: 32%;
+  top: 21%;
+  width: 12.5%;
   animation-delay: 0.48s;
 }
 

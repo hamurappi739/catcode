@@ -3,7 +3,11 @@
 // Owns speech bubble timers, base speech, thinking dots, and AI task speech.
 
 const AI_TASK_WATCHDOG_DEFAULT_MS = 180000;
-const AI_TASK_WATCHDOG_BY_AGENT = { antigravity: 3000 };
+const AI_TASK_WATCHDOG_BY_AGENT = {
+  antigravity: 3000,
+  // QA --catcode-preview-thinking uses agentId "preview" (24h; refresh on pet reload).
+  preview: 24 * 60 * 60 * 1000,
+};
 const AI_COMPLETE_VISUAL_HOLD_MS = 1600;
 
 function createSpeech({

@@ -161,7 +161,7 @@ const I18N = {
     restLabel: "Перерыв",
     startBreak: (name) => `${name || "Человек"}, пора отдохнуть!`,
     startFocus: (name) => `${name || "Человек"}, возвращаемся к фокусу!`,
-    drinkPrompt: (name) => `${name || "Человек"}, пора попить воды!`,
+    drinkPrompt: (name) => `${name || "Человек"}, пора попить воды, хорошо?`,
     stretchPrompt: (name) => `${name || "Человек"}, пора размяться!`,
     updateChecking: "Проверяю...",
     updateAvailable: "Обновить",

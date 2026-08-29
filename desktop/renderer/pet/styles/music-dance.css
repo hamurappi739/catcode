@@ -1,0 +1,83 @@
+/* Legacy (non-V4) CSS hop only.
+   G-D3: V4 must not treat data-music-dance as a visible dance visual.
+   Future authored V4 dance uses data-v4-dance-active + pose objects, not these hops. */
+
+body[data-music-dance]:not([data-catcode-model="v4"]) #cat {
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+body[data-music-dance]:not([data-catcode-model="v4"])[data-music-dance-variant="1"] #cat {
+  animation: catcode-dance-paws-up var(--music-dance-duration, 0.56s)
+    ease-in-out infinite;
+}
+
+body[data-music-dance]:not([data-catcode-model="v4"])[data-music-dance-variant="2"] #cat {
+  animation: catcode-dance-side-step var(--music-dance-duration, 0.64s)
+    ease-in-out infinite;
+}
+
+body[data-music-dance]:not([data-catcode-model="v4"])[data-music-dance-variant="3"] #cat {
+  animation: catcode-dance-hop var(--music-dance-duration, 0.48s)
+    ease-in-out infinite;
+}
+
+body[data-music-dance]:not([data-catcode-model="v4"])[data-music-beat] #cat {
+  filter: brightness(1.08);
+}
+
+@keyframes catcode-dance-paws-up {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0) scale(0.98, 1.02) rotate(-2deg);
+  }
+  25% {
+    transform: translateX(-50%) translateY(-6px) scale(1, 1.04) rotate(2deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-2px) scale(0.98, 1.02) rotate(0deg);
+  }
+  75% {
+    transform: translateX(-50%) translateY(-6px) scale(1, 1.04) rotate(-2deg);
+  }
+}
+
+@keyframes catcode-dance-side-step {
+  0%,
+  100% {
+    transform: translateX(calc(-50% - 4px)) translateY(-1px) rotate(-5deg);
+  }
+  25% {
+    transform: translateX(-50%) translateY(-5px) rotate(0deg);
+  }
+  50% {
+    transform: translateX(calc(-50% + 4px)) translateY(-1px) rotate(5deg);
+  }
+  75% {
+    transform: translateX(-50%) translateY(-5px) rotate(0deg);
+  }
+}
+
+@keyframes catcode-dance-hop {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(1px) scale(1.04, 0.96) rotate(0deg);
+  }
+  25% {
+    transform: translateX(calc(-50% + 3px)) translateY(-8px) scale(0.98, 1.04)
+      rotate(5deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-3px) scale(1, 1) rotate(0deg);
+  }
+  75% {
+    transform: translateX(calc(-50% - 3px)) translateY(-8px) scale(0.98, 1.04)
+      rotate(-5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-music-dance]:not([data-catcode-model="v4"]) #cat {
+    animation-duration: 0.95s;
+  }
+}

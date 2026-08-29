@@ -1,0 +1,1123 @@
+{
+  "generatedAt": "2026-08-13T15:29:19.897Z",
+  "maskEncoding": "R=classId (1 coat, 2 eye, 3 inner-ear, 4 line, 5 prop), A=255",
+  "count": 93,
+  "assets": [
+    {
+      "rel": "idle-master.png",
+      "family": "idle",
+      "counts": {
+        "transparent": 709548,
+        "coat": 305024,
+        "eye": 19911,
+        "innerEar": 13190,
+        "line": 903,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "head-layers/idle-body-under-head-1024.png",
+      "family": "idle-head-layers",
+      "counts": {
+        "transparent": 883829,
+        "coat": 164747,
+        "eye": 0,
+        "innerEar": 0,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "head-layers/idle-head-with-neck-underlap-1024.png",
+      "family": "idle-head-layers",
+      "counts": {
+        "transparent": 839566,
+        "coat": 175006,
+        "eye": 19911,
+        "innerEar": 13190,
+        "line": 903,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "edge-peek/peek-from-left-looking-right.png",
+      "family": "edge-peek",
+      "counts": {
+        "transparent": 867963,
+        "coat": 160293,
+        "eye": 11963,
+        "innerEar": 7482,
+        "line": 875,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "edge-peek/peek-from-right-looking-left.png",
+      "family": "edge-peek",
+      "counts": {
+        "transparent": 867963,
+        "coat": 160293,
+        "eye": 11963,
+        "innerEar": 7482,
+        "line": 875,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "sleep/sleep-f0-closed.png",
+      "family": "sleep",
+      "counts": {
+        "transparent": 790171,
+        "coat": 235239,
+        "eye": 13675,
+        "innerEar": 9360,
+        "line": 131,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "sleep/sleep-f1-transition.png",
+      "family": "sleep",
+      "counts": {
+        "transparent": 733127,
+        "coat": 305584,
+        "eye": 0,
+        "innerEar": 9865,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "sleep/sleep-f2-peek.png",
+      "family": "sleep",
+      "counts": {
+        "transparent": 734405,
+        "coat": 300750,
+        "eye": 3381,
+        "innerEar": 9864,
+        "line": 176,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f0-rest.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 707514,
+        "coat": 327330,
+        "eye": 0,
+        "innerEar": 13732,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f1-gentle-left.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 708690,
+        "coat": 326373,
+        "eye": 0,
+        "innerEar": 13513,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f2-gentle-rise.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 705451,
+        "coat": 330348,
+        "eye": 0,
+        "innerEar": 12777,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f3-gentle-peak.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 709790,
+        "coat": 325041,
+        "eye": 0,
+        "innerEar": 13745,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f4-centered.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 705982,
+        "coat": 329249,
+        "eye": 0,
+        "innerEar": 13345,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f5-gentle-right.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 705970,
+        "coat": 327698,
+        "eye": 0,
+        "innerEar": 14908,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f6-gentle-return.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 709427,
+        "coat": 325449,
+        "eye": 0,
+        "innerEar": 13700,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f7-loop-settle.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 703077,
+        "coat": 331880,
+        "eye": 0,
+        "innerEar": 13619,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "purr-smooth/purr-f8-rest.png",
+      "family": "purr",
+      "counts": {
+        "transparent": 707514,
+        "coat": 327330,
+        "eye": 0,
+        "innerEar": 13732,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "celebrate/celebrate-f0-ready.png",
+      "family": "celebrate",
+      "counts": {
+        "transparent": 869585,
+        "coat": 159862,
+        "eye": 11517,
+        "innerEar": 7403,
+        "line": 209,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "celebrate/celebrate-f1-jump.png",
+      "family": "celebrate",
+      "counts": {
+        "transparent": 857394,
+        "coat": 174004,
+        "eye": 9501,
+        "innerEar": 6773,
+        "line": 904,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "celebrate/celebrate-f2-return.png",
+      "family": "celebrate",
+      "counts": {
+        "transparent": 860475,
+        "coat": 168223,
+        "eye": 11379,
+        "innerEar": 7562,
+        "line": 937,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "typing/typing-f0-ready.png",
+      "family": "typing",
+      "counts": {
+        "transparent": 747821,
+        "coat": 211803,
+        "eye": 10862,
+        "innerEar": 6607,
+        "line": 71483,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "typing/typing-f1-left.png",
+      "family": "typing",
+      "counts": {
+        "transparent": 757181,
+        "coat": 209500,
+        "eye": 9676,
+        "innerEar": 6221,
+        "line": 65998,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "typing/typing-f2-right.png",
+      "family": "typing",
+      "counts": {
+        "transparent": 750589,
+        "coat": 212092,
+        "eye": 10925,
+        "innerEar": 6580,
+        "line": 68387,
+        "prop": 3
+      }
+    },
+    {
+      "rel": "typing/typing-f3-fast.png",
+      "family": "typing",
+      "counts": {
+        "transparent": 752191,
+        "coat": 213528,
+        "eye": 7894,
+        "innerEar": 6602,
+        "line": 68359,
+        "prop": 2
+      }
+    },
+    {
+      "rel": "typing/typing-f4-tense.png",
+      "family": "typing",
+      "counts": {
+        "transparent": 752696,
+        "coat": 225604,
+        "eye": 5588,
+        "innerEar": 330,
+        "line": 64150,
+        "prop": 208
+      }
+    },
+    {
+      "rel": "scroll/scroll-f0-ready.png",
+      "family": "scroll",
+      "counts": {
+        "transparent": 809134,
+        "coat": 204849,
+        "eye": 5017,
+        "innerEar": 6141,
+        "line": 803,
+        "prop": 22632
+      }
+    },
+    {
+      "rel": "scroll/scroll-f1-reach.png",
+      "family": "scroll",
+      "counts": {
+        "transparent": 804472,
+        "coat": 211183,
+        "eye": 4955,
+        "innerEar": 6229,
+        "line": 865,
+        "prop": 20872
+      }
+    },
+    {
+      "rel": "scroll/scroll-f2-unroll.png",
+      "family": "scroll",
+      "counts": {
+        "transparent": 806617,
+        "coat": 199478,
+        "eye": 8682,
+        "innerEar": 6296,
+        "line": 753,
+        "prop": 26750
+      }
+    },
+    {
+      "rel": "scroll/scroll-f3-pull.png",
+      "family": "scroll",
+      "counts": {
+        "transparent": 804165,
+        "coat": 171261,
+        "eye": 33951,
+        "innerEar": 11871,
+        "line": 646,
+        "prop": 26682
+      }
+    },
+    {
+      "rel": "scroll/scroll-f4-recover.png",
+      "family": "scroll",
+      "counts": {
+        "transparent": 817344,
+        "coat": 165150,
+        "eye": 38315,
+        "innerEar": 9018,
+        "line": 798,
+        "prop": 17951
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f0-alert.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 747686,
+        "coat": 270323,
+        "eye": 16720,
+        "innerEar": 12006,
+        "line": 1841,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f1-shoulder-drop.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 737347,
+        "coat": 278629,
+        "eye": 17484,
+        "innerEar": 13178,
+        "line": 1938,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f2-forelegs-lower.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 756036,
+        "coat": 260375,
+        "eye": 17428,
+        "innerEar": 12739,
+        "line": 1998,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f3-half-crouch.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 774023,
+        "coat": 242441,
+        "eye": 17712,
+        "innerEar": 12320,
+        "line": 2080,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f4-low-crouch.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 776402,
+        "coat": 222165,
+        "eye": 42045,
+        "innerEar": 5885,
+        "line": 2079,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f5-deep-stalk.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 785804,
+        "coat": 194432,
+        "eye": 55370,
+        "innerEar": 10923,
+        "line": 2047,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f6-near-hold.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 794459,
+        "coat": 176956,
+        "eye": 64488,
+        "innerEar": 10734,
+        "line": 1939,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f7-watch-hold.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 798349,
+        "coat": 171356,
+        "eye": 66523,
+        "innerEar": 10767,
+        "line": 1581,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "hunt-smooth/hunt-f8-gaze-ready.png",
+      "family": "hunt",
+      "counts": {
+        "transparent": 802937,
+        "coat": 170283,
+        "eye": 64589,
+        "innerEar": 10767,
+        "line": 0,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "tease/tease-f0-stalk.png",
+      "family": "tease",
+      "counts": {
+        "transparent": 810990,
+        "coat": 217131,
+        "eye": 11412,
+        "innerEar": 7655,
+        "line": 1388,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "tease/tease-f1-reach.png",
+      "family": "tease",
+      "counts": {
+        "transparent": 803475,
+        "coat": 224988,
+        "eye": 11821,
+        "innerEar": 7738,
+        "line": 554,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "tease/tease-f2-catch.png",
+      "family": "tease",
+      "counts": {
+        "transparent": 798060,
+        "coat": 224556,
+        "eye": 17268,
+        "innerEar": 7759,
+        "line": 933,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "tease/tease-f3-hold.png",
+      "family": "tease",
+      "counts": {
+        "transparent": 796956,
+        "coat": 203680,
+        "eye": 39633,
+        "innerEar": 7736,
+        "line": 571,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "tease/tease-f4-release.png",
+      "family": "tease",
+      "counts": {
+        "transparent": 699855,
+        "coat": 309417,
+        "eye": 25715,
+        "innerEar": 12148,
+        "line": 1441,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-left-f0.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 712681,
+        "coat": 322713,
+        "eye": 6290,
+        "innerEar": 6626,
+        "line": 266,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-left-f1.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 701412,
+        "coat": 333126,
+        "eye": 7006,
+        "innerEar": 6964,
+        "line": 68,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-left-f2.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 703653,
+        "coat": 330484,
+        "eye": 7044,
+        "innerEar": 6721,
+        "line": 674,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-left-f3.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 707627,
+        "coat": 325034,
+        "eye": 8520,
+        "innerEar": 6895,
+        "line": 500,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-left-f4.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 704593,
+        "coat": 330402,
+        "eye": 6774,
+        "innerEar": 6796,
+        "line": 11,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-right-f0.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 712681,
+        "coat": 322713,
+        "eye": 6290,
+        "innerEar": 6626,
+        "line": 266,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-right-f1.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 701412,
+        "coat": 333126,
+        "eye": 7006,
+        "innerEar": 6964,
+        "line": 68,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-right-f2.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 703653,
+        "coat": 330484,
+        "eye": 7044,
+        "innerEar": 6721,
+        "line": 674,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-right-f3.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 707627,
+        "coat": 325034,
+        "eye": 8520,
+        "innerEar": 6895,
+        "line": 500,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "walk/walk-right-f4.png",
+      "family": "walk",
+      "counts": {
+        "transparent": 704593,
+        "coat": 330402,
+        "eye": 6774,
+        "innerEar": 6796,
+        "line": 11,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/twist/dance-two-twist-f0-neutral.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 737516,
+        "coat": 277161,
+        "eye": 22635,
+        "innerEar": 9715,
+        "line": 1549,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/twist/dance-two-twist-f1-left-step.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 747825,
+        "coat": 270863,
+        "eye": 18568,
+        "innerEar": 9564,
+        "line": 1756,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/twist/dance-two-twist-f2-left-high.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 741375,
+        "coat": 277108,
+        "eye": 18863,
+        "innerEar": 9549,
+        "line": 1681,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/twist/dance-two-twist-f3-center.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 753436,
+        "coat": 261624,
+        "eye": 22239,
+        "innerEar": 9704,
+        "line": 1573,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/twist/dance-two-twist-f4-right-step.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 747825,
+        "coat": 270863,
+        "eye": 18568,
+        "innerEar": 9564,
+        "line": 1756,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/twist/dance-two-twist-f5-right-high.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 741375,
+        "coat": 277108,
+        "eye": 18863,
+        "innerEar": 9549,
+        "line": 1681,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/twist/dance-two-twist-f6-both-paws.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 724590,
+        "coat": 289798,
+        "eye": 22939,
+        "innerEar": 9690,
+        "line": 1559,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/twist/dance-two-twist-f7-loop.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 737516,
+        "coat": 277161,
+        "eye": 22635,
+        "innerEar": 9715,
+        "line": 1549,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/march/dance-three-march-f0-neutral.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 737516,
+        "coat": 277161,
+        "eye": 22635,
+        "innerEar": 9715,
+        "line": 1549,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/march/dance-three-march-f1-left-step.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 745615,
+        "coat": 272539,
+        "eye": 19466,
+        "innerEar": 9674,
+        "line": 1282,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/march/dance-three-march-f2-left-knee.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 743806,
+        "coat": 275766,
+        "eye": 17863,
+        "innerEar": 9687,
+        "line": 1454,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/march/dance-three-march-f3-center.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 737516,
+        "coat": 277161,
+        "eye": 22635,
+        "innerEar": 9715,
+        "line": 1549,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/march/dance-three-march-f4-right-step.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 745615,
+        "coat": 272539,
+        "eye": 19466,
+        "innerEar": 9674,
+        "line": 1282,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/march/dance-three-march-f5-right-knee.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 743806,
+        "coat": 275766,
+        "eye": 17863,
+        "innerEar": 9687,
+        "line": 1454,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/march/dance-three-march-f6-pump.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 753038,
+        "coat": 265372,
+        "eye": 19255,
+        "innerEar": 9697,
+        "line": 1214,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/march/dance-three-march-f7-loop.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 737516,
+        "coat": 277161,
+        "eye": 22635,
+        "innerEar": 9715,
+        "line": 1549,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/paw-groove/paw-groove-f0-ready.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 729964,
+        "coat": 287393,
+        "eye": 17246,
+        "innerEar": 12148,
+        "line": 1825,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/paw-groove/paw-groove-f1-left-lean.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 733461,
+        "coat": 286635,
+        "eye": 16234,
+        "innerEar": 10451,
+        "line": 1795,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/paw-groove/paw-groove-f2-right-lean.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 736759,
+        "coat": 281725,
+        "eye": 16949,
+        "innerEar": 11654,
+        "line": 1489,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f00-ready.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1132336,
+        "coat": 385109,
+        "eye": 33320,
+        "innerEar": 17969,
+        "line": 3782,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f01-left-bounce.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1159106,
+        "coat": 363216,
+        "eye": 30753,
+        "innerEar": 16147,
+        "line": 3294,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f02-left-punch.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1120141,
+        "coat": 398954,
+        "eye": 32020,
+        "innerEar": 17885,
+        "line": 3516,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f03-center-bounce.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1156360,
+        "coat": 364784,
+        "eye": 30064,
+        "innerEar": 17985,
+        "line": 3323,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f04-right-bounce.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1132000,
+        "coat": 387395,
+        "eye": 32348,
+        "innerEar": 17572,
+        "line": 3201,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f05-right-punch.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1133117,
+        "coat": 387999,
+        "eye": 30746,
+        "innerEar": 17102,
+        "line": 3552,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f06-bounce-up.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1123732,
+        "coat": 396400,
+        "eye": 31167,
+        "innerEar": 17927,
+        "line": 3290,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f07-shoulder-pop.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1118345,
+        "coat": 399037,
+        "eye": 33729,
+        "innerEar": 18085,
+        "line": 3320,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f08-settle.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1139698,
+        "coat": 378834,
+        "eye": 33317,
+        "innerEar": 17262,
+        "line": 3405,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/drill/drill-f09-loop-return.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1135299,
+        "coat": 387377,
+        "eye": 28317,
+        "innerEar": 17903,
+        "line": 3620,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f00-ready.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1114460,
+        "coat": 404631,
+        "eye": 32724,
+        "innerEar": 17229,
+        "line": 3472,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f01-left-forward.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1112220,
+        "coat": 400316,
+        "eye": 39158,
+        "innerEar": 17627,
+        "line": 3195,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f02-left-knee.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1105049,
+        "coat": 410324,
+        "eye": 37599,
+        "innerEar": 16454,
+        "line": 3090,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f03-center-downbeat.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1111880,
+        "coat": 412089,
+        "eye": 28726,
+        "innerEar": 16720,
+        "line": 3101,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f04-right-forward.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1112409,
+        "coat": 399267,
+        "eye": 40628,
+        "innerEar": 17129,
+        "line": 3083,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f05-right-knee.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1119571,
+        "coat": 394835,
+        "eye": 37866,
+        "innerEar": 17088,
+        "line": 3156,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f06-center-rise.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1110482,
+        "coat": 412185,
+        "eye": 29239,
+        "innerEar": 17501,
+        "line": 3109,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f07-left-recover.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1117502,
+        "coat": 408422,
+        "eye": 26264,
+        "innerEar": 17201,
+        "line": 3127,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f08-settle.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1113576,
+        "coat": 411914,
+        "eye": 26873,
+        "innerEar": 16994,
+        "line": 3159,
+        "prop": 0
+      }
+    },
+    {
+      "rel": "dance/hip-hop/hiphop-f09-loop-return.png",
+      "family": "dance",
+      "counts": {
+        "transparent": 1118434,
+        "coat": 403816,
+        "eye": 30080,
+        "innerEar": 17108,
+        "line": 3078,
+        "prop": 0
+      }
+    }
+  ]
+}

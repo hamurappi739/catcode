@@ -11,6 +11,12 @@ const PATTERN_PART_MAPPING = {
   earL: ["ear-left"],
   earR: ["ear-right"],
 };
+const patternCoordinateTools =
+  typeof window !== "undefined" && window.CatCodePatternCoordinates
+    ? window.CatCodePatternCoordinates
+    : typeof require === "function"
+      ? require("../../../pattern-coordinate-normalizer")
+      : null;
 
 // Pattern coordinates are now stored on a two-times denser grid.  Keeping the
 // conversion here lets pre-64x64 presets render unchanged in every pose.
@@ -28,6 +34,8 @@ const LEGACY_PART_CELLS = {
 };
 
 function normalizePatternResolution(pattern) {
+  if (patternCoordinateTools)
+    return patternCoordinateTools.normalizePatternCoordinates(pattern);
   const source = pattern && typeof pattern === "object" ? pattern : {};
   if (source.pixelResolution === DETAIL_SCALE) return source;
 

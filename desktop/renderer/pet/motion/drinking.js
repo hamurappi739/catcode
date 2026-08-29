@@ -6,6 +6,10 @@
 
 const DRINK_DURATION_MS = 3000;
 
+// Mirrors desktop/water-reminders-gate.js — main must not send drink IPC while
+// gated; this is a renderer defense so a stale event cannot start drinking.
+const WATER_REMINDERS_TEMPORARILY_DISABLED = false;
+
 function createDrinkingMotion({
   electronAPI,
   body = document.body,
@@ -24,6 +28,7 @@ function createDrinkingMotion({
   }
 
   function start() {
+    if (WATER_REMINDERS_TEMPORARILY_DISABLED) return;
     if (body.dataset.drinking) return;
     if (typeof onBeforeDrink === "function") onBeforeDrink();
     if (typeof stopHuntingPose === "function") stopHuntingPose();

@@ -1,28 +1,48 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 4,
   "app": "catcode",
   "preset": {
-    "name": "Мой кот",
+    "name": "My cat",
+    "origin": "custom",
     "createdAt": "2026-01-01T00:00:00.000Z",
     "updatedAt": "2026-01-01T00:00:00.000Z",
     "pattern": {
-      "baseColor": "#1A1A1A",
+      "schemaVersion": 4,
+      "name": "My cat",
       "pixelResolution": 2,
-      "eyeColor": "#1A1A1A",
-      "eyeBgColor": "#FFFFFF",
+      "baseColor": "#20242D",
+      "earInnerColor": "#F18AA5",
+      "eyeColor": "#A7EFF0",
+      "eyeBgColor": "#EDF4F5",
+      "eyeOutlineColor": "#1C1C1C",
       "eyePupilScale": 100,
+      "eyeStyle": "natural",
+      "eyePupilColor": "#141820",
       "oddEye": false,
-      "eyeColorLeft": "#1A1A1A",
-      "eyeColorRight": "#1A1A1A",
-      "head": [],
-      "body": [],
-      "tail": [],
-      "legFl": [],
-      "legFr": [],
-      "legRl": [],
-      "legRr": [],
-      "earL": [],
-      "earR": []
+      "eyeColorLeft": "#A7EFF0",
+      "eyeColorRight": "#A7EFF0",
+      "closedLidColor": "#1A1E26",
+      "noseColor": "#304055",
+      "markingColor": "#3A4559",
+      "markings": [],
+      "regionColors": {
+        "head": "",
+        "body": "",
+        "frontPaws": "",
+        "hindPaws": "",
+        "tail": "",
+        "ears": ""
+      },
+      "regionMarkings": {
+        "head": [],
+        "body": [],
+        "frontPaws": [],
+        "hindPaws": [],
+        "tail": [],
+        "ears": []
+      },
+      "sidePatternMode": "auto",
+      "legacy": {}
     }
   }
 }

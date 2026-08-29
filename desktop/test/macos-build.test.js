@@ -20,6 +20,7 @@ test("production macOS packaging is hardened, notarized, and architecture-specif
   assert.equal(dmg.contents[1].path, "/Applications");
   assert.deepEqual(mac.binaries, [
     "Contents/Resources/app.asar.unpacked/node_modules/ffmpeg-static/ffmpeg",
+    "Contents/Resources/app.asar.unpacked/native/macos/cursor-warp",
   ]);
 });
 

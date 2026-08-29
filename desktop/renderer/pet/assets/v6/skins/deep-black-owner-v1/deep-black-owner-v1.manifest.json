@@ -1,0 +1,10 @@
+{
+  "schema": "catcode.v6.skin-candidate-manifest.v1",
+  "candidateId": "deep-black-owner-v1",
+  "mappedAssets": 78,
+  "includesHuntFinalGaze": false,
+  "includesIdleHeadLayers": true,
+  "idleGazeBase": "idle-master.png",
+  "idleGazeBaseNote": "owner idle has baked yellow eyes/pupils; runtime must NOT paint turquoise gaze overlay",
+  "stillEyes": true
+}

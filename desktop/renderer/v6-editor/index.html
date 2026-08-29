@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'"
+    />
+    <title>Редактор кота</title>
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body>
+    <main class="editor-shell">
+      <section class="preview-area" aria-label="Предпросмотр окраса">
+        <div class="preview-heading">
+          <h1>Редактор кота</h1>
+          <p id="status" aria-live="polite"></p>
+        </div>
+        <div class="preview-grid">
+          <figure class="preview-card">
+            <img
+              id="preview-idle"
+              alt="Кот в покое"
+              src="../pet/assets/v6/skins/black-owner-v1/idle-master.png"
+              width="256"
+              height="256"
+            />
+            <figcaption>Покой</figcaption>
+          </figure>
+          <figure class="preview-card">
+            <img
+              id="preview-walkLeft"
+              alt="Кот идёт влево"
+              src="../pet/assets/v6/skins/black-owner-v1/walk/walk-left-f0.png"
+              width="256"
+              height="256"
+            />
+            <figcaption>Прогулка влево</figcaption>
+          </figure>
+          <figure class="preview-card">
+            <img
+              id="preview-walkRight"
+              alt="Кот идёт вправо"
+              src="../pet/assets/v6/skins/black-owner-v1/walk/walk-right-f0.png"
+              width="256"
+              height="256"
+            />
+            <figcaption>Прогулка вправо</figcaption>
+          </figure>
+          <figure class="preview-card">
+            <img
+              id="preview-sleep"
+              alt="Спящий кот"
+              src="../pet/assets/v6/skins/black-owner-v1/sleep/sleep-f1-transition.png"
+              width="256"
+              height="256"
+            />
+            <figcaption>Сон</figcaption>
+          </figure>
+          <figure class="preview-card">
+            <img
+              id="preview-hunt"
+              alt="Кот в охоте"
+              src="../pet/assets/v6/skins/black-owner-v1/hunt-smooth/hunt-f8-gaze-ready.png"
+              width="256"
+              height="256"
+            />
+            <figcaption>Охота</figcaption>
+          </figure>
+          <figure class="preview-card">
+            <img
+              id="preview-typing"
+              alt="Кот печатает"
+              src="../pet/assets/v6/skins/black-owner-v1/typing/typing-f0-ready.png"
+              width="256"
+              height="256"
+            />
+            <figcaption>Печать</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <aside class="controls" aria-label="Палитра окраса">
+        <div class="controls-heading">
+          <h2>Палитра</h2>
+          <button type="button" id="reset" class="icon-button" title="Сбросить">↺</button>
+        </div>
+        <div class="color-list">
+          <label><span>Основной окрас</span><input type="color" data-token="coatBase" /></label>
+          <label><span>Тень шерсти</span><input type="color" data-token="coatShadow" /></label>
+          <label><span>Внешний контур</span><input type="color" data-token="outline" /></label>
+          <label><span>Линии тела</span><input type="color" data-token="separator" /></label>
+          <label><span>Внутри ушей</span><input type="color" data-token="earInner" /></label>
+          <label><span>Радужка</span><input type="color" data-token="iris" /></label>
+          <label><span>Нос</span><input type="color" data-token="nose" /></label>
+          <label><span>Рот</span><input type="color" data-token="mouth" /></label>
+        </div>
+        <div class="actions">
+          <button type="button" id="apply" class="primary">Применить</button>
+          <button type="button" id="use-black">Вернуть чёрного</button>
+        </div>
+      </aside>
+    </main>
+    <script src="../pet/v6-custom-palette-contracts.js"></script>
+    <script src="../pet/v6-custom-palette-core.js"></script>
+    <script src="v6-editor-hunt-preview.js"></script>
+    <script src="editor.js"></script>
+  </body>
+</html>

@@ -11,6 +11,11 @@ native dependency is checked against the exact machine architecture.
 - `uiohook-napi` includes both `darwin-arm64` and `darwin-x64` native binaries.
 - `ffmpeg-static` is installed separately for each target architecture.
 - The onboarding opens the correct macOS Privacy & Security pages.
+- Walking and jumping use the shared cross-platform movement system. Cursor
+  stealing uses the packaged macOS helper after Accessibility permission is
+  granted.
+- Music dancing and automatic full-screen hiding remain Windows-only and are
+  described that way in the macOS onboarding.
 - Production builds use Hardened Runtime, Apple signing, notarization, and a
   stapled notarization ticket.
 - The packaged application is checked for the correct Electron, FFmpeg, and
@@ -93,10 +98,12 @@ missing. It never prints secret values.
 6. Run `Show my CatCode`, grant Screen Recording, and save the result.
 7. Confirm startup at login, tray actions, reminders, Pomodoro, water, stretch,
    cat editor, custom skin import/export, and Russian/English switching.
-8. Restart offline and confirm the cached signed entitlement works.
-9. Reconnect, revoke the test license, wait for the next refresh, and confirm
+8. Enable walking, jumping, and cursor stealing separately. Confirm playful
+   actions do not interrupt sleep, dragging, or an important notification.
+9. Restart offline and confirm the cached signed entitlement works.
+10. Reconnect, revoke the test license, wait for the next refresh, and confirm
    access is removed.
-10. Move the application to Trash, reinstall it, and verify the expected local
+11. Move the application to Trash, reinstall it, and verify the expected local
     settings/license retention behavior.
 
 The automated workflow validates packaging and trust. It cannot replace the

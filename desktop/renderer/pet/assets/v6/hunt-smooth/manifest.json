@@ -1,0 +1,58 @@
+{
+  "family": "v6-hunt-smooth",
+  "masterCanvas": {
+    "width": 256,
+    "height": 256
+  },
+  "source": "art-handoff/V6_CURRENT_POSES_FOR_PISKEL/06_hunt/256",
+  "neverManipulatesOsCursor": true,
+  "frames": [
+    {
+      "key": "f0",
+      "fileName": "hunt-f0-alert.png",
+      "role": "alert"
+    },
+    {
+      "key": "f1",
+      "fileName": "hunt-f1-shoulder-drop.png",
+      "role": "micro-lower"
+    },
+    {
+      "key": "f2",
+      "fileName": "hunt-f2-forelegs-lower.png",
+      "role": "lower"
+    },
+    {
+      "key": "f3",
+      "fileName": "hunt-f3-half-crouch.png",
+      "role": "half-crouch"
+    },
+    {
+      "key": "f4",
+      "fileName": "hunt-f4-low-crouch.png",
+      "role": "deep"
+    },
+    {
+      "key": "f5",
+      "fileName": "hunt-f5-deep-stalk.png",
+      "role": "low-settle"
+    },
+    {
+      "key": "f6",
+      "fileName": "hunt-f6-near-hold.png",
+      "role": "watch-arrive"
+    },
+    {
+      "key": "f7",
+      "fileName": "hunt-f7-watch-hold.png",
+      "role": "watch-settle"
+    },
+    {
+      "key": "f8",
+      "fileName": "hunt-f8-gaze-ready.png",
+      "role": "watch-hold",
+      "derivedFrom": "hunt-f8-watch-hold.png",
+      "note": "Runtime hold host: baked pupils cleared for #v6-hunt-gaze-layer; master PNG unchanged"
+    }
+  ]
+}

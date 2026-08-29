@@ -55,6 +55,29 @@ jobs:
           app_path="$(find release -type d -name CatCode.app -print -quit)"
           bash scripts/verify-macos-artifact.sh "$app_path" arm64 unsigned
 
+  desktop-linux:
+    name: Desktop (Linux)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      npm_config_platform: linux
+      npm_config_arch: x64
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: xvfb-run -a npm run smoke
+      - run: npm run build:linux:dir
+
   license-server:
     name: License server (Linux)
     runs-on: ubuntu-latest

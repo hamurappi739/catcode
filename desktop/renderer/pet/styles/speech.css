@@ -67,7 +67,19 @@ body[data-speech] #cat-speech-bubble-container {
 }
 
 body[data-pet-peek] #cat-speech-bubble-container {
-  display: none;
+  width: min(112px, calc(100vw - 8px));
+}
+
+body[data-pet-peek="left"] #cat-speech-bubble-container {
+  left: 78%;
+}
+
+body[data-pet-peek="right"] #cat-speech-bubble-container {
+  left: 22%;
+}
+
+body[data-pet-peek] #cat-speech-bubble {
+  max-width: 100%;
 }
 
 body[data-speech] #cat-speech-bubble {

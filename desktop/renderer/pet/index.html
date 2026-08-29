@@ -6,7 +6,7 @@
     <title>CatCode</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body data-catcode-model="v4">
     <div id="drag-handle"></div>
     <div id="share-name-badge"></div>
     <div id="cover-message" aria-hidden="true"></div>
@@ -23,8 +23,12 @@
         <button type="button" id="fixed-message-cancel">×</button>
       </form>
     </div>
-    <div id="cat-thinking-dots" aria-label="thinking">
-      <span>.</span><span>.</span><span>.</span>
+    <div id="cursor-theft-copy" role="status" aria-live="polite"></div>
+    <div id="cat-thinking-dots" aria-label="thinking" aria-hidden="true">
+      <span class="waiting-glyph waiting-lt">&lt;</span>
+      <span class="waiting-glyph waiting-ltslash">&lt;/</span>
+      <span class="waiting-glyph waiting-full">&lt;/&gt;</span>
+      <span class="waiting-glyph waiting-star" aria-hidden="true"></span>
     </div>
     <button
       id="reminder-clock-button"
@@ -41,6 +45,11 @@
         <rect x="8" y="8" width="3" height="2" fill="currentColor" />
       </svg>
     </button>
+    <button id="cat-wellness-complete" type="button" hidden></button>
+    <section id="cat-reminder-ack" role="alert" hidden>
+      <span id="cat-reminder-ack-text"></span>
+      <button id="cat-reminder-ack-button" type="button"></button>
+    </section>
     <section id="reminder-panel" aria-label="Reminders">
       <div class="reminder-panel-header">
         <div id="reminder-panel-title">알림</div>
@@ -155,6 +164,23 @@
       <button type="submit">OK</button>
       <button type="button" id="pomodoro-focus-cancel">×</button>
     </form>
+    <form id="wellness-interval-editor">
+      <input
+        id="wellness-interval-input"
+        type="number"
+        min="1"
+        max="360"
+        step="1"
+        autocomplete="off"
+      />
+      <span>MIN</span>
+      <button type="submit">OK</button>
+      <button
+        type="button"
+        id="wellness-interval-cancel"
+        aria-label="Close"
+      >&times;</button>
+    </form>
     <form id="share-duration-editor">
       <input
         id="share-duration-input"
@@ -171,9 +197,436 @@
     <object
       id="cat"
       type="image/svg+xml"
-      data="../../svg/cat-idle-follow-v2.svg"
+      data="../../svg/catcode-v4-idle.svg"
       aria-label="cat"
     ></object>
+    <img
+      id="v6-idle-preview"
+      class="v6-pose-host"
+      data-src="assets/v6/idle-master.png"
+      aria-label="V6 idle preview"
+      hidden
+    />
+    <img
+      id="v6-angry-idle"
+      class="v6-pose-host"
+      data-src="assets/v6/angry/angry-idle.png"
+      aria-label="V6 angry cat"
+      hidden
+    />
+    <div id="v6-angry-steam" aria-hidden="true"><i></i><i></i><i></i></div>
+    <img
+      id="v6-idle-body-layer"
+      class="v6-pose-host"
+      data-v6-skin-layer="1"
+      data-src="assets/v6/head-layers/idle-body-under-head-256.png"
+      aria-label="V6 idle body layer"
+      hidden
+    />
+    <img
+      id="v6-idle-head-layer"
+      class="v6-pose-host"
+      data-v6-skin-layer="1"
+      data-src="assets/v6/head-layers/idle-head-with-neck-underlap-256.png"
+      aria-label="V6 idle head layer"
+      hidden
+    />
+    <canvas id="v6-head-motion-layer" width="1024" height="1024" aria-hidden="true"></canvas>
+    <canvas id="v6-gaze-layer" width="1024" height="1024" aria-hidden="true"></canvas>
+    <canvas id="v6-hunt-gaze-layer" width="1024" height="1024" aria-hidden="true"></canvas>
+    <img
+      id="v6-edge-peek-left"
+      class="v6-pose-host"
+      data-src="assets/v6/edge-peek/peek-from-left-looking-right.png"
+      aria-label="V6 cat peeking from left edge"
+      hidden
+    />
+    <img
+      id="v6-edge-peek-right"
+      class="v6-pose-host"
+      data-src="assets/v6/edge-peek/peek-from-right-looking-left.png"
+      aria-label="V6 cat peeking from right edge"
+      hidden
+    />
+    <img
+      id="v6-sleep-settle"
+      class="v6-pose-host"
+      data-src="assets/v6/sleep/sleep-f0-closed.png"
+      aria-label="V6 sleep settle"
+      hidden
+    />
+    <img
+      id="v6-sleep"
+      class="v6-pose-host"
+      data-src="assets/v6/sleep/sleep-f1-transition.png"
+      aria-label="V6 sleep"
+      hidden
+    />
+    <img
+      id="v6-sleep-peek"
+      class="v6-pose-host"
+      data-src="assets/v6/sleep/sleep-f2-peek.png"
+      aria-label="V6 sleep peek"
+      hidden
+    />
+    <img
+      id="v6-purr-f0"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f0-rest.png"
+      aria-label="V6 purr rest"
+      hidden
+    />
+    <img
+      id="v6-purr-f1"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f1-gentle-left.png"
+      aria-label="V6 purr gentle left"
+      hidden
+    />
+    <img
+      id="v6-purr-f2"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f2-gentle-rise.png"
+      aria-label="V6 purr gentle rise"
+      hidden
+    />
+    <img
+      id="v6-purr-f3"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f3-gentle-peak.png"
+      aria-label="V6 purr gentle peak"
+      hidden
+    />
+    <img
+      id="v6-purr-f4"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f4-centered.png"
+      aria-label="V6 purr centered crossover"
+      hidden
+    />
+    <img
+      id="v6-purr-f5"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f5-gentle-right.png"
+      aria-label="V6 purr gentle right"
+      hidden
+    />
+    <img
+      id="v6-purr-f6"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f6-gentle-return.png"
+      aria-label="V6 purr gentle return"
+      hidden
+    />
+    <img
+      id="v6-purr-f7"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f7-loop-settle.png"
+      aria-label="V6 purr loop settle"
+      hidden
+    />
+    <img
+      id="v6-purr-f8"
+      class="v6-pose-host"
+      data-src="assets/v6/purr-smooth/purr-f8-rest.png"
+      aria-label="V6 purr rest"
+      hidden
+    />
+    <img
+      id="v6-celebrate-f0"
+      class="v6-pose-host"
+      data-src="assets/v6/celebrate/celebrate-f0-ready.png"
+      aria-label="V6 celebrate ready"
+      hidden
+    />
+    <img
+      id="v6-celebrate-f1"
+      class="v6-pose-host"
+      data-src="assets/v6/celebrate/celebrate-f1-jump.png"
+      aria-label="V6 celebrate jump"
+      hidden
+    />
+    <img
+      id="v6-celebrate-f2"
+      class="v6-pose-host"
+      data-src="assets/v6/celebrate/celebrate-f2-return.png"
+      aria-label="V6 celebrate return"
+      hidden
+    />
+    <img
+      id="v6-typing-f0"
+      class="v6-pose-host"
+      data-src="assets/v6/typing/typing-f0-ready.png"
+      aria-label="V6 typing ready"
+      hidden
+    />
+    <img
+      id="v6-typing-f1"
+      class="v6-pose-host"
+      data-src="assets/v6/typing/typing-f1-left.png"
+      aria-label="V6 typing left paw"
+      hidden
+    />
+    <img
+      id="v6-typing-f2"
+      class="v6-pose-host"
+      data-src="assets/v6/typing/typing-f2-right.png"
+      aria-label="V6 typing right paw"
+      hidden
+    />
+    <img
+      id="v6-typing-f3"
+      class="v6-pose-host"
+      data-src="assets/v6/typing/typing-f3-fast.png"
+      aria-label="V6 typing fast"
+      hidden
+    />
+    <img
+      id="v6-typing-f4"
+      class="v6-pose-host"
+      data-src="assets/v6/typing/typing-f4-tense.png"
+      aria-label="V6 typing tense"
+      hidden
+    />
+    <img
+      id="v6-scroll-f0"
+      class="v6-pose-host"
+      data-src="assets/v6/scroll/scroll-f0-ready.png"
+      aria-label="V6 scroll ready"
+      hidden
+    />
+    <img
+      id="v6-scroll-f1"
+      class="v6-pose-host"
+      data-src="assets/v6/scroll/scroll-f1-reach.png"
+      aria-label="V6 scroll reach"
+      hidden
+    />
+    <img
+      id="v6-scroll-f2"
+      class="v6-pose-host"
+      data-src="assets/v6/scroll/scroll-f2-unroll.png"
+      aria-label="V6 scroll unroll"
+      hidden
+    />
+    <img
+      id="v6-scroll-f3"
+      class="v6-pose-host"
+      data-src="assets/v6/scroll/scroll-f3-pull.png"
+      aria-label="V6 scroll pull"
+      hidden
+    />
+    <img
+      id="v6-scroll-f4"
+      class="v6-pose-host"
+      data-src="assets/v6/scroll/scroll-f4-recover.png"
+      aria-label="V6 scroll recover"
+      hidden
+    />
+    <img
+      id="v6-hunt-f0"
+      class="v6-pose-host"
+      data-src="assets/v6/hunt-smooth/hunt-f0-alert.png"
+      aria-label="V6 hunt crouch alert"
+      hidden
+    />
+    <img
+      id="v6-hunt-f1"
+      class="v6-pose-host"
+      data-src="assets/v6/hunt-smooth/hunt-f1-shoulder-drop.png"
+      aria-label="V6 hunt shoulder drop"
+      hidden
+    />
+    <img
+      id="v6-hunt-f2"
+      class="v6-pose-host"
+      data-src="assets/v6/hunt-smooth/hunt-f2-forelegs-lower.png"
+      aria-label="V6 hunt forelegs lower"
+      hidden
+    />
+    <img
+      id="v6-hunt-f3"
+      class="v6-pose-host"
+      data-src="assets/v6/hunt-smooth/hunt-f3-half-crouch.png"
+      aria-label="V6 hunt half crouch"
+      hidden
+    />
+    <img
+      id="v6-hunt-f4"
+      class="v6-pose-host"
+      data-src="assets/v6/hunt-smooth/hunt-f4-low-crouch.png"
+      aria-label="V6 hunt low crouch"
+      hidden
+    />
+    <img
+      id="v6-hunt-f5"
+      class="v6-pose-host"
+      data-src="assets/v6/hunt-smooth/hunt-f5-deep-stalk.png"
+      aria-label="V6 hunt deep stalk"
+      hidden
+    />
+    <img
+      id="v6-hunt-f6"
+      class="v6-pose-host"
+      data-src="assets/v6/hunt-smooth/hunt-f6-near-hold.png"
+      aria-label="V6 hunt near hold"
+      hidden
+    />
+    <img
+      id="v6-hunt-f7"
+      class="v6-pose-host"
+      data-src="assets/v6/hunt-smooth/hunt-f7-watch-hold.png"
+      aria-label="V6 hunt watch settle"
+      hidden
+    />
+    <img
+      id="v6-hunt-f8"
+      class="v6-pose-host v6-hunt-hold-host"
+      data-src="assets/v6/hunt-smooth/hunt-f8-gaze-ready.png"
+      aria-label="V6 hunt watch hold"
+      hidden
+    />
+    <img
+      id="v6-tease-f0"
+      class="v6-pose-host"
+      data-src="assets/v6/tease/tease-f0-stalk.png"
+      aria-label="V6 cursor tease stalk"
+      hidden
+    />
+    <img
+      id="v6-tease-f1"
+      class="v6-pose-host"
+      data-src="assets/v6/tease/tease-f1-reach.png"
+      aria-label="V6 cursor tease reach"
+      hidden
+    />
+    <img
+      id="v6-tease-f2"
+      class="v6-pose-host"
+      data-src="assets/v6/tease/tease-f2-catch.png"
+      aria-label="V6 cursor tease catch"
+      hidden
+    />
+    <img
+      id="v6-tease-f3"
+      class="v6-pose-host"
+      data-src="assets/v6/tease/tease-f3-hold.png"
+      aria-label="V6 cursor tease hold"
+      hidden
+    />
+    <img
+      id="v6-tease-f4"
+      class="v6-pose-host"
+      data-src="assets/v6/tease/tease-f4-release.png"
+      aria-label="V6 cursor tease release"
+      hidden
+    />
+    <img
+      id="v6-walk-left-f0"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-left-f0.png"
+      aria-label="V6 walk left f0"
+      hidden
+    />
+    <img
+      id="v6-walk-left-f1"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-left-f1.png"
+      aria-label="V6 walk left f1"
+      hidden
+    />
+    <img
+      id="v6-walk-left-f2"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-left-f2.png"
+      aria-label="V6 walk left f2"
+      hidden
+    />
+    <img
+      id="v6-walk-left-f3"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-left-f3.png"
+      aria-label="V6 walk left f3"
+      hidden
+    />
+    <img
+      id="v6-walk-left-f4"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-left-f4.png"
+      aria-label="V6 walk left f4"
+      hidden
+    />
+    <img
+      id="v6-walk-right-f0"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-right-f0.png"
+      aria-label="V6 walk right f0"
+      hidden
+    />
+    <img
+      id="v6-walk-right-f1"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-right-f1.png"
+      aria-label="V6 walk right f1"
+      hidden
+    />
+    <img
+      id="v6-walk-right-f2"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-right-f2.png"
+      aria-label="V6 walk right f2"
+      hidden
+    />
+    <img
+      id="v6-walk-right-f3"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-right-f3.png"
+      aria-label="V6 walk right f3"
+      hidden
+    />
+    <img
+      id="v6-walk-right-f4"
+      class="v6-pose-host"
+      data-src="assets/v6/walk/walk-right-f4.png"
+      aria-label="V6 walk right f4"
+      hidden
+    />
+    <img id="v6-dance-paw-groove-f0" class="v6-pose-host" data-src="assets/v6/dance/paw-groove/paw-groove-f0-ready.png" aria-label="V6 paw groove ready" hidden />
+    <img id="v6-dance-paw-groove-f1" class="v6-pose-host" data-src="assets/v6/dance/paw-groove/paw-groove-f1-left-lean.png" aria-label="V6 paw groove left lean" hidden />
+    <img id="v6-dance-paw-groove-f2" class="v6-pose-host" data-src="assets/v6/dance/paw-groove/paw-groove-f2-right-lean.png" aria-label="V6 paw groove right lean" hidden />
+    <img id="v6-dance-drill-f00" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f00-ready.png" aria-label="V6 drill ready" hidden />
+    <img id="v6-dance-drill-f01" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f01-left-bounce.png" aria-label="V6 drill left bounce" hidden />
+    <img id="v6-dance-drill-f02" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f02-left-punch.png" aria-label="V6 drill left punch" hidden />
+    <img id="v6-dance-drill-f03" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f03-center-bounce.png" aria-label="V6 drill center bounce" hidden />
+    <img id="v6-dance-drill-f04" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f04-right-bounce.png" aria-label="V6 drill right bounce" hidden />
+    <img id="v6-dance-drill-f05" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f05-right-punch.png" aria-label="V6 drill right punch" hidden />
+    <img id="v6-dance-drill-f06" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f06-bounce-up.png" aria-label="V6 drill bounce up" hidden />
+    <img id="v6-dance-drill-f07" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f07-shoulder-pop.png" aria-label="V6 drill shoulder pop" hidden />
+    <img id="v6-dance-drill-f08" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f08-settle.png" aria-label="V6 drill settle" hidden />
+    <img id="v6-dance-drill-f09" class="v6-pose-host" data-src="assets/v6/dance/drill/drill-f09-loop-return.png" aria-label="V6 drill loop return" hidden />
+    <img id="v6-dance-hip-hop-f00" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f00-ready.png" aria-label="V6 hip hop ready" hidden />
+    <img id="v6-dance-hip-hop-f01" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f01-left-forward.png" aria-label="V6 hip hop left forward" hidden />
+    <img id="v6-dance-hip-hop-f02" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f02-left-knee.png" aria-label="V6 hip hop left knee" hidden />
+    <img id="v6-dance-hip-hop-f03" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f03-center-downbeat.png" aria-label="V6 hip hop center downbeat" hidden />
+    <img id="v6-dance-hip-hop-f04" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f04-right-forward.png" aria-label="V6 hip hop right forward" hidden />
+    <img id="v6-dance-hip-hop-f05" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f05-right-knee.png" aria-label="V6 hip hop right knee" hidden />
+    <img id="v6-dance-hip-hop-f06" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f06-center-rise.png" aria-label="V6 hip hop center rise" hidden />
+    <img id="v6-dance-hip-hop-f07" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f07-left-recover.png" aria-label="V6 hip hop left recover" hidden />
+    <img id="v6-dance-hip-hop-f08" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f08-settle.png" aria-label="V6 hip hop settle" hidden />
+    <img id="v6-dance-hip-hop-f09" class="v6-pose-host" data-src="assets/v6/dance/hip-hop/hiphop-f09-loop-return.png" aria-label="V6 hip hop loop return" hidden />
+    <object
+      id="purr-pose"
+      type="image/svg+xml"
+      data-src="../../svg/catcode-v4-purr.svg"
+      aria-label="cat-purring"
+    ></object>
+    <object
+      id="sleep-pose"
+      type="image/svg+xml"
+      data-src="../../svg/catcode-v4-sleep.svg"
+      aria-label="cat-sleeping"
+    ></object>
+    <div id="playful-walk-sprite" aria-hidden="true"></div>
     <div id="purr-hearts" aria-hidden="true">
       <span></span>
       <span></span>
@@ -195,13 +648,13 @@
     <object
       id="press-left"
       type="image/svg+xml"
-      data-src="../../svg/press-left.svg"
+      data-src="../../svg/catcode-v4-idle.svg"
       aria-label="cat-typing-left"
     ></object>
     <object
       id="press-right"
       type="image/svg+xml"
-      data-src="../../svg/press-right.svg"
+      data-src="../../svg/catcode-v4-idle.svg"
       aria-label="cat-typing-right"
     ></object>
     <object
@@ -240,8 +693,42 @@
       data-src="../../svg/stretch-pose-ing.svg"
       aria-label="stretching-active"
     ></object>
+    <script src="../../pattern-coordinate-normalizer.js"></script>
     <script src="cell-mappings.js"></script>
+      <script src="v4-palette-runtime.js"></script>
+      <script src="v6-skin-catalog.js"></script>
+      <script src="v6-static-skin-map.js"></script>
+      <script src="v6-custom-palette-contracts.js"></script>
+      <script src="v6-custom-palette-core.js"></script>
+      <script src="v6-skin-runtime.js"></script>
+    <script src="v6-idle-preview.js"></script>
+    <script src="v6-visual-pose.js"></script>
+    <script src="v6-angry.js"></script>
+    <script src="v4-visual-state.js"></script>
+    <script src="v4-cursor-attention.js"></script>
+    <script src="v4-eye-animation.js"></script>
+    <script src="v4-sleep-peek.js"></script>
     <script src="renderer.js"></script>
+    <script src="v6-celebrate.js"></script>
+    <script src="v6-typing.js"></script>
+    <script src="v6-scroll.js"></script>
+    <script src="v6-hunt-visual-focus.js"></script>
+    <script src="v6-hunt.js"></script>
+    <script src="v6-cursor-tease.js"></script>
+    <script src="v6-walk.js"></script>
+    <script src="v6-gaze-masks.js"></script>
+    <script src="v6-live-gaze-skin-contract.js"></script>
+    <script src="v6-reference-idle-gaze-contract.js"></script>
+    <script src="v6-gaze.js"></script>
+    <script src="v6-dance.js"></script>
+    <script src="v6-exclusive-pose-reset.js"></script>
+    <script src="v6-edge-peek.js"></script>
+    <script src="v6-typing-preview.js"></script>
+    <script src="low-power-animations.js"></script>
     <script src="custom-behavior.js"></script>
+    <script src="side-walk-renderer.js"></script>
+    <script src="playful-movement-speech.js"></script>
+    <script src="playful-movement.js"></script>
+    <script src="music-dance.js"></script>
   </body>
 </html>

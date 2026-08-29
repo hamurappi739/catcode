@@ -7,6 +7,10 @@
   var uo = Pt(() => {
     var Et = "http://www.w3.org/2000/svg",
       E = "#1A1A1A",
+      DEFAULT_BASE = "#20242D",
+      DEFAULT_EYE = "#A7EFF0",
+      DEFAULT_EYE_BG = "#EDF4F5",
+      DEFAULT_EYE_OUTLINE = "#1C1C1C",
       x = {
         head: {
           labels: { en: "Head", ru: "\u0413\u043e\u043b\u043e\u0432\u0430", ko: "\uBA38\uB9AC", ja: "\u982D" },
@@ -96,6 +100,24 @@
           silhouettePath: "M1 3H0V7H1V8H4V7H5V2H4V1H3V0H2V1H1V3Z",
           silhouetteTransform: "translate(0 0)",
         },
+        side: {
+          labels: {
+            en: "Side view",
+            ru: "\u0412\u0438\u0434 \u0441\u0431\u043e\u043a\u0443",
+            ko: "\uCE21\uBA74",
+            ja: "\u6A2A\u5411\u304D",
+          },
+          icon: "\u2194",
+          cells: { x: 56, y: 40 },
+          silhouettePath:
+            "M1 2H2V1H4V3H5V6H7V7H20V6H22V4H23V1H25V2H26V4H27V9H26V11H24V13H22V15H24V19H21V17H19V14H16V17H15V19H12V17H10V14H7V17H6V19H3V18H1V16H2V13H3V11H1V10H0V5H1V2Z",
+          silhouetteTransform: "translate(28 0) scale(-1 1)",
+          fixedDetails: [
+            { className: "side-detail-ear", x: 23, y: 2.5, width: 0.75, height: 2.5 },
+            { className: "side-detail-eye-bg", x: 24, y: 6.5, width: 1.5, height: 2 },
+            { className: "side-detail-eye", x: 25, y: 7, width: 0.5, height: 1 },
+          ],
+        },
       },
       Je = [
         "#FFFFFF",
@@ -125,11 +147,15 @@
           help: "Help",
           hint: "Paint every part from one workspace. Changes apply to the pet immediately.",
           caveat:
-            "Brush size paints a square area. Some markings appear only in certain poses.",
+            "Part grids paint coat markings onto the live V4 cat preview. They are not separate V2 limbs. Brush size paints a square area.",
+          v4Preview: "V4 cat preview",
+          v4PreviewNote:
+            "This is the same V4 cat used on the desktop. Part grids below paint coat markings onto it.",
           baseColor: "Base body color",
           reset: "Reset",
           eyeColor: "Eye color",
           eyeBgColor: "Eye background",
+          eyeOutlineColor: "Eye outline",
           eyePupilSize: "Pupil size",
           oddEye: "Odd eyes",
           bodyColor: "Body color",
@@ -178,19 +204,25 @@
           discardChangesConfirm: "Discard unsaved changes?",
           totalSpots: "Total spots",
           paint: "Paint",
+          fill: "Fill",
           erase: "Eraser",
           spots: "spots",
         },
         ru: {
+          fill: "\u0417\u0430\u043b\u0438\u0432\u043a\u0430",
           title: "Редактор внешности CatCode",
           help: "Помощь",
           hint: "Раскрасьте все части кота в одном окне. Изменения сразу появятся у CatCode.",
           caveat:
-            "Размер кисти закрашивает квадратную область. Некоторые пятна видны только в отдельных позах.",
+            "Размер кисти закрашивает квадратную область. Сетки частей рисуют отметины на живом V4-коте, а не отдельные конечности V2.",
+          v4Preview: "Превью V4-кота",
+          v4PreviewNote:
+            "Тот же V4-кот, что на рабочем столе. Сетки ниже рисуют отметины на нём.",
           baseColor: "Основной цвет тела",
           reset: "Сбросить",
           eyeColor: "Цвет глаз",
           eyeBgColor: "Фон глаз",
+          eyeOutlineColor: "Контур глаз",
           eyePupilSize: "Размер зрачка",
           oddEye: "Разные глаза",
           bodyColor: "Цвет тела",
@@ -208,7 +240,7 @@
           brush: "Кисть",
           tools: "Инструменты",
           presets: "Пресеты",
-          currentPreset: "Выбранный пресет",
+          currentPreset: "Выбранный вид кота",
           changePreset: "Изменить",
           backToEdit: "Назад",
           builtinPresets: "Базовые пресеты",
@@ -247,11 +279,15 @@
           help: "\uB3C4\uC6C0\uB9D0",
           hint: "\uBAA8\uB4E0 \uBD80\uC704\uB97C \uD55C \uD654\uBA74\uC5D0\uC11C \uCE60\uD569\uB2C8\uB2E4. \uBCC0\uACBD \uC0AC\uD56D\uC740 \uD3AB\uC5D0 \uC989\uC2DC \uBC18\uC601\uB429\uB2C8\uB2E4.",
           caveat:
-            "\uBE0C\uB7EC\uC2DC \uD06C\uAE30\uB294 \uC815\uC0AC\uAC01\uD615 \uC601\uC5ED\uC73C\uB85C \uCE60\uD569\uB2C8\uB2E4. \uC77C\uBD80 \uBB34\uB2AC\uB294 \uD2B9\uC815 \uD3EC\uC988\uC5D0\uC11C\uB9CC \uBCF4\uC785\uB2C8\uB2E4.",
+            "\uBE0C\uB7EC\uC2DC \uD06C\uAE30\uB294 \uC815\uC0AC\uAC01\uD615 \uC601\uC5ED\uC73C\uB85C \uCE60\uD569\uB2C8\uB2E4. \uBD80\uC704 \uADF8\uB9AC\uB4DC\uB294 V4 \uACE0\uC591\uC774\uC5D0 \uBB34\uB2AC\uC744 \uCE60\uD569\uB2C8\uB2E4.",
+          v4Preview: "V4 \uACE0\uC591\uEC774 \uBBF8\uB9AC\uBCF4\uAE30",
+          v4PreviewNote:
+            "\uB370\uC2A4\uD06C\uD0D1\uACFC \uAC19\uC740 V4 \uACE0\uC591\uC774\uC785\uB2C8\uB2E4. \uC544\uB798 \uADF8\uB9AC\uB4DC\uB294 \uBB34\uB2AC\uC744 \uCE60\uD569\uB2C8\uB2E4.",
           baseColor: "\uAE30\uBCF8 \uBAB8\uD1B5 \uC0C9",
           reset: "\uCD08\uAE30\uD654",
           eyeColor: "\uB208\uB3D9\uC790 \uC0C9",
           eyeBgColor: "\uB208 \uBC30\uACBD\uC0C9",
+          eyeOutlineColor: "\uB208 \uC678\uACFD\uC120",
           eyePupilSize: "\uB208\uB3D9\uC790 \uD06C\uAE30",
           oddEye: "\uC624\uB4DC\uC544\uC774",
           bodyColor: "\uBAB8\uD1B5\uC0C9",
@@ -313,11 +349,15 @@
           help: "\u30D8\u30EB\u30D7",
           hint: "\u3059\u3079\u3066\u306E\u90E8\u4F4D\u3092\u3072\u3068\u3064\u306E\u753B\u9762\u3067\u5857\u308C\u307E\u3059\u3002\u5909\u66F4\u306F\u30DA\u30C3\u30C8\u306B\u3059\u3050\u53CD\u6620\u3055\u308C\u307E\u3059\u3002",
           caveat:
-            "\u30D6\u30E9\u30B7\u30B5\u30A4\u30BA\u306F\u6B63\u65B9\u5F62\u306E\u7BC4\u56F2\u3092\u5857\u308A\u307E\u3059\u3002\u4E00\u90E8\u306E\u6A21\u69D8\u306F\u7279\u5B9A\u306E\u30DD\u30FC\u30BA\u3067\u306E\u307F\u8868\u793A\u3055\u308C\u307E\u3059\u3002",
+            "\u30D6\u30E9\u30B7\u30B5\u30A4\u30BA\u306F\u6B63\u65B9\u5F62\u306E\u7BC4\u56F2\u3092\u5857\u308A\u307E\u3059\u3002\u90E8\u4F4D\u30B0\u30EA\u30C3\u30C9\u306FV4\u732B\u3078\u306E\u6A21\u69D8\u3067\u3059\u3002",
+          v4Preview: "V4\u732B\u30D7\u30EC\u30D3\u30E5\u30FC",
+          v4PreviewNote:
+            "\u30C7\u30B9\u30AF\u30C8\u30C3\u30D7\u3068\u540C\u3058V4\u732B\u3067\u3059\u3002\u4E0B\u306E\u30B0\u30EA\u30C3\u30C9\u306F\u6A21\u69D8\u3092\u5857\u308A\u307E\u3059\u3002",
           baseColor: "\u57FA\u672C\u306E\u4F53\u8272",
           reset: "\u30EA\u30BB\u30C3\u30C8",
           eyeColor: "\u77B3\u306E\u8272",
           eyeBgColor: "\u76EE\u306E\u80CC\u666F\u8272",
+          eyeOutlineColor: "\u76EE\u306E\u8F0C",
           eyePupilSize: "\u77B3\u306E\u30B5\u30A4\u30BA",
           oddEye: "\u30AA\u30C3\u30C9\u30A2\u30A4",
           bodyColor: "\u4F53\u8272",
@@ -407,6 +447,8 @@
       wt = document.getElementById("eye-color-row"),
       nt = document.getElementById("eye-bg-color"),
       Ht = document.getElementById("eye-bg-color-hex"),
+      eyeOutlineInput = document.getElementById("eye-outline-color"),
+      eyeOutlineHex = document.getElementById("eye-outline-color-hex"),
       st = document.getElementById("eye-pupil-scale"),
       It = document.getElementById("eye-pupil-scale-value"),
       rt = document.getElementById("odd-eye"),
@@ -423,13 +465,14 @@
       q = Je[0],
       pe = "paint",
       k = 1,
-      ee = E,
-      M = E,
-      Le = "#FFFFFF",
+      ee = DEFAULT_BASE,
+      M = DEFAULT_EYE,
+      Le = DEFAULT_EYE_BG,
+      eyeOutlineColor = DEFAULT_EYE_OUTLINE,
       se = 100,
       Ve = !1,
-      ye = E,
-      he = E,
+      ye = DEFAULT_EYE,
+      he = DEFAULT_EYE,
       we = !1,
       me = null,
       X = null,
@@ -442,6 +485,7 @@
       T = [],
       re = [],
       le = !1;
+    let sidePatternMode = "auto";
     function y(e, ...t) {
       let o = (de[R] || de.en)[e] || de.en[e] || e;
       return typeof o == "function" ? o(...t) : o;
@@ -495,6 +539,7 @@
         let i = d("g");
         (i.classList.add("grid-lines"), i.setAttribute("stroke-width", "0.05"));
         let c = d("g"),
+          u = d("g"),
           a = d("rect");
         (a.setAttribute("fill", "none"),
           a.setAttribute("stroke", "#fff"),
@@ -503,14 +548,15 @@
           a.setAttribute("visibility", "hidden"),
           Tt(l, t),
           Mt(i, t.cells.x, t.cells.y),
-          l.append(i, c, a),
+          Dt(u, t),
+          l.append(i, c, u, a),
           r.appendChild(l),
           n.append(o, r),
           Me.appendChild(n),
-          (oe[e] = { card: n, title: s, svg: l, grid: i, spots: c, hover: a }),
+          (oe[e] = { card: n, title: s, svg: l, grid: i, spots: c, details: u, hover: a }),
           eo(l, e));
       }
-      (Se(), at());
+      (Se(), at(), refreshSideFixedDetails());
     }
     function Tt(e, t) {
       if (t.silhouettePath) {
@@ -553,6 +599,18 @@
           e.appendChild(s));
       }
     }
+    function Dt(e, t) {
+      for (let n of Array.isArray(t.fixedDetails) ? t.fixedDetails : []) {
+        let o = d("rect");
+        (o.classList.add("side-fixed-detail", n.className),
+          o.setAttribute("x", n.x),
+          o.setAttribute("y", n.y),
+          o.setAttribute("width", n.width),
+          o.setAttribute("height", n.height),
+          o.setAttribute("pointer-events", "none"),
+          e.appendChild(o));
+      }
+    }
     function Se() {
       for (let [e, t] of Object.entries(oe)) {
         let n = x[e];
@@ -589,10 +647,21 @@
       (e.target.value !== ee && V(), ut(e.target.value), H());
     });
     function dt(e) {
-      ((M = e), (ot.value = e), (xt.textContent = e.toUpperCase()));
+      ((M = e),
+        (ot.value = e),
+        (xt.textContent = e.toUpperCase()),
+        refreshSideFixedDetails());
     }
     function mt(e) {
-      ((Le = e), (nt.value = e), (Ht.textContent = e.toUpperCase()));
+      ((Le = e),
+        (nt.value = e),
+        (Ht.textContent = e.toUpperCase()),
+        refreshSideFixedDetails());
+    }
+    function setEyeOutlineColor(e) {
+      eyeOutlineColor = e;
+      if (eyeOutlineInput) eyeOutlineInput.value = e;
+      if (eyeOutlineHex) eyeOutlineHex.textContent = e.toUpperCase();
     }
     function ge(e) {
       return Math.max(40, Math.min(140, Math.round(Number(e) || 100)));
@@ -601,10 +670,16 @@
       ((se = ge(e)), (st.value = String(se)), (It.textContent = `${se}%`));
     }
     function Be(e) {
-      ((ye = e), (it.value = e), (Lt.textContent = e.toUpperCase()));
+      ((ye = e),
+        (it.value = e),
+        (Lt.textContent = e.toUpperCase()),
+        refreshSideFixedDetails());
     }
     function Fe(e) {
-      ((he = e), (lt.value = e), (St.textContent = e.toUpperCase()));
+      ((he = e),
+        (lt.value = e),
+        (St.textContent = e.toUpperCase()),
+        refreshSideFixedDetails());
     }
     function pt(e) {
       ((Ve = e),
@@ -612,7 +687,16 @@
         (wt.style.display = e ? "none" : ""),
         (Vt.style.display = e ? "" : "none"),
         (Bt.style.display = e ? "" : "none"),
-        e && (ye === E && M && Be(M), he === E && M && Fe(M)));
+        e && (ye === DEFAULT_EYE && M && Be(M), he === DEFAULT_EYE && M && Fe(M)),
+        refreshSideFixedDetails());
+    }
+    function refreshSideFixedDetails() {
+      for (let e of document.querySelectorAll(".side-detail-ear"))
+        e.setAttribute("fill", "#F48AA6");
+      for (let e of document.querySelectorAll(".side-detail-eye-bg"))
+        e.setAttribute("fill", Le);
+      for (let e of document.querySelectorAll(".side-detail-eye"))
+        e.setAttribute("fill", Ve ? he : M);
     }
     ot.addEventListener("input", (e) => {
       (e.target.value !== M && V(), dt(e.target.value), H());
@@ -620,6 +704,12 @@
     nt.addEventListener("input", (e) => {
       (e.target.value !== Le && V(), mt(e.target.value), H());
     });
+    eyeOutlineInput &&
+      eyeOutlineInput.addEventListener("input", (e) => {
+        (e.target.value !== eyeOutlineColor && V(),
+          setEyeOutlineColor(e.target.value),
+          H());
+      });
     st.addEventListener("input", (e) => {
       let t = ge(e.target.value);
       (t !== se && V(), ft(t), H());
@@ -872,9 +962,11 @@
       return r;
     }
     function Ke(e, t, n) {
+      if (pe === "fill") return eoFill(e, t, n);
       let o = z[e],
         s = S(),
         r = !1;
+      e === "side" && (sidePatternMode = "custom");
       for (let [l, i] of Jt(e, t, n)) {
         let c = `${l},${i}`;
         if (pe === "erase") {
@@ -883,6 +975,36 @@
         } else o.get(c) !== q && (o.set(c, q), (r = !0));
       }
       r && (V(s), yt(e), H());
+    }
+    function eoFill(e, t, n) {
+      let o = z[e];
+      if (!o || !_(e, t, n)) return;
+      let s = `${t},${n}`,
+        r = o.has(s) ? o.get(s) : null;
+      if (r === q) return;
+      let l = S(),
+        i = [[t, n]],
+        c = new Set(),
+        u = !1;
+      e === "side" && (sidePatternMode = "custom");
+      while (i.length > 0) {
+        let [a, h] = i.pop(),
+          B = `${a},${h}`;
+        if (c.has(B) || !_(e, a, h)) continue;
+        c.add(B);
+        let v = o.has(B) ? o.get(B) : null;
+        if (v !== r) continue;
+        (o.set(B, q), (u = !0));
+        let F = x[e];
+        for (let [P, N] of [
+          [a - 1, h],
+          [a + 1, h],
+          [a, h - 1],
+          [a, h + 1],
+        ])
+          P >= 0 && P < F.cells.x && N >= 0 && N < F.cells.y && i.push([P, N]);
+      }
+      u && (V(l), yt(e), H());
     }
     function yt(e) {
       let t = oe[e];
@@ -910,29 +1032,32 @@
         return;
       }
       let o = x[e],
-        s = Math.floor((k - 1) / 2),
-        r = Math.max(0, t.x - s),
-        l = Math.max(0, t.y - s),
-        i = Math.min(k, o.cells.x - r),
-        c = Math.min(k, o.cells.y - l);
+        s = pe === "fill" ? 1 : k,
+        r = Math.floor((s - 1) / 2),
+        l = Math.max(0, t.x - r),
+        i = Math.max(0, t.y - r),
+        c = Math.min(s, o.cells.x - l),
+        a = Math.min(s, o.cells.y - i);
       (n.hover.setAttribute("visibility", "visible"),
-        n.hover.setAttribute("x", r / 2),
-        n.hover.setAttribute("y", l / 2),
-        n.hover.setAttribute("width", i / 2),
-        n.hover.setAttribute("height", c / 2));
+        n.hover.setAttribute("x", l / 2),
+        n.hover.setAttribute("y", i / 2),
+        n.hover.setAttribute("width", c / 2),
+        n.hover.setAttribute("height", a / 2));
     }
     function eo(e, t) {
       (e.addEventListener("mousedown", (n) => {
         let o = Ye(n, t);
         !o ||
           !_(t, o.x, o.y) ||
-          ((we = !0),
-          (me = `${t}:${o.x},${o.y}:${k}:${pe}:${q}`),
-          Ke(t, o.x, o.y));
+          (pe === "fill"
+            ? Ke(t, o.x, o.y)
+            : ((we = !0),
+              (me = `${t}:${o.x},${o.y}:${k}:${pe}:${q}`),
+              Ke(t, o.x, o.y)));
       }),
         e.addEventListener("mousemove", (n) => {
           let o = Ye(n, t);
-          if ((We(t, o), !we || !o || !_(t, o.x, o.y))) return;
+          if ((We(t, o), pe === "fill" || !we || !o || !_(t, o.x, o.y))) return;
           let s = `${t}:${o.x},${o.y}:${k}:${pe}:${q}`;
           s !== me && ((me = s), Ke(t, o.x, o.y));
         }),
@@ -944,9 +1069,11 @@
     function S() {
       let e = {
         pixelResolution: 2,
+        sidePatternMode,
         baseColor: ee,
         eyeColor: M,
         eyeBgColor: Le,
+        eyeOutlineColor,
         eyePupilScale: se,
         oddEye: Ve,
         eyeColorLeft: ye,
@@ -963,18 +1090,27 @@
       return e;
     }
     function ce(e) {
-      let t = e && typeof e == "object" ? e : {},
+      let t = e && typeof e == "object" ? e : {};
+      window.CatCodePatternCoordinates &&
+        (t = window.CatCodePatternCoordinates.normalizePatternCoordinates(t));
+      let
         n = {
           pixelResolution: 2,
-          baseColor: typeof t.baseColor == "string" ? t.baseColor : E,
-          eyeColor: typeof t.eyeColor == "string" ? t.eyeColor : E,
+          sidePatternMode: t.sidePatternMode === "custom" ? "custom" : "auto",
+          baseColor: typeof t.baseColor == "string" ? t.baseColor : DEFAULT_BASE,
+          eyeColor: typeof t.eyeColor == "string" ? t.eyeColor : DEFAULT_EYE,
           eyeBgColor:
-            typeof t.eyeBgColor == "string" ? t.eyeBgColor : "#FFFFFF",
+            typeof t.eyeBgColor == "string" ? t.eyeBgColor : DEFAULT_EYE_BG,
+          eyeOutlineColor:
+            typeof t.eyeOutlineColor == "string"
+              ? t.eyeOutlineColor
+              : DEFAULT_EYE_OUTLINE,
           eyePupilScale: ge(t.eyePupilScale),
           oddEye: !!t.oddEye,
-          eyeColorLeft: typeof t.eyeColorLeft == "string" ? t.eyeColorLeft : E,
+          eyeColorLeft:
+            typeof t.eyeColorLeft == "string" ? t.eyeColorLeft : DEFAULT_EYE,
           eyeColorRight:
-            typeof t.eyeColorRight == "string" ? t.eyeColorRight : E,
+            typeof t.eyeColorRight == "string" ? t.eyeColorRight : DEFAULT_EYE,
         };
       for (let o of Object.keys(x)) {
         let s = Array.isArray(t[o]) ? t[o] : [];
@@ -1003,7 +1139,50 @@
             { ...s, y: s.y + 1 },
             { ...s, x: s.x + 1, y: s.y + 1 },
           ]);
+      n.sidePatternMode !== "custom" &&
+        n.side.length === 0 &&
+        (n.side = projectPatternToSide(n));
       return n;
+    }
+    function projectPatternToSide(e) {
+      let t = {
+          head: { x: 44, y: 36 },
+          body: { x: 44, y: 30 },
+          tail: { x: 26, y: 20 },
+          legFl: { x: 16, y: 22 },
+          legFr: { x: 16, y: 22 },
+          legRl: { x: 16, y: 16 },
+          legRr: { x: 16, y: 16 },
+          earL: { x: 12, y: 16 },
+          earR: { x: 10, y: 16 },
+        },
+        n = {
+          head: { x: 43, y: 4, width: 13, height: 22 },
+          body: { x: 12, y: 14, width: 36, height: 20 },
+          tail: { x: 0, y: 0, width: 16, height: 23 },
+          legFl: { x: 36, y: 25, width: 13, height: 15 },
+          legFr: { x: 28, y: 25, width: 13, height: 15 },
+          legRl: { x: 11, y: 25, width: 13, height: 15 },
+          legRr: { x: 1, y: 25, width: 13, height: 15 },
+          earL: { x: 48, y: 0, width: 7, height: 10 },
+          earR: { x: 44, y: 1, width: 7, height: 10 },
+        },
+        o = new Map();
+      for (let [s, r] of Object.entries(t))
+        for (let l of Array.isArray(e[s]) ? e[s] : []) {
+          if (l.x < 0 || l.y < 0 || l.x >= r.x || l.y >= r.y) continue;
+          let i = n[s],
+            c = Math.min(
+              55,
+              i.x + Math.round((l.x / Math.max(1, r.x - 1)) * (i.width - 1)),
+            ),
+            a = Math.min(
+              39,
+              i.y + Math.round((l.y / Math.max(1, r.y - 1)) * (i.height - 1)),
+            );
+          o.set(`${c},${a}`, { x: c, y: a, color: l.color });
+        }
+      return Array.from(o.values());
     }
     function w(e) {
       return JSON.stringify(ce(e));
@@ -1020,9 +1199,16 @@
     function Z(e) {
       if (!(!e || typeof e != "object")) {
         e = ce(e);
-        (ut(typeof e.baseColor == "string" ? e.baseColor : E),
-          dt(typeof e.eyeColor == "string" ? e.eyeColor : E),
-          mt(typeof e.eyeBgColor == "string" ? e.eyeBgColor : "#FFFFFF"),
+        ((sidePatternMode =
+          e.sidePatternMode === "custom" ? "custom" : "auto"),
+          ut(typeof e.baseColor == "string" ? e.baseColor : DEFAULT_BASE),
+          dt(typeof e.eyeColor == "string" ? e.eyeColor : DEFAULT_EYE),
+          mt(typeof e.eyeBgColor == "string" ? e.eyeBgColor : DEFAULT_EYE_BG),
+          setEyeOutlineColor(
+            typeof e.eyeOutlineColor == "string"
+              ? e.eyeOutlineColor
+              : DEFAULT_EYE_OUTLINE,
+          ),
           ft(e.eyePupilScale),
           Be(typeof e.eyeColorLeft == "string" ? e.eyeColorLeft : M),
           Fe(typeof e.eyeColorRight == "string" ? e.eyeColorRight : M),

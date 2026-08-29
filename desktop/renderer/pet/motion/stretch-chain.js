@@ -442,9 +442,24 @@ function createStretchChain({
     velState[0] -= dx * IMPULSE;
   }
 
+  function finishRelease() {
+    setReleasing(false);
+    resetMotion();
+    body.classList.remove("dragging");
+    electronAPI.setStretchMode(false);
+    onReleaseComplete();
+    chainRafId = null;
+  }
+
   function tick() {
+    // Without stretch SVG data, release must still clear body.dragging so the
+    // V4 (or any) cat cannot stay invisible after mouseup.
     if (!endData) {
       chainRafId = null;
+      if (isReleasing()) {
+        setStretchT(0);
+        finishRelease();
+      }
       return;
     }
 
@@ -474,12 +489,7 @@ function createStretchChain({
     apply();
 
     if (isReleasing() && getStretchT() === 0 && maxMotion < 0.15) {
-      setReleasing(false);
-      resetMotion();
-      body.classList.remove("dragging");
-      electronAPI.setStretchMode(false);
-      onReleaseComplete();
-      chainRafId = null;
+      finishRelease();
       return;
     }
 

@@ -1,4 +1,136 @@
 "use strict";
+const {
+  globalMenuDismissal: outsideClickMenu,
+  isPointInsideBounds,
+} = require("./menu-dismissal");
+const {
+  WELLNESS_NOTIFICATION_COVER,
+  WELLNESS_NOTIFICATION_COMPACT,
+  normalizeWellnessNotificationMode,
+  normalizeWellnessKind,
+  normalizeWellnessInterval,
+  shouldUseCompactNotification,
+} = require("./wellness-notifications");
+const {
+  WATER_REMINDERS_TEMPORARILY_DISABLED,
+  areWaterRemindersTemporarilyDisabled,
+} = require("./water-reminders-gate");
+const {
+  createWellnessAccountabilityController,
+} = require("./wellness-accountability");
+const { createCursorWarpController } = require("./cursor-warp");
+const {
+  createPetPlayfulMovementController,
+} = require("./pet-playful-movement");
+const {
+  createSystemAudioActivityController,
+} = require("./audio-activity");
+const {
+  normalizeV4Pattern,
+  V4_PATTERN_DEFAULTS,
+} = require("./v4-pattern-schema");
+const {
+  isGazeDiagnosticsArgEnabled,
+  initGazeDiagnostics,
+  getGazeDiagnostics,
+} = require("./gaze-diagnostics");
+const {
+  isDanceForensicArgEnabled,
+  initDanceForensic,
+  getDanceForensic,
+} = require("./dance-forensic");
+const {
+  isDanceRotationForensicArgEnabled,
+  initDanceRotationForensic,
+  getDanceRotationForensic,
+} = require("./dance-rotation-forensic");
+const {
+  isCursorTeaseForensicArgEnabled,
+  initCursorTeaseForensic,
+  getCursorTeaseForensic,
+} = require("./cursor-tease-forensic");
+const {
+  isHuntOwnerForensicArgEnabled,
+  isHuntOwnerForensicQaPackage,
+  resolveHuntOwnerForensicPackageMarker,
+  initHuntOwnerForensic,
+  getHuntOwnerForensic,
+  PACKAGE_MARKER: HUNT_OWNER_FORENSIC_PACKAGE_MARKER,
+  CURSOR_POS_CHANNEL: HUNT_CURSOR_POS_CHANNEL,
+  HUNT_OWNER_FORENSIC_EVENT_CHANNEL,
+} = require("./hunt-owner-forensic");
+const {
+  PET_RENDERER_READY_CHANNEL,
+  PET_RENDERER_READY_PROTOCOL,
+  PET_RENDERER_READY_MODEL,
+  markPetRendererReady,
+  clearPetRendererReady,
+  isPetRendererReady,
+  getPetRendererReady,
+} = require("./pet-renderer-handshake");
+const {
+  VISUAL_FOCUS_CHANNEL: V6_HUNT_VISUAL_FOCUS_CHANNEL,
+  DEFAULT_NEAR_RADIUS_PX: V6_HUNT_DEFAULT_NEAR_RADIUS_PX,
+  DEFAULT_APPROACH_BAND_PX: V6_HUNT_DEFAULT_APPROACH_BAND_PX,
+  normalizeVisualFocusContract: normalizeV6HuntVisualFocusContract,
+  screenFocusFromContract: screenV6HuntFocusFromContract,
+  relativeCursorFromScreen: relativeV6HuntCursorFromScreen,
+  classifyDistance: classifyV6HuntDistance,
+} = require("./v6-hunt-visual-focus");
+const v6HuntVisualFocusByContentsId = new Map();
+const {
+  isCursorTheftCopyForensicArgEnabled,
+  initCursorTheftCopyForensic,
+  getCursorTheftCopyForensic,
+} = require("./cursor-theft-copy-forensic");
+const {
+  isThinkingPreviewArgEnabled,
+  applyThinkingPreviewIfEnabled,
+  THINKING_PREVIEW_FLAG,
+} = require("./thinking-preview");
+const {
+  isAgentDiagnosticsArgEnabled,
+  initAgentDiagnostics,
+  getAgentDiagnostics,
+  AGENT_DIAGNOSTICS_FLAG,
+} = require("./agent-diagnostics");
+const {
+  isEnabled: isV6SkinDiagnosticsEnabled,
+  isQaPackage: isV6SkinDiagnosticsQaPackage,
+  init: initV6SkinDiagnostics,
+  get: getV6SkinDiagnostics,
+} = require("./v6-skin-diagnostics");
+const nodeFs = require("node:fs");
+const nodePath = require("node:path");
+
+function isV6IdlePreviewQaPackage() {
+  if (!process.resourcesPath) return false;
+  return [
+    "v6-idle-preview-qa.marker",
+    "v6-ten-solid-colour-runtime-import-qa.marker",
+    "v6-ten-solid-colour-runtime-import-v2-qa.marker",
+    "v6-hunt-f8-yellow-paw-runtime-repair-qa.marker",
+    "v6-hunt-f8-highlight-fleck-repair-qa.marker",
+    "v6-idle-head-pupil-free-runtime-import-qa.marker",
+    "v6-idle-center-pupil-overwrite-repair-qa.marker",
+    "v6-hunt-center-pupil-overwrite-repair-qa.marker",
+    "v6-editor-preview-repair-qa.marker",
+    "v6-editor-hunt-preview-pupil-repair-qa.marker",
+    "v6-editor-six-previews-qa.marker",
+    "v6-editor-77-host-apply-qa.marker",
+    "v6-custom-skin-idle-hunt-gaze-repair-qa.marker",
+  ].some((marker) => nodeFs.existsSync(nodePath.join(process.resourcesPath, marker)));
+}
+const {
+  createSkinGalleryWindowController,
+} = require("./v6-skin-gallery-window");
+let playfulMovementController = null;
+// V6 palette editor is now the supported appearance editor. The legacy V4
+// brush editor stays unreachable because its coordinate model is obsolete.
+const CAT_APPEARANCE_EDITOR_ENABLED = true;
+let musicActivityController = null;
+let musicPlaybackActive = false;
+let petSleeping = false;
 var Ai = Object.defineProperty;
 var Vm = Object.getOwnPropertyDescriptor;
 var Km = Object.getOwnPropertyNames;
@@ -15565,6 +15697,10 @@ var Gh = F((NP, zh) => {
     startReminderTimer: f,
     stopReminderTimer: h,
     stopPomodoroTimer: p,
+    startPlayfulMovement,
+    stopPlayfulMovement,
+    startMusicDance,
+    stopMusicDance,
     hideShareCaptureOverlay: g,
     createLicenseWindow: y,
     powerMonitor: w,
@@ -15608,6 +15744,8 @@ var Gh = F((NP, zh) => {
         O("stretch timer", i),
         O("drink timer", l),
         O("reminder timer", f),
+        O("playful movement", startPlayfulMovement),
+        O("music dance", startMusicDance),
         D("startup").catch((Q) => {
           S("[CatCode] startup sync failed:", Q && Q.message ? Q.message : Q);
         }));
@@ -15615,7 +15753,16 @@ var Gh = F((NP, zh) => {
       ee && ee.close();
     }
     function j() {
-      (B(), n(), o(), C(), G(), h(), p(), g());
+      (B(),
+        n(),
+        o(),
+        C(),
+        G(),
+        h(),
+        p(),
+        stopPlayfulMovement(),
+        stopMusicDance(),
+        g());
     }
     function z(ee = "invalid") {
       (j(), y(ee));
@@ -16527,276 +16674,7 @@ var _f = F((FP, yf) => {
 });
 var bf = F((qP, wf) => {
   "use strict";
-  var er = require("fs"),
-    Kn = require("path"),
-    _0 = require("os"),
-    vf = 50,
-    v0 = 65536,
-    w0 = 14,
-    b0 = 12e4,
-    S0 = 8e3,
-    vc = class {
-      constructor(e) {
-        ((this._onStateChange = e),
-          (this._interval = null),
-          (this._tracked = new Map()),
-          (this._baseDir = Kn.join(_0.homedir(), ".codex", "sessions")),
-          (this._startedAtMs = Date.now()));
-      }
-      start() {
-        this._interval ||
-          ((this._startedAtMs = Date.now()),
-          this._poll(),
-          (this._interval = setInterval(() => this._poll(), 1500)));
-      }
-      stop() {
-        (this._interval &&
-          (clearInterval(this._interval), (this._interval = null)),
-          this._tracked.clear());
-      }
-      _poll() {
-        let e = Date.now(),
-          r = new Set(this._tracked.keys());
-        for (let n of this._getSessionDirs()) {
-          let s;
-          try {
-            s = er.readdirSync(n);
-          } catch {
-            continue;
-          }
-          for (let o of s)
-            !o.startsWith("rollout-") ||
-              !o.endsWith(".jsonl") ||
-              r.add(Kn.join(n, o));
-        }
-        for (let n of r) {
-          if (!this._tracked.has(n))
-            try {
-              if (e - er.statSync(n).mtimeMs > b0) continue;
-            } catch {
-              continue;
-            }
-          this._pollFile(n, Kn.basename(n));
-        }
-        this._cleanStaleFiles();
-      }
-      _getSessionDirs() {
-        let e = [],
-          r;
-        try {
-          r = er.readdirSync(this._baseDir);
-        } catch {
-          return [];
-        }
-        for (let n of r) {
-          if (!/^\d{4}$/.test(n)) continue;
-          let s = Kn.join(this._baseDir, n),
-            o;
-          try {
-            o = er.readdirSync(s);
-          } catch {
-            continue;
-          }
-          for (let i of o) {
-            if (!/^\d{2}$/.test(i)) continue;
-            let a = Kn.join(s, i),
-              c;
-            try {
-              c = er.readdirSync(a);
-            } catch {
-              continue;
-            }
-            for (let l of c)
-              /^\d{2}$/.test(l) &&
-                e.push({ key: n + i + l, path: Kn.join(a, l) });
-          }
-        }
-        return (
-          e.sort((n, s) => (n.key < s.key ? 1 : n.key > s.key ? -1 : 0)),
-          e.slice(0, w0).map((n) => n.path)
-        );
-      }
-      _pollFile(e, r) {
-        let n;
-        try {
-          n = er.statSync(e);
-        } catch {
-          return;
-        }
-        let s = this._tracked.get(e);
-        if (!s) {
-          let c = this._extractSessionId(r);
-          if (!c) return;
-          (this._tracked.size >= vf && this._cleanStaleFiles(!0),
-            (s = {
-              offset: 0,
-              partial: "",
-              sessionId: `codex:${c}`,
-              cwd: "",
-              lastEventTime: Date.now(),
-              lastState: null,
-              lastNotificationEvent: "",
-              activeTurn: !1,
-              hadToolUse: !1,
-              hadAgentMessage: !1,
-              approvalPolicy: "",
-            }),
-            this._tracked.set(e, s));
-        }
-        if (n.size <= s.offset) return;
-        let o;
-        try {
-          let c = er.openSync(e, "r");
-          ((o = Buffer.alloc(n.size - s.offset)),
-            er.readSync(c, o, 0, o.length, s.offset),
-            er.closeSync(c));
-        } catch {
-          return;
-        }
-        ((s.offset = n.size), (s.lastEventTime = Date.now()));
-        let i = (s.partial + o.toString("utf8")).split(`
-`),
-          a = i.pop() || "";
-        s.partial = a.length > v0 ? "" : a;
-        for (let c of i) c.trim() && this._processLine(c, s);
-      }
-      _processLine(e, r) {
-        let n;
-        try {
-          n = JSON.parse(e);
-        } catch {
-          return;
-        }
-        if (typeof n.timestamp == "string") {
-          let l = Date.parse(n.timestamp);
-          if (Number.isFinite(l) && l < this._startedAtMs - 1500) return;
-        }
-        let s = n.type,
-          o = n.payload,
-          i = (o && typeof o == "object" && o.type) || "",
-          a = i ? `${s}:${i}` : s,
-          c = (o && typeof o == "object" && o.name) || "";
-        if (
-          (console.log(
-            `[CatCode] log-line codex: ${a}${c ? ` name=${c}` : ""} session=${r.sessionId} policy=${r.approvalPolicy || "?"}`,
-          ),
-          s === "session_meta" && o)
-        ) {
-          ((r.cwd = o.cwd || ""),
-            typeof o.approval_policy == "string" &&
-              (r.approvalPolicy = o.approval_policy));
-          return;
-        }
-        if (s === "turn_context" && o) {
-          (typeof o.cwd == "string" && o.cwd && (r.cwd = o.cwd),
-            typeof o.approval_policy == "string" &&
-              (r.approvalPolicy = o.approval_policy));
-          return;
-        }
-        if (a === "event_msg:task_started" || a === "event_msg:user_message") {
-          ((r.activeTurn = !0),
-            (r.hadToolUse = !1),
-            (r.hadAgentMessage = !1),
-            this._emit(r, "thinking", a));
-          return;
-        }
-        if (a === "event_msg:agent_message" || a === "response_item:message") {
-          r.hadAgentMessage = !0;
-          return;
-        }
-        if (this._isUserInterventionRequest(n, r)) {
-          let l = o && (o.id || o.call_id);
-          this._emitNotification(r, l ? `${a}:${l}` : a);
-          return;
-        }
-        if (
-          a === "response_item:function_call" ||
-          a === "response_item:custom_tool_call" ||
-          a === "response_item:web_search_call"
-        ) {
-          ((r.hadToolUse = !0), this._emit(r, "working", a));
-          return;
-        }
-        if (
-          a === "event_msg:exec_command_end" ||
-          a === "event_msg:patch_apply_end" ||
-          a === "event_msg:custom_tool_call_output"
-        ) {
-          this._emit(r, "working", a);
-          return;
-        }
-        if (a === "event_msg:task_complete") {
-          if (!r.activeTurn) return;
-          (this._emit(
-            r,
-            r.hadToolUse || r.hadAgentMessage ? "complete" : "idle",
-            a,
-          ),
-            (r.activeTurn = !1),
-            (r.hadToolUse = !1),
-            (r.hadAgentMessage = !1));
-          return;
-        }
-        a === "event_msg:turn_aborted" &&
-          ((r.activeTurn = !1), this._emit(r, "idle", a));
-      }
-      _isUserInterventionRequest(e, r) {
-        let n = e && e.payload;
-        if (!n || typeof n != "object" || n.type !== "function_call") return !1;
-        if (
-          n.name === "request_user_input" ||
-          n.name === "request_plugin_install"
-        )
-          return !0;
-        if (n.name === "exec_command" || n.name === "shell_command") {
-          let s = {};
-          try {
-            s = JSON.parse(n.arguments || "{}");
-          } catch {
-            s = {};
-          }
-          if (!s || s.sandbox_permissions !== "require_escalated") return !1;
-          let o = String((r && r.approvalPolicy) || "");
-          return !(o === "never" || o === "on-failure");
-        }
-        return !1;
-      }
-      _emitNotification(e, r) {
-        let n = Date.now();
-        (e.lastNotificationEvent === r && n - e.lastEventTime < 5e3) ||
-          ((e.lastNotificationEvent = r), this._emit(e, "notification", r));
-      }
-      _emit(e, r, n) {
-        let s = Date.now();
-        (r === e.lastState &&
-          r === "working" &&
-          s - (e.lastEmitAt || 0) < S0) ||
-          ((e.lastState = r),
-          (e.lastEmitAt = s),
-          (e.lastEventTime = s),
-          this._onStateChange({
-            agentId: "codex",
-            sessionId: e.sessionId,
-            state: r,
-            event: n,
-            cwd: e.cwd,
-          }));
-      }
-      _extractSessionId(e) {
-        let n = e.replace(".jsonl", "").split("-");
-        return n.length >= 10 ? n.slice(-5).join("-") : null;
-      }
-      _cleanStaleFiles(e = !1) {
-        let r = Date.now();
-        for (let [n, s] of this._tracked)
-          if (
-            ((e || r - s.lastEventTime > 3e5) && this._tracked.delete(n),
-            !e && this._tracked.size <= vf)
-          )
-            break;
-      }
-    };
-  wf.exports = vc;
+  wf.exports = require("./agents/codex-log-monitor");
 });
 var kf = F((BP, Sf) => {
   "use strict";
@@ -17820,6 +17698,16 @@ var Uf = F((KP, Df) => {
       (console.log(
         `[CatCode] agent-state <- ${N} ${k} (${P || "?"}) session=${v.sessionId || ""}`,
       ),
+        (() => {
+          try {
+            getAgentDiagnostics().record({
+              agentId: N,
+              eventCategory: P || "",
+              state: k,
+              sessionId: v.sessionId || "",
+            });
+          } catch {}
+        })(),
         (N === "antigravity" || k === "complete" || k === "error") &&
           s("[CatCode] agent state event", {
             agentId: N,
@@ -18273,413 +18161,23 @@ var Uf = F((KP, Df) => {
 });
 var Bf = F((zP, qf) => {
   "use strict";
-  function $f(t = {}) {
-    let e = String(t.key || t.code || "").toLowerCase(),
-      r = Number(t.keycode || t.rawcode || t.keyCode);
-    return e === "escape" || e === "esc" || r === 1 || r === 53 || r === 27;
-  }
-  function Ff(t) {
-    return t && t.type === 11;
-  }
-  function q0({
-    isMac: t,
-    appIconPath: e,
-    globalShortcut: r,
-    shell: n,
-    systemPreferences: s,
-    dialog: o,
-    nativeImage: i,
-    logInfo: a,
-    logWarn: c,
-    t: l,
-    releaseBuildExcludesDevOptions: d,
-    triggerJumpSequence: u,
-    cancelCoveringMotion: f,
-    getPetWindow: h,
-  }) {
-    let p = null,
-      g = !1,
-      y = !1,
-      w = null,
-      A = !1,
-      S = !1,
-      D = !1;
-    try {
-      ({ uIOhook: p } = require("uiohook-napi"));
-    } catch (O) {
-      c(
-        "[CatCode] uiohook-napi is unavailable:",
-        O && O.message ? O.message : O,
-      );
-    }
-    function B() {
-      (r.unregister("CommandOrControl+-"),
-        r.unregister("CommandOrControl+="),
-        r.unregister("CommandOrControl+0"),
-        r.unregister("CommandOrControl+J"));
-      let O = [...(d() ? [] : [["CommandOrControl+J", () => u()]])];
-      for (let [L, j] of O)
-        r.register(L, j) ||
-          console.warn(`[CatCode] failed to register shortcut: ${L}`);
-    }
-    function R(O) {
-      t &&
-        n
-          .openExternal(
-            `x-apple.systempreferences:com.apple.preference.security?${O}`,
-          )
-          .catch(() => {});
-    }
-    function _() {
-      if (!t) return !0;
-      try {
-        return s.isTrustedAccessibilityClient(!0);
-      } catch (O) {
-        return (
-          console.warn(
-            "[CatCode] accessibility permission check failed:",
-            O && O.message,
-          ),
-          !1
-        );
-      }
-    }
-    function T() {
-      !t ||
-        S ||
-        ((S = !0),
-        setTimeout(async () => {
-          try {
-            (
-              await o.showMessageBox({
-                type: "info",
-                title: l("accessibilityPermissionTitle"),
-                message: l("accessibilityPermissionMessage"),
-                detail: l("accessibilityPermissionDetail"),
-                buttons: [l("openAccessibility"), l("later")],
-                defaultId: 0,
-                cancelId: 1,
-              })
-            ).response === 0 && R("Privacy_Accessibility");
-          } catch {}
-        }, 800));
-    }
-    function m() {
-      !t ||
-        D ||
-        ((D = !0),
-        setTimeout(async () => {
-          try {
-            (
-              await o.showMessageBox({
-                type: "info",
-                title: l("inputPermissionTitle"),
-                message: l("inputPermissionMessage"),
-                detail: l("inputPermissionDetail"),
-                buttons: [l("openInputMonitoring"), l("later")],
-                defaultId: 0,
-                cancelId: 1,
-              })
-            ).response === 0 && R("Privacy_ListenEvent");
-          } catch {}
-        }, 800));
-    }
-    function x() {
-      t ||
-        D ||
-        ((D = !0),
-        setTimeout(async () => {
-          try {
-            await o.showMessageBox({
-              type: "info",
-              title: l("globalInputPermissionTitle"),
-              message: l("globalInputPermissionMessage"),
-              detail: l("globalInputPermissionDetail"),
-              buttons: [l("later")],
-              defaultId: 0,
-              cancelId: 0,
-              icon: i.createFromPath(e),
-            });
-          } catch {}
-        }, 800));
-    }
-    function b(O) {
-      let L = h();
-      !L ||
-        L.isDestroyed() ||
-        (A ||
-          ((A = !0),
-          a("[CatCode] global wheel hook received", {
-            amount: O && typeof O.amount == "number" ? O.amount : null,
-            direction: O && typeof O.direction == "number" ? O.direction : null,
-            rotation: O && typeof O.rotation == "number" ? O.rotation : null,
-          })),
-        L.webContents.send("mouse-wheel", {
-          rotation: O && typeof O.rotation == "number" ? O.rotation : 0,
-        }));
-    }
-    function C() {
-      if (!g) {
-        if (!p) {
-          (console.warn(
-            "[CatCode] global input hook unavailable: uiohook-napi is not loaded",
-          ),
-            x());
-          return;
-        }
-        try {
-          (_() || T(),
-            y ||
-              (p.on("keydown", (L) => {
-                if ($f(L)) {
-                  f();
-                  return;
-                }
-                let j = h();
-                !j || j.isDestroyed() || j.webContents.send("key-pressed");
-              }),
-              p.on("input", (L) => {
-                Ff(L) && b(L);
-              }),
-              (y = !0)),
-            p.start(),
-            (g = !0),
-            w && (clearInterval(w), (w = null)),
-            console.log("[CatCode] global input hook started"));
-        } catch (O) {
-          (console.warn(
-            "[CatCode] global key hook unavailable:",
-            O && O.message,
-          ),
-            t ? (_() ? m() : T()) : x(),
-            w ||
-              (w = setInterval(() => {
-                g || C();
-              }, 5e3)));
-        }
-      }
-    }
-    function G() {
-      if ((w && (clearInterval(w), (w = null)), g)) {
-        if (p)
-          try {
-            p.stop();
-          } catch {}
-        g = !1;
-      }
-    }
-    return { registerGlobalShortcuts: B, startKeyHook: C, stopKeyHook: G };
+  // V6-INPUT-M0: SoT lives in ./global-input-controller (no 5s retry storm).
+  const inputCtrl = require("./global-input-controller");
+  function isWheelInputEvent(t) {
+    return !!(t && t.type === 11);
   }
   qf.exports = {
-    createGlobalInputController: q0,
-    isEscapeKeyInput: $f,
-    isWheelInputEvent: Ff,
+    createGlobalInputController: inputCtrl.createGlobalInputController,
+    isEscapeKeyInput: inputCtrl.isEscapeKeyInput,
+    isWheelInputEvent,
+    isInputHookDiagnosticsEnabled: inputCtrl.isInputHookDiagnosticsEnabled,
+    STATES: inputCtrl.STATES,
+    DIAG_FLAG: inputCtrl.DIAG_FLAG,
   };
 });
 var Wf = F((GP, Hf) => {
   "use strict";
-  function B0({
-    screen: t,
-    getPetPeekState: e,
-    getPetWindow: r,
-    boundsWithConstrainedPetPosition: n,
-    setCurrentPetPosition: s,
-    saveSettings: o,
-    broadcastPetSize: i,
-    getPeekStretchEnabled: a,
-    getPeekDrinkEnabled: c,
-    unpeekPet: l,
-    peekPet: d,
-  }) {
-    let u = !1,
-      f = null,
-      h = null,
-      p = null,
-      g = !1,
-      y = null,
-      w = null,
-      A = null,
-      S = !1,
-      D = null,
-      B = null,
-      R = null,
-      _ = [],
-      T = null,
-      m = null;
-    function x(E) {
-      _.includes(E) || _.push(E);
-    }
-    function b(E) {
-      let W = E === "stretch" ? a : c;
-      return typeof W == "function" ? !!W() : !1;
-    }
-    function C() {
-      return !!e() || !!m;
-    }
-    function G() {
-      let E = e();
-      E && (m || (m = E.edge || "left"), typeof l == "function" && l());
-    }
-    function O() {
-      if (!(_.length > 0 || T) && m && typeof d == "function") {
-        let E = m;
-        ((m = null), d(E));
-      }
-    }
-    function L() {
-      ((_ = []), T && (clearTimeout(T), (T = null)));
-    }
-    function j() {
-      if ((T && (clearTimeout(T), (T = null)), _.length === 0)) return;
-      let E = _.shift();
-      T = setTimeout(() => {
-        ((T = null), E === "stretch" ? ae() : E === "drink" && te());
-      }, 900);
-    }
-    function z() {
-      (h && clearTimeout(h), p && clearTimeout(p), (h = null), (p = null));
-    }
-    function H(E = {}) {
-      let W = r();
-      if (
-        (z(),
-        W &&
-          !W.isDestroyed() &&
-          (E.cancelRenderer && W.webContents.send("cancel-stretch"), f))
-      ) {
-        let v = n(f);
-        (W.setBounds(v, !0), s({ x: v.x, y: v.y }), o({ sync: !1 }));
-      }
-      ((u = !1), (f = null), E.cancelRenderer ? L() : j(), O());
-    }
-    function ee() {
-      return u ? (H({ cancelRenderer: !0 }), !0) : !1;
-    }
-    function Q() {
-      (B && clearTimeout(B), R && clearTimeout(R), (B = null), (R = null));
-    }
-    function se(E = {}) {
-      let W = r();
-      if (
-        (Q(),
-        W &&
-          !W.isDestroyed() &&
-          (E.cancelRenderer && W.webContents.send("cancel-pomodoro-motion"), D))
-      ) {
-        let v = n(D);
-        (W.setBounds(v, !0), s({ x: v.x, y: v.y }), i(), o({ sync: !1 }));
-      }
-      ((S = !1), (D = null), E.cancelRenderer ? L() : j(), O());
-    }
-    function be() {
-      return S ? (se({ cancelRenderer: !0 }), !0) : !1;
-    }
-    function oe() {
-      let E = r(),
-        W = ee(),
-        v = Z(),
-        k = be();
-      return (
-        E && !E.isDestroyed() && E.webContents.send("cancel-pomodoro-motion"),
-        W || v || k
-      );
-    }
-    function ae() {
-      let E = r();
-      if (!E || E.isDestroyed() || (C() && !b("stretch"))) return;
-      if (u || g || S) {
-        x("stretch");
-        return;
-      }
-      (G(), z(), (u = !0), (f = E.getBounds()));
-      let W = t.getDisplayMatching(f),
-        { x: v, y: k, width: N, height: P } = W.workArea,
-        M = Math.round(P * 0.7),
-        ne = v + Math.round((N - M) / 2),
-        ue = k + Math.round((P - M) / 2);
-      (E.setBounds({ x: ne, y: ue, width: M, height: M }, !0),
-        (h = setTimeout(() => {
-          ((h = null),
-            E && !E.isDestroyed() && E.webContents.send("do-stretch"));
-        }, 400)),
-        (p = setTimeout(() => {
-          H();
-        }, 3600)));
-    }
-    function I() {
-      (w && clearTimeout(w), A && clearTimeout(A), (w = null), (A = null));
-    }
-    function $(E = {}) {
-      let W = r();
-      if (
-        (I(),
-        W &&
-          !W.isDestroyed() &&
-          (E.cancelRenderer && W.webContents.send("cancel-drink"), y))
-      ) {
-        let v = n(y);
-        (W.setBounds(v, !0), s({ x: v.x, y: v.y }), o({ sync: !1 }));
-      }
-      ((g = !1), (y = null), E.cancelRenderer ? L() : j(), O());
-    }
-    function Z() {
-      return g ? ($({ cancelRenderer: !0 }), !0) : !1;
-    }
-    function te() {
-      let E = r();
-      if (!E || E.isDestroyed() || (C() && !b("drink"))) return;
-      if (g || u || S) {
-        x("drink");
-        return;
-      }
-      (G(), I(), (g = !0), (y = E.getBounds()));
-      let W = t.getDisplayMatching(y),
-        { x: v, y: k, width: N, height: P } = W.workArea,
-        M = Math.round(P * 0.7),
-        ne = v + Math.round((N - M) / 2),
-        ue = k + Math.round((P - M) / 2);
-      (E.setBounds({ x: ne, y: ue, width: M, height: M }, !0),
-        (w = setTimeout(() => {
-          ((w = null), E && !E.isDestroyed() && E.webContents.send("do-drink"));
-        }, 400)),
-        (A = setTimeout(() => {
-          $();
-        }, 3600)));
-    }
-    function Y() {
-      let E = r();
-      if (e() || !E || E.isDestroyed() || S || u || g) return;
-      ((S = !0), (D = E.getBounds()));
-      let W = t.getDisplayMatching(D),
-        { x: v, y: k, width: N, height: P } = W.workArea,
-        M = Math.round(P * 0.7),
-        ne = v + Math.round((N - M) / 2),
-        ue = k + Math.round((P - M) / 2);
-      (E.setBounds({ x: ne, y: ue, width: M, height: M }, !0),
-        i(Math.round(M * 0.42)),
-        (B = setTimeout(() => {
-          ((B = null),
-            E &&
-              !E.isDestroyed() &&
-              E.webContents.send("pomodoro-focus-start"));
-        }, 160)),
-        (R = setTimeout(() => {
-          se();
-        }, 1400)));
-    }
-    function U() {
-      let E = r();
-      e() || !E || E.isDestroyed() || E.webContents.send("do-jump");
-    }
-    return {
-      cancelCoveringMotion: oe,
-      triggerStretchSequence: ae,
-      triggerDrinkSequence: te,
-      triggerPomodoroFocusStartSequence: Y,
-      triggerJumpSequence: U,
-    };
-  }
-  Hf.exports = { createCoveringMotionController: B0 };
+  Hf.exports = require("./covering-motion-controller");
 });
 var Gf = F((JP, zf) => {
   "use strict";
@@ -18904,16 +18402,22 @@ Choose which version to keep. The selected version will become the version used 
         mappingEditorTitle: "CatCode Cell Mapping Editor",
         appMenuAbout: "About CatCode",
         appMenuQuit: "Quit",
+        developerCredit: "Developer: Andrey",
+        contactDeveloper: "Contact me · @catcodeapp",
         checkForUpdates: "Check for Updates",
         editMenu: "Edit",
         contextTitle: "CatCode",
-        moveToCenter: "Move CatCode to Center",
+        moveToCenter: "Return Cat to Screen",
         peekMode: "Peek mode",
         peekLeft: "Peek from left",
         peekRight: "Peek from right",
         peekExit: "Exit peek mode",
         peekNotifications: "Notify in Peek mode",
         peekNotificationsHint: "Pops out briefly, then returns to peek",
+        wellnessNotificationStyle: "Water and stretch alerts",
+        notificationFullAnimation: "Large animation",
+        notificationCompact: "Compact message with sound",
+        wellnessAccountability: "React to an ignored stretch",
         size: "Size",
         smaller: "Smaller (-20)",
         larger: "Larger (+20)",
@@ -18923,8 +18427,10 @@ Choose which version to keep. The selected version will become the version used 
         stretchNow: "Start break stretch now",
         drink: "Drink Water",
         drinkNow: "Drink water now",
+        waterRemindersTemporarilyUnavailable: "temporarily unavailable",
         jump: "Jump (test)",
         jumpNow: "Jump now (test)",
+        angryNow: "Get angry now",
         shareCat: "Show off my CatCode",
         name: "Name",
         setUserName: "Tell my name",
@@ -18946,12 +18452,24 @@ Choose which version to keep. The selected version will become the version used 
         pomodoroMinutes: (t) => `${t} min`,
         pomodoroCustom: "Custom",
         patternEditor: "Cat Editor",
+        catSkins: "Cat skins",
+        catSkinsTitle: "CatCode skins",
         mappingEditor: "Cell Mapping Editor",
         taskCompleteSound: "Sound Volume",
         soundVolumeHeader: "Volume",
         soundMute: "Mute",
         soundLevel: (t) => `${t}`,
         attentionRequests: "Cat asks for attention",
+        attentionInterval: "How often it asks",
+        hideOverFullscreenApps: "Hide cat over fullscreen apps",
+        playfulBehavior: "Playful behavior",
+        petRoaming: "Roam around the screen",
+        cursorStealing: "Occasionally steal the cursor",
+        musicDance: "Dance to system music",
+        huntCursor: "Hunt the cursor",
+        huntCursorNotReady: "Hunt the cursor (coming soon)",
+        walkNow: "Walk now",
+        stealCursorNow: "Steal the cursor now",
         launchAtLogin: "Open at Login",
         agentMonitoring: "Agent Monitoring",
         agentMonitoringCursor: "Cursor",
@@ -18992,7 +18510,8 @@ Choose which version to keep. The selected version will become the version used 
         globalInputPermissionMessage:
           "CatCode cannot detect keyboard or wheel input",
         globalInputPermissionDetail:
-          "Restart CatCode and check whether Windows security software or system policy is blocking global input hooks.",
+          "Restart CatCode and check whether Windows security software or system policy is blocking global input hooks. You can also retry from the tray menu.",
+        retryInputMonitoring: "Retry input monitoring",
         reset: "Reset",
         clear: "Clear",
         delete: "Delete",
@@ -19066,8 +18585,11 @@ Choose which version to keep. The selected version will become the version used 
         stretchNow: "\uC9C0\uAE08 \uD734\uC2DD \uC2A4\uD2B8\uB808\uCE6D",
         drink: "\uBB3C \uB9C8\uC2DC\uAE30",
         drinkNow: "\uC9C0\uAE08 \uBB3C \uB9C8\uC2DC\uAE30",
+        waterRemindersTemporarilyUnavailable:
+          "\uc77c\uc2dc\uc801\uc73c\ub85c \ube44\ud65c\uc131\ud654",
         jump: "\uC810\uD504 (\uD14C\uC2A4\uD2B8)",
         jumpNow: "\uC9C0\uAE08 \uC810\uD504 (\uD14C\uC2A4\uD2B8)",
+        angryNow: "Get angry now",
         shareCat:
           "\uB0B4 \uCF64\uB0E5\uC774 \uC790\uB791 \uC601\uC0C1\uCC0D\uAE30",
         name: "\uC774\uB984",
@@ -19091,6 +18613,8 @@ Choose which version to keep. The selected version will become the version used 
         pomodoroMinutes: (t) => `${t}\uBD84`,
         pomodoroCustom: "\uCEE4\uC2A4\uD140",
         patternEditor: "\uD328\uD134 \uD3B8\uC9D1",
+        catSkins: "\uACE0\uC591\uC774 \uC2A4\uD0A8",
+        catSkinsTitle: "CatCode \uC2A4\uD0A8",
         mappingEditor: "\uC140 \uB9E4\uD551 \uD3B8\uC9D1",
         taskCompleteSound: "\uC18C\uB9AC",
         soundVolumeHeader: "\uBCFC\uB968",
@@ -19143,7 +18667,9 @@ Choose which version to keep. The selected version will become the version used 
         globalInputPermissionMessage:
           "CatCode\uC774 \uD0A4\uBCF4\uB4DC \uB610\uB294 \uD720 \uC785\uB825\uC744 \uAC10\uC9C0\uD558\uC9C0 \uBABB\uD558\uACE0 \uC788\uC5B4\uC694",
         globalInputPermissionDetail:
-          "CatCode\uC744 \uB2E4\uC2DC \uC2E4\uD589\uD574 \uBCF4\uC138\uC694. \uACC4\uC18D \uC2E4\uD328\uD558\uBA74 Windows \uBCF4\uC548 \uD504\uB85C\uADF8\uB7A8\uC774\uB098 \uC2DC\uC2A4\uD15C \uC815\uCC45\uC774 \uC804\uC5ED \uC785\uB825 \uD6C4\uD0B9\uC744 \uB9C9\uACE0 \uC788\uB294\uC9C0 \uD655\uC778\uD574 \uC8FC\uC138\uC694.",
+          "CatCode\uC744 \uB2E4\uC2DC \uC2E4\uD589\uD574 \uBCF4\uC138\uC694. \uACC4\uC18D \uC2E4\uD328\uD558\uBA74 Windows \uBCF4\uC548 \uD504\uB85C\uADF8\uB7A8\uC774\uB098 \uC2DC\uC2A4\uD15C \uC815\uCC45\uC774 \uC804\uC5ED \uC785\uB825 \uD6C4\uD0B9\uC744 \uB9C9\uACE0 \uC788\uB294\uC9C0 \uD655\uC778\uD574 \uC8FC\uC138\uC694. \uD2B8\uB808\uC774 \uBA54\uB274\uC5D0\uC11C \uB2E4\uC2DC \uC2DC\uB3C4\uD560 \uC218\uB3C4 \uC788\uC2B5\uB2C8\uB2E4.",
+        retryInputMonitoring:
+          "\uC785\uB825 \uAC10\uC9C0 \uB2E4\uC2DC \uC2DC\uB3C4",
         reset: "\uCD08\uAE30\uD654",
         clear: "\uC9C0\uC6B0\uAE30",
         delete: "\uC0AD\uC81C",
@@ -19223,9 +18749,12 @@ Choose which version to keep. The selected version will become the version used 
           "\u4ECA\u3059\u3050\u4F11\u61A9\u30B9\u30C8\u30EC\u30C3\u30C1",
         drink: "\u6C34\u3092\u98F2\u3080",
         drinkNow: "\u4ECA\u3059\u3050\u6C34\u3092\u98F2\u3080",
+        waterRemindersTemporarilyUnavailable:
+          "\u4e00\u6642\u7684\u306b\u7121\u52b9",
         jump: "\u30B8\u30E3\u30F3\u30D7 (\u30C6\u30B9\u30C8)",
         jumpNow:
           "\u4ECA\u3059\u3050\u30B8\u30E3\u30F3\u30D7 (\u30C6\u30B9\u30C8)",
+        angryNow: "Get angry now",
         shareCat:
           "CatCode \u3092\u81EA\u6162\u3059\u308B\u52D5\u753B\u3092\u64AE\u308B",
         name: "\u540D\u524D",
@@ -19249,6 +18778,8 @@ Choose which version to keep. The selected version will become the version used 
         pomodoroMinutes: (t) => `${t}\u5206`,
         pomodoroCustom: "\u30AB\u30B9\u30BF\u30E0",
         patternEditor: "\u30D1\u30BF\u30FC\u30F3\u7DE8\u96C6",
+        catSkins: "\u30CD\u30B3\u30B9\u30AD\u30F3",
+        catSkinsTitle: "CatCode \u30B9\u30AD\u30F3",
         mappingEditor: "\u30BB\u30EB\u30DE\u30C3\u30D4\u30F3\u30B0\u7DE8\u96C6",
         taskCompleteSound: "\u97F3",
         soundVolumeHeader: "\u97F3\u91CF",
@@ -19300,7 +18831,8 @@ Choose which version to keep. The selected version will become the version used 
         globalInputPermissionMessage:
           "CatCode \u304C\u30AD\u30FC\u30DC\u30FC\u30C9\u307E\u305F\u306F\u30DB\u30A4\u30FC\u30EB\u5165\u529B\u3092\u691C\u51FA\u3067\u304D\u307E\u305B\u3093",
         globalInputPermissionDetail:
-          "CatCode \u3092\u518D\u8D77\u52D5\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u89E3\u6C7A\u3057\u306A\u3044\u5834\u5408\u306F\u3001Windows \u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30BD\u30D5\u30C8\u307E\u305F\u306F\u30B7\u30B9\u30C6\u30E0\u30DD\u30EA\u30B7\u30FC\u304C\u30B0\u30ED\u30FC\u30D0\u30EB\u5165\u529B\u30D5\u30C3\u30AF\u3092\u30D6\u30ED\u30C3\u30AF\u3057\u3066\u3044\u306A\u3044\u304B\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+          "CatCode \u3092\u518D\u8D77\u52D5\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u89E3\u6C7A\u3057\u306A\u3044\u5834\u5408\u306F\u3001Windows \u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30BD\u30D5\u30C8\u307E\u305F\u306F\u30B7\u30B9\u30C6\u30E0\u30DD\u30EA\u30B7\u30FC\u304C\u30B0\u30ED\u30FC\u30D0\u30EB\u5165\u529B\u30D5\u30C3\u30AF\u3092\u30D6\u30ED\u30C3\u30AF\u3057\u3066\u3044\u306A\u3044\u304B\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u30C8\u30EC\u30A4\u30E1\u30CB\u30E5\u30FC\u304B\u3089\u3082\u518D\u8A66\u884C\u3067\u304D\u307E\u3059\u3002",
+        retryInputMonitoring: "\u5165\u529B\u691C\u51FA\u3092\u518D\u8A66\u884C",
         reset: "\u30EA\u30BB\u30C3\u30C8",
         clear: "\u30AF\u30EA\u30A2",
         delete: "\u524A\u9664",
@@ -19343,16 +18875,23 @@ Choose which version to keep. The selected version will become the version used 
         mappingEditorTitle: "Редактор ячеек CatCode",
         appMenuAbout: "О CatCode",
         appMenuQuit: "Выйти",
+        developerCredit: "Разработчик: Андрей",
+        contactDeveloper: "Связаться со мной · @catcodeapp",
         checkForUpdates: "Проверить обновления",
         editMenu: "Правка",
         contextTitle: "CatCode",
-        moveToCenter: "Переместить CatCode в центр",
+        moveToCenter: "Вернуть кота на экран",
         peekMode: "Режим выглядывания",
         peekLeft: "Выглядывать слева",
         peekRight: "Выглядывать справа",
         peekExit: "Выйти из режима",
         peekNotifications: "Уведомления в режиме выглядывания",
         peekNotificationsHint: "Кратко появляется и возвращается назад",
+        wellnessNotificationStyle:
+          "Уведомления о воде и разминке",
+        notificationFullAnimation: "Большая анимация",
+        notificationCompact: "Компактная реплика со звуком",
+        wellnessAccountability: "Сердиться за пропущенную разминку",
         size: "Размер",
         smaller: "Меньше (-20)",
         larger: "Больше (+20)",
@@ -19362,8 +18901,10 @@ Choose which version to keep. The selected version will become the version used 
         stretchNow: "Начать растяжку сейчас",
         drink: "Вода",
         drinkNow: "Попить воды сейчас",
+        waterRemindersTemporarilyUnavailable: "временно недоступно",
         jump: "Прыжок (тест)",
         jumpNow: "Прыгнуть сейчас (тест)",
+        angryNow: "Позлиться сейчас",
         shareCat: "Показать моего CatCode",
         name: "Имя",
         setUserName: "Указать моё имя",
@@ -19385,12 +18926,25 @@ Choose which version to keep. The selected version will become the version used 
         pomodoroMinutes: (t) => `${t} мин`,
         pomodoroCustom: "Свое",
         patternEditor: "Редактор кота",
+        catSkins: "Скины кота",
+        catSkinsTitle: "Скины кота CatCode",
         mappingEditor: "Редактор ячеек",
         taskCompleteSound: "Громкость звука",
         soundVolumeHeader: "Громкость",
         soundMute: "Без звука",
         soundLevel: (t) => `${t}`,
         attentionRequests: "Кот просит внимания",
+        attentionInterval: "Как часто просить внимания",
+        hideOverFullscreenApps:
+          "Скрывать кота поверх полноэкранных приложений",
+        playfulBehavior: "Игровое поведение",
+        petRoaming: "Гулять по экрану",
+        cursorStealing: "Иногда красть курсор",
+        musicDance: "Танцевать под музыку",
+        huntCursor: "Охотиться за курсором",
+        huntCursorNotReady: "Охотиться за курсором (скоро)",
+        walkNow: "Прогуляться сейчас",
+        stealCursorNow: "Украсть курсор сейчас",
         launchAtLogin: "Открывать при входе",
         agentMonitoring: "Мониторинг агентов",
         agentMonitoringCursor: "Cursor",
@@ -19432,7 +18986,8 @@ Choose which version to keep. The selected version will become the version used 
         globalInputPermissionMessage:
           "CatCode не может видеть клавиатуру или колесо мыши",
         globalInputPermissionDetail:
-          "Перезапустите CatCode и проверьте, не блокирует ли защитное ПО Windows или системная политика глобальные хуки ввода.",
+          "Перезапустите CatCode и проверьте, не блокирует ли защитное ПО Windows или системная политика глобальные хуки ввода. Также можно повторить попытку из меню трея.",
+        retryInputMonitoring: "Повторить мониторинг ввода",
         reset: "Сброс",
         clear: "Очистить",
         delete: "Удалить",
@@ -19488,8 +19043,8 @@ var up = F((eR, lp) => {
     ip = 1,
     ap = 60,
     cp = 1,
-    jc = 0.1,
-    iS = jc;
+    jc = 1,
+    iS = 0.65;
   function aS({ app: t, remindersStorePath: e, defaultPetSize: r }) {
     function n() {
       return t.isPackaged;
@@ -19522,10 +19077,11 @@ var up = F((eR, lp) => {
       return Math.max(0, Math.min(jc, Number(y) || 0));
     }
     function f(y) {
-      return u(Math.max(1, Math.min(10, Math.round(Number(y) || 1))) / 100);
+      let w = Math.max(1, Math.min(10, Math.round(Number(y) || 1))) / 10;
+      return u(Math.pow(w, 1.35));
     }
     function h(y) {
-      return Math.max(1, Math.min(10, Math.round(u(y) * 100)));
+      return Math.max(1, Math.min(10, Math.round(Math.pow(u(y), 1 / 1.35) * 10)));
     }
     function p(y) {
       let w = String(y || "").trim();
@@ -19562,6 +19118,9 @@ var up = F((eR, lp) => {
 });
 var hp = F((tR, dp) => {
   "use strict";
+  var {
+    areWaterRemindersTemporarilyDisabled,
+  } = require("./water-reminders-gate");
   function cS({
     app: t,
     isWindows: e,
@@ -19647,7 +19206,7 @@ var hp = F((tR, dp) => {
       let re = h();
       re && (clearInterval(re), p(null));
       let ke = g();
-      ke > 0 && p(setInterval(() => f(), ke * 60 * 1e3));
+      ke > 0 && p(setInterval(() => f({ automatic: !0 }), ke * 60 * 1e3));
     }
     function kt(re) {
       (y(i(re)), l(), qe(), u());
@@ -19655,8 +19214,10 @@ var hp = F((tR, dp) => {
     function xe() {
       let re = A();
       re && (clearInterval(re), S(null));
+      // Temporary water gate: clear any timer and do not reschedule.
+      if (areWaterRemindersTemporarilyDisabled()) return;
       let ke = D();
-      ke > 0 && S(setInterval(() => w(), ke * 60 * 1e3));
+      ke > 0 && S(setInterval(() => w({ automatic: !0 }), ke * 60 * 1e3));
     }
     function pe(re) {
       (B(a(re)), l(), xe(), u());
@@ -19831,15 +19392,29 @@ var pp = F((rR, fp) => {
             typeof _.drinkIntervalMin == "number" &&
               _.drinkIntervalMin >= 0 &&
               (T.drinkIntervalMin = i(_.drinkIntervalMin)),
+            typeof _.stretchCustomIntervalMin == "number" &&
+              _.stretchCustomIntervalMin > 0 &&
+              (T.stretchCustomIntervalMin = _.stretchCustomIntervalMin),
+            typeof _.drinkCustomIntervalMin == "number" &&
+              _.drinkCustomIntervalMin > 0 &&
+              (T.drinkCustomIntervalMin = _.drinkCustomIntervalMin),
             typeof _.peekStretchEnabled == "boolean" &&
               (T.peekStretchEnabled = _.peekStretchEnabled),
             typeof _.peekDrinkEnabled == "boolean" &&
               (T.peekDrinkEnabled = _.peekDrinkEnabled),
+            typeof _.stretchNotificationMode == "string" &&
+              (T.stretchNotificationMode = normalizeWellnessNotificationMode(
+                _.stretchNotificationMode,
+              )),
+            typeof _.drinkNotificationMode == "string" &&
+              (T.drinkNotificationMode = normalizeWellnessNotificationMode(
+                _.drinkNotificationMode,
+              )),
             typeof _.language == "string" &&
               (T.currentLanguage = a(_.language)),
             typeof _.catName == "string" &&
               _.catName.trim() &&
-              (T.catName = _.catName.trim().slice(0, 24)),
+              (T.catName = _.catName.trim().normalize("NFC").slice(0, 24)),
             typeof _.userName == "string" &&
               (T.userName = _.userName.trim().slice(0, 24)),
             typeof _.showCatName == "boolean" &&
@@ -19851,7 +19426,11 @@ var pp = F((rR, fp) => {
             typeof _.catNamePromptShown == "boolean" &&
               (T.catNamePromptShown = _.catNamePromptShown),
             typeof _.taskCompleteSoundVolume == "number" &&
-              (T.taskCompleteSoundVolume = c(_.taskCompleteSoundVolume)),
+              (T.taskCompleteSoundVolume = c(
+                Number(_.soundVolumeScaleVersion) === 2
+                  ? _.taskCompleteSoundVolume
+                  : _.taskCompleteSoundVolume * 10,
+              )),
             typeof _.soundMuted == "boolean"
               ? (T.soundMuted = _.soundMuted)
               : T.taskCompleteSoundVolume === 0 &&
@@ -19859,6 +19438,26 @@ var pp = F((rR, fp) => {
                 (T.taskCompleteSoundVolume = g().defaultSoundVolume)),
             typeof _.attentionRequestsEnabled == "boolean" &&
               (T.attentionRequestsEnabled = _.attentionRequestsEnabled),
+            typeof _.attentionRequestIntervalMin == "number" &&
+              _.attentionRequestIntervalMin > 0 &&
+              (T.attentionRequestIntervalMin = normalizeWellnessInterval(
+                _.attentionRequestIntervalMin,
+                60,
+                { max: 240 },
+              )),
+            typeof _.wellnessAccountabilityEnabled == "boolean" &&
+              (T.wellnessAccountabilityEnabled =
+                _.wellnessAccountabilityEnabled),
+            typeof _.hideOverFullscreenApps == "boolean" &&
+              (T.hideOverFullscreenApps = _.hideOverFullscreenApps),
+            typeof _.petRoamingEnabled == "boolean" &&
+              (T.petRoamingEnabled = _.petRoamingEnabled),
+            typeof _.cursorStealingEnabled == "boolean" &&
+              (T.cursorStealingEnabled = _.cursorStealingEnabled),
+            typeof _.musicDanceEnabled == "boolean" &&
+              (T.musicDanceEnabled = _.musicDanceEnabled),
+            typeof _.huntCursorEnabled == "boolean" &&
+              (T.huntCursorEnabled = _.huntCursorEnabled),
             typeof _.launchAtLogin == "boolean" &&
               (T.launchAtLogin = _.launchAtLogin),
             typeof _.allowAnalysis == "boolean" &&
@@ -19914,8 +19513,12 @@ var pp = F((rR, fp) => {
             {
               stretchIntervalMin: m.stretchIntervalMin,
               drinkIntervalMin: m.drinkIntervalMin,
+              stretchCustomIntervalMin: m.stretchCustomIntervalMin,
+              drinkCustomIntervalMin: m.drinkCustomIntervalMin,
               peekStretchEnabled: m.peekStretchEnabled,
               peekDrinkEnabled: m.peekDrinkEnabled,
+              stretchNotificationMode: m.stretchNotificationMode,
+              drinkNotificationMode: m.drinkNotificationMode,
               language: m.currentLanguage,
               catName: m.catName,
               userName: m.userName,
@@ -19923,9 +19526,18 @@ var pp = F((rR, fp) => {
               fixedMessage: m.fixedMessage,
               showReminderButtonOutside: m.showReminderButtonOutside,
               catNamePromptShown: m.catNamePromptShown,
+              soundVolumeScaleVersion: 2,
               taskCompleteSoundVolume: m.taskCompleteSoundVolume,
               soundMuted: m.soundMuted,
               attentionRequestsEnabled: m.attentionRequestsEnabled,
+              attentionRequestIntervalMin: m.attentionRequestIntervalMin,
+              wellnessAccountabilityEnabled:
+                m.wellnessAccountabilityEnabled,
+              hideOverFullscreenApps: m.hideOverFullscreenApps,
+              petRoamingEnabled: m.petRoamingEnabled,
+              cursorStealingEnabled: m.cursorStealingEnabled,
+              musicDanceEnabled: m.musicDanceEnabled,
+              huntCursorEnabled: m.huntCursorEnabled,
               launchAtLogin: m.launchAtLogin,
               allowAnalysis: m.allowAnalysis,
               agentMonitoringOverrides: m.agentMonitoringOverrides,
@@ -20582,20 +20194,46 @@ var Pp = F((aR, Cp) => {
 });
 var Hc = F((cR, Ip) => {
   "use strict";
-  var Fc = "#1A1A1A",
-    Jr = "#1A1A1A",
-    qc = "#FFFFFF";
+  var Fc = "#20242D",
+    Jr = "#A7EFF0",
+    qc = "#EDF4F5";
   function kS() {
     return {
+      schemaVersion: 4,
       selectedPresetId: null,
+      name: "",
       pixelResolution: 2,
       baseColor: Fc,
+      earInnerColor: "#F18AA5",
       eyeColor: Jr,
       eyeBgColor: qc,
+      eyeOutlineColor: "#1C1C1C",
       eyePupilScale: 100,
+      eyeStyle: "natural",
+      eyePupilColor: "#141820",
       oddEye: !1,
       eyeColorLeft: Jr,
       eyeColorRight: Jr,
+      closedLidColor: "#1A1E26",
+      noseColor: "#304055",
+      markingColor: "#3A4559",
+      markings: [],
+      regionColors: {
+        head: "",
+        body: "",
+        frontPaws: "",
+        hindPaws: "",
+        tail: "",
+        ears: "",
+      },
+      regionMarkings: {
+        head: [],
+        body: [],
+        frontPaws: [],
+        hindPaws: [],
+        tail: [],
+        ears: [],
+      },
       head: [],
       body: [],
       tail: [],
@@ -20605,6 +20243,9 @@ var Hc = F((cR, Ip) => {
       legRr: [],
       earL: [],
       earR: [],
+      sidePatternMode: "auto",
+      side: [],
+      legacy: {},
     };
   }
   function AS(t) {
@@ -20619,32 +20260,7 @@ var Hc = F((cR, Ip) => {
     return Math.max(40, Math.min(140, Math.round(Number(t) || 100)));
   }
   function Ms(t) {
-    let e = t && typeof t == "object" ? t : {};
-    return {
-      selectedPresetId:
-        typeof e.selectedPresetId == "string" ? e.selectedPresetId : null,
-      // Version 2 skins keep their coordinates on the 64x64 detail grid.
-      // Older files intentionally remain unmarked so the renderer can migrate them.
-      pixelResolution: Number(e.pixelResolution) === 2 ? 2 : 1,
-      baseColor: typeof e.baseColor == "string" ? e.baseColor : Fc,
-      eyeColor: typeof e.eyeColor == "string" ? e.eyeColor : Jr,
-      eyeBgColor: typeof e.eyeBgColor == "string" ? e.eyeBgColor : qc,
-      eyePupilScale: Rp(e.eyePupilScale),
-      oddEye: !!e.oddEye,
-      eyeColorLeft:
-        typeof e.eyeColorLeft == "string" ? e.eyeColorLeft : e.eyeColor || Jr,
-      eyeColorRight:
-        typeof e.eyeColorRight == "string" ? e.eyeColorRight : e.eyeColor || Jr,
-      head: Array.isArray(e.head) ? e.head : [],
-      body: Array.isArray(e.body) ? e.body : [],
-      tail: Array.isArray(e.tail) ? e.tail : [],
-      legFl: Array.isArray(e.legFl) ? e.legFl : [],
-      legFr: Array.isArray(e.legFr) ? e.legFr : [],
-      legRl: Array.isArray(e.legRl) ? e.legRl : [],
-      legRr: Array.isArray(e.legRr) ? e.legRr : [],
-      earL: Array.isArray(e.earL) ? e.earL : [],
-      earR: Array.isArray(e.earR) ? e.earR : [],
-    };
+    return normalizeV4Pattern(t);
   }
   function oi(t) {
     let e = Ms(t);
@@ -20671,6 +20287,7 @@ var Hc = F((cR, Ip) => {
             typeof t.name == "string" && t.name.trim()
               ? t.name.trim().slice(0, 60)
               : "My preset",
+          origin: t.origin === "imported" ? "imported" : "custom",
           createdAt:
             typeof t.createdAt == "string"
               ? t.createdAt
@@ -20706,6 +20323,12 @@ var Hc = F((cR, Ip) => {
               typeof r.name == "string" && r.name.trim()
                 ? r.name.trim().slice(0, 60)
                 : "My preset",
+            origin:
+              r.origin === "imported" || t.origin === "imported"
+                ? "imported"
+                : r.origin === "custom"
+                  ? "custom"
+                  : "imported",
             createdAt:
               typeof r.createdAt == "string"
                 ? r.createdAt
@@ -20802,142 +20425,196 @@ var jp = F((lR, Lp) => {
     jS = [
       {
         id: "black-cat",
-        label: { en: "Black cat", ko: "\uAC80\uC740\uB0E5\uC774" },
+        label: { en: "Black cat", ru: "Чёрный кот", ko: "\uAC80\uC740\uB0E5\uC774" },
         file: "black-cat.json",
         image: "../../assets/img/presets/black.png",
+        promoted: true,
       },
       {
         id: "white-cat",
-        label: { en: "White cat", ko: "\uD558\uC580\uB0E5\uC774" },
+        label: { en: "White cat", ru: "Белый кот", ko: "\uD558\uC580\uB0E5\uC774" },
         file: "white-cat.json",
         image: "../../assets/img/presets/white.png",
-      },
-      {
-        id: "cheese-cat",
-        label: { en: "Cheese cat", ko: "\uCE58\uC988\uB0E5\uC774" },
-        file: "cheese-cat.json",
-        image: "../../assets/img/presets/orange.png",
+        promoted: true,
       },
       {
         id: "siamese-cat",
-        label: { en: "Siamese cat", ko: "\uC0F4\uACE0\uC591\uC774" },
+        label: { en: "Siamese cat", ru: "Сиамский кот", ko: "\uC0F4\uACE0\uC591\uC774" },
         file: "siamese-cat.json",
         image: "../../assets/img/presets/siamese.png",
+        promoted: true,
+      },
+      {
+        id: "graphite-aqua",
+        label: { en: "Graphite Aqua", ru: "Графит и аква" },
+        file: "graphite-aqua.json",
+        promoted: true,
+      },
+      {
+        id: "warm-ginger",
+        label: { en: "Warm Ginger", ru: "Тёплый рыжий" },
+        file: "warm-ginger.json",
+        promoted: true,
+      },
+      {
+        id: "silver-sage",
+        label: { en: "Silver Sage", ru: "Серебристый шалфей" },
+        file: "silver-sage.json",
+        promoted: true,
+      },
+      {
+        id: "cocoa-amber",
+        label: { en: "Cocoa Amber", ru: "Какао и янтарь" },
+        file: "cocoa-amber.json",
+        promoted: true,
+      },
+      {
+        id: "cheese-cat",
+        label: { en: "Cheese cat", ru: "Сырный кот (архив)", ko: "\uCE58\uC988\uB0E5\uC774" },
+        file: "cheese-cat.json",
+        image: "../../assets/img/presets/orange.png",
+        promoted: false,
+        legacyArchive: true,
       },
       {
         id: "mackerel-tabby",
-        label: { en: "Mackerel tabby", ko: "\uACE0\uB4F1\uC5B4\uB0E5\uC774" },
+        label: { en: "Mackerel tabby", ru: "Скумбриевый (архив)", ko: "\uACE0\uB4F1\uC5B4\uB0E5\uC774" },
         file: "mackerel-tabby.json",
         image: "../../assets/img/presets/mackerel.png",
+        promoted: false,
+        legacyArchive: true,
       },
       {
         id: "calico-cat",
-        label: { en: "Calico cat", ko: "\uC0BC\uC0C9\uB0E5\uC774" },
+        label: { en: "Calico cat", ru: "Трёхцветный (архив)", ko: "\uC0BC\uC0C9\uB0E5\uC774" },
         file: "calico-cat.json",
         image: "../../assets/img/presets/calico.png",
+        promoted: false,
+        legacyArchive: true,
       },
       {
         id: "russian-blue",
-        label: { en: "Russian Blue", ko: "\uB7EC\uC2DC\uC548\uBE14\uB8E8" },
+        label: { en: "Russian Blue", ru: "Русская голубая (архив)", ko: "\uB7EC\uC2DC\uC548\uBE14\uB8E8" },
         file: "rusian-blue.json",
         image: "../../assets/img/presets/rusian-blue.png",
+        promoted: false,
+        legacyArchive: true,
       },
       {
         id: "community-asexual-v0",
         label: { en: "Asexual v0", ru: "Асексуал v0" },
         file: "community/comnyang-pattern-asexual-v0.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-dalmatian",
         label: { en: "Dalmatian", ru: "Далматинец" },
         file: "community/comnyang-pattern-dalmatian.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-dilute-calico-77",
         label: { en: "Dilute calico 77", ru: "Разбавленный калико 77" },
         file: "community/comnyang-pattern-dilute-calico-77.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-gunbamie",
         label: { en: "Gunbamie", ru: "Гунбами" },
         file: "community/comnyang-pattern-gunbamie.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-jamun",
         label: { en: "Jamun", ru: "Джамун" },
         file: "community/comnyang-pattern-jamun.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-kohaze",
         label: { en: "Kohaze", ru: "Кохадзэ" },
         file: "community/comnyang-pattern-kohaze.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-lazlo",
         label: { en: "Lazlo", ru: "Лазло" },
         file: "community/comnyang-pattern-lazlo.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-mandarino",
         label: { en: "Mandarino", ru: "Мандарино" },
         file: "community/comnyang-pattern-mandarino.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-matcha",
         label: { en: "Matcha", ru: "Матча" },
         file: "community/comnyang-pattern-matcha.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-misty",
         label: { en: "Misty", ru: "Мисти" },
         file: "community/comnyang-pattern-misty.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-pepperino",
         label: { en: "Pepperino", ru: "Пепперино" },
         file: "community/comnyang-pattern-pepperino.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-potato",
         label: { en: "Potato", ru: "Картошка" },
         file: "community/comnyang-pattern-potato.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-tortuga",
         label: { en: "Tortuga", ru: "Тортуга" },
         file: "community/comnyang-pattern-tortuga.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-winter",
         label: { en: "Winter", ru: "Зима" },
         file: "community/comnyang-pattern-winter.json",
         source: "collection",
+        promoted: false,
       },
       {
         id: "community-zorro",
         label: { en: "Zorro", ru: "Зорро" },
         file: "community/comnyang-pattern-zorro.json",
         source: "collection",
+        promoted: false,
       },
     ],
     Np = {
       "black-cat": "Black",
       "white-cat": "White",
-      "cheese-cat": "Cheese",
       "siamese-cat": "Siamese",
+      "graphite-aqua": "Graphite Aqua",
+      "warm-ginger": "Warm Ginger",
+      "silver-sage": "Silver Sage",
+      "cocoa-amber": "Cocoa Amber",
+      "cheese-cat": "Cheese",
       "mackerel-tabby": "Mackerel Tabby",
       "calico-cat": "Calico",
       "russian-blue": "Russian Blue",
@@ -20985,6 +20662,8 @@ var jp = F((lR, Lp) => {
               label: m.label,
               source: m.source || "builtin",
               image: m.image,
+              promoted: m.promoted !== false,
+              legacyArchive: !!m.legacyArchive,
               pattern: ai((JSON.parse(x).preset || {}).pattern || JSON.parse(x)),
             };
           } catch {
@@ -21020,6 +20699,7 @@ var jp = F((lR, Lp) => {
         id: m.id,
         label: { en: m.name, ko: m.name },
         source: "custom",
+        origin: m.origin === "imported" ? "imported" : "custom",
         syncPending: !!(C.includes(m.id) || !b),
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
@@ -21927,7 +21607,7 @@ var Vp = F((pR, Wp) => {
       (a(f),
         o(),
         f.setMenu(null),
-        f.loadFile(e("renderer", "editor", "index.html")),
+        f.loadFile(e("renderer", "v6-editor", "index.html")),
         f.once("ready-to-show", l),
         f.on("closed", () => {
           (i() === f && a(null), c(), o());
@@ -22015,10 +21695,22 @@ var Jp = F((mR, Gp) => {
     broadcastSoundMuted: G,
     broadcastReminders: O,
     broadcastReminderSettings: L,
+    broadcastThinkingPreview: thinkingPreviewBroadcast,
+    getV6IdlePreviewEnabled: isV6IdlePreviewEnabled,
+    getHuntCursorEnabled: getHuntCursorEnabledForPet,
+    getHuntOwnerForensicEnabled: isHuntOwnerForensicEnabledForPet,
     refreshAppTrayMenu: j,
+    onGlobalCursorActivity: wellnessCursorActivity,
   }) {
     let z = null,
       H = null;
+    function clearReadyForWindow(win) {
+      try {
+        if (win && win.webContents && !win.webContents.isDestroyed()) {
+          clearPetRendererReady(win.webContents.id);
+        }
+      } catch {}
+    }
     function ee() {
       let Q = l();
       if (Q && !Q.isDestroyed()) return;
@@ -22029,6 +21721,19 @@ var Jp = F((mR, Gp) => {
         $ = p(),
         Z = I ? ($ ? I : a(I, oe, ae)) : i(se, oe, ae);
       h(Z);
+      let v6On = !!(isV6IdlePreviewEnabled && isV6IdlePreviewEnabled()),
+        forensicOn = !!(
+          isHuntOwnerForensicEnabledForPet && isHuntOwnerForensicEnabledForPet()
+        ),
+        petQuery =
+          v6On || forensicOn
+            ? {
+                // Forensic QA must boot the same V6 model path as regular V6 QA.
+                v6IdlePreview: "1",
+                v6TypingPreview: catcodeV6TypingPreviewEnabled ? "1" : "0",
+              }
+            : void 0;
+      if (petQuery && forensicOn) petQuery.huntOwnerForensic = "1";
       let te = new t({
         width: oe,
         height: ae,
@@ -22058,9 +21763,72 @@ var Jp = F((mR, Gp) => {
         A(te),
         S(te),
         D(),
-        te.loadFile(r("renderer", "pet", "index.html")),
+        clearReadyForWindow(te),
+        (() => {
+          try {
+            getHuntOwnerForensic()?.record?.("boot", {
+              process: "main",
+              event: "pet-window-created",
+              webContentsId: te.webContents.id,
+              v6Query: !!(petQuery && petQuery.v6IdlePreview === "1"),
+              forensicQuery: !!(petQuery && petQuery.huntOwnerForensic === "1"),
+            });
+          } catch {}
+        })(),
+        te.webContents.on("did-start-navigation", (_e, _url, isInPlace, isMainFrame) => {
+          if (isMainFrame === false || isInPlace) return;
+          clearReadyForWindow(te);
+          try {
+            getHuntOwnerForensic()?.record?.("boot", {
+              process: "main",
+              event: "pet-navigation-start",
+              webContentsId: te.webContents.id,
+            });
+          } catch {}
+        }),
+        te.webContents.on("render-process-gone", () => {
+          clearReadyForWindow(te);
+        }),
+        te.webContents.on("destroyed", () => {
+          clearReadyForWindow(te);
+        }),
+        te.loadFile(
+          r("renderer", "pet", "index.html"),
+          petQuery ? { query: petQuery } : void 0,
+        ),
         te.webContents.on("did-finish-load", () => {
+          // Do not clear handshake here: renderer scripts (and ready ack) run
+          // before did-finish-load. Clearing would drop a valid ready mark.
+          try {
+            getHuntOwnerForensic()?.record?.("boot", {
+              process: "main",
+              event: "pet-did-finish-load",
+              webContentsId: te.webContents.id,
+              rendererReady: !!isPetRendererReady(te.webContents.id),
+            });
+          } catch {}
+          // Re-push tray hunt setting after scripts wire listeners; the ready-ack
+          // push can race ahead of onHuntCursorEnabled registration.
+          try {
+            const huntOn = !!(
+              typeof getHuntCursorEnabledForPet === "function"
+                ? getHuntCursorEnabledForPet()
+                : !1
+            );
+            te.webContents.send("hunt-cursor-enabled", huntOn);
+          } catch {}
+          try {
+            const forensic = getHuntOwnerForensic && getHuntOwnerForensic();
+            te.webContents.send("hunt-owner-forensic-enabled", {
+              enabled: !!(forensic && forensic.enabled),
+              packageMarker:
+                (forensic && forensic.packageMarker) ||
+                "v6-hunt-visual-focus-and-play-gesture-qa",
+            });
+          } catch {}
           (R(), _(), T(), m(), x(), b(), C(), G(), O(), L());
+          typeof thinkingPreviewBroadcast == "function" &&
+            thinkingPreviewBroadcast();
           let U = p();
           (U && te.webContents.send("pet-peek-state", U),
             g() ||
@@ -22074,22 +21842,142 @@ var Jp = F((mR, Gp) => {
       let Y = () => {
         let U = l();
         if (!U || U.isDestroyed()) return;
+        let contents = U.webContents,
+          contentsId = contents && !contents.isDestroyed() ? contents.id : null,
+          rendererReady = isPetRendererReady(contentsId);
+        if (!U.isVisible()) {
+          try {
+            getGazeDiagnostics().recordMainCursorPoll({
+              sent: !1,
+              petVisible: !1,
+              hypot: 0,
+              dx: 0,
+              dy: 0,
+            });
+          } catch {}
+          z = setTimeout(Y, 500);
+          return;
+        }
         let E = e.getCursorScreenPoint(),
           W = U.getBounds(),
-          v = c(W),
-          k = Math.round(E.x - v.x),
-          N = Math.round(E.y - v.y),
-          P = { dx: k, dy: N },
-          ne = Math.hypot(k, N) <= 300 ? 50 : 100;
-        ((!H || H.dx !== P.dx || H.dy !== P.dy) &&
-          ((H = P), U.webContents.send("cursor-pos", P)),
-          (z = setTimeout(Y, ne)));
+          fallbackFocus = c(W),
+          focusContract =
+            contentsId != null
+              ? v6HuntVisualFocusByContentsId.get(contentsId) || null
+              : null,
+          focus = screenV6HuntFocusFromContract(
+            W,
+            focusContract,
+            fallbackFocus,
+            V6_HUNT_DEFAULT_NEAR_RADIUS_PX,
+          ),
+          rel = relativeV6HuntCursorFromScreen(E, focus),
+          k = rel.dx,
+          N = rel.dy,
+          nearRadiusPx = Math.round(
+            focus && focus.radiusPx > 0
+              ? focus.radiusPx
+              : V6_HUNT_DEFAULT_NEAR_RADIUS_PX,
+          ),
+          approachBandPx = Math.max(
+            V6_HUNT_DEFAULT_APPROACH_BAND_PX,
+            Math.round(nearRadiusPx * 2.5),
+          ),
+          P = { dx: k, dy: N, nearRadiusPx },
+          hyp = Math.hypot(k, N),
+          // V6 hunt gesture: denser samples across a wide approach band so a
+          // quick near-cat pass is observable before the far 500ms cadence.
+          ne = hyp <= approachBandPx ? 60 : 500,
+          moved =
+            !H ||
+            H.dx !== P.dx ||
+            H.dy !== P.dy ||
+            H.nearRadiusPx !== P.nearRadiusPx,
+          sent = !1;
+        if (rendererReady && moved) {
+          H = P;
+          typeof wellnessCursorActivity == "function" &&
+            wellnessCursorActivity("cursor");
+          U.webContents.send(
+            typeof HUNT_CURSOR_POS_CHANNEL === "string"
+              ? HUNT_CURSOR_POS_CHANNEL
+              : "cursor-pos",
+            P,
+          );
+          sent = !0;
+          if (!Y._huntFirstSampleLogged) {
+            Y._huntFirstSampleLogged = !0;
+            try {
+              getHuntOwnerForensic()?.record?.("boot", {
+                process: "main",
+                event: "first-sample-sent",
+                webContentsId: contentsId,
+                rendererReady: true,
+              });
+            } catch {}
+          }
+        } else if (moved) {
+          H = P;
+        }
+        (() => {
+          try {
+            const huntForensic = getHuntOwnerForensic && getHuntOwnerForensic();
+            if (huntForensic && huntForensic.enabled) {
+              const nowMs = Date.now();
+              if (
+                !Y._huntForensicLastAt ||
+                nowMs - Y._huntForensicLastAt >= 200
+              ) {
+                Y._huntForensicLastAt = nowMs;
+                huntForensic.record("main-poll", {
+                  pollActive: true,
+                  petVisible: true,
+                  sampleSent: !!sent,
+                  rendererReady: !!rendererReady,
+                  cursorChannel:
+                    typeof HUNT_CURSOR_POS_CHANNEL === "string"
+                      ? HUNT_CURSOR_POS_CHANNEL
+                      : "cursor-pos",
+                  distanceBand: classifyV6HuntDistance(
+                    hyp,
+                    nearRadiusPx,
+                    approachBandPx,
+                  ),
+                  focusFromContract: !!(focus && focus.fromContract),
+                  huntCursorEnabled: !!(
+                    typeof getHuntCursorEnabledForPet === "function"
+                      ? getHuntCursorEnabledForPet()
+                      : huntCursorEnabled
+                  ),
+                  pollMs: ne,
+                  process: "main",
+                });
+              }
+            }
+          } catch {}
+          try {
+            getGazeDiagnostics().recordMainCursorPoll({
+              sent,
+              petVisible: !0,
+              hypot: hyp,
+              dx: k,
+              dy: N,
+            });
+          } catch {}
+        })();
+        z = setTimeout(Y, ne);
       };
       (Y(),
         te.on("closed", () => {
+          try {
+            if (te.webContents && !te.webContents.isDestroyed()) {
+              v6HuntVisualFocusByContentsId.delete(te.webContents.id);
+            }
+          } catch {}
           (z && clearTimeout(z),
             (z = null),
             (H = null),
+            clearReadyForWindow(te),
             B(),
             l() === te && d(null),
             j());
@@ -22444,19 +22332,26 @@ var Zp = F((_R, Qp) => {
 });
 var tg = F((vR, eg) => {
   "use strict";
-  function KS({ isMac: t, isWindows: e, getPetWindow: r }) {
-    let n = null;
-    function s(c) {
+  function KS({
+    isMac: t,
+    isWindows: e,
+    getPetWindow: r,
+    getHideOverFullscreenApps: n,
+  }) {
+    let o = null;
+    function i(c) {
       if (!(!c || c.isDestroyed())) {
         if (!e && typeof c.setVisibleOnAllWorkspaces == "function")
           try {
             c.setVisibleOnAllWorkspaces(!0, {
-              visibleOnFullScreen: !0,
+              visibleOnFullScreen: !n(),
               skipTransformProcessType: t,
             });
           } catch {
             try {
-              c.setVisibleOnAllWorkspaces(!0, { visibleOnFullScreen: !0 });
+              c.setVisibleOnAllWorkspaces(!0, {
+                visibleOnFullScreen: !n(),
+              });
             } catch {}
           }
         try {
@@ -22466,26 +22361,26 @@ var tg = F((vR, eg) => {
         }
       }
     }
-    function o() {
+    function a() {
       let c = r();
       if (!(!c || c.isDestroyed())) {
-        s(c);
+        i(c);
         try {
           c.moveTop();
         } catch {}
       }
     }
-    function i() {
-      n || (o(), (n = setInterval(o, 2500)));
+    function l() {
+      o || (a(), (o = setInterval(a, 2500)));
     }
-    function a() {
-      n && (clearInterval(n), (n = null));
+    function d() {
+      o && (clearInterval(o), (o = null));
     }
     return {
-      keepWindowOnTop: s,
-      reinforcePetWindowOnTop: o,
-      startPetOnTopReinforcement: i,
-      stopPetOnTopReinforcement: a,
+      keepWindowOnTop: i,
+      reinforcePetWindowOnTop: a,
+      startPetOnTopReinforcement: l,
+      stopPetOnTopReinforcement: d,
     };
   }
   eg.exports = { createPetOnTopController: KS };
@@ -23158,6 +23053,9 @@ var hg = F((AR, dg) => {
 var pg = F((ER, fg) => {
   "use strict";
   var { createAppMenuController: QS } = hg();
+  var {
+    areWaterRemindersTemporarilyDisabled,
+  } = require("./water-reminders-gate");
   function ZS({
     app: t,
     BrowserWindow: e,
@@ -23175,14 +23073,20 @@ var pg = F((ER, fg) => {
     getStretchIntervalMin: h,
     releaseExcludedStretchIntervalMin: p,
     setStretchInterval: g,
+    getStretchCustomIntervalMin,
     getDrinkIntervalMin: y,
     releaseExcludedDrinkIntervalMin: w,
     setDrinkInterval: A,
+    getDrinkCustomIntervalMin,
     triggerDrinkSequence: S,
     getPeekStretchEnabled: D,
     setPeekStretchEnabled: B,
     getPeekDrinkEnabled: R,
     setPeekDrinkEnabled: _,
+    getStretchNotificationMode: stretchNotificationModeGet,
+    setStretchNotificationMode: stretchNotificationModeSet,
+    getDrinkNotificationMode: drinkNotificationModeGet,
+    setDrinkNotificationMode: drinkNotificationModeSet,
     getPomodoroRunning: T,
     getPomodoroRemainingSec: m,
     getPomodoroMode: x,
@@ -23221,8 +23125,28 @@ var pg = F((ER, fg) => {
     setAllowAnalysis: qe,
     getAttentionRequestsEnabled: attentionGet,
     setAttentionRequestsEnabled: attentionSet,
+    getAttentionRequestIntervalMin: attentionIntervalGet,
+    setAttentionRequestIntervalMin: attentionIntervalSet,
+    getWellnessAccountabilityEnabled: wellnessAccountabilityGet,
+    setWellnessAccountabilityEnabled: wellnessAccountabilitySet,
+    getHideOverFullscreenApps: fullscreenHideGet,
+    setHideOverFullscreenApps: fullscreenHideSet,
+    getPetRoamingEnabled: roamingGet,
+    setPetRoamingEnabled: roamingSet,
+    getCursorStealingEnabled: cursorStealingGet,
+    setCursorStealingEnabled: cursorStealingSet,
+    isCursorStealingAvailable: cursorStealingAvailable,
+    getMusicDanceEnabled: musicDanceGet,
+    setMusicDanceEnabled: musicDanceSet,
+    isMusicDanceAvailable: musicDanceAvailable,
+    getHuntCursorEnabled: huntCursorGet,
+    setHuntCursorEnabled: huntCursorSet,
+    walkPetNow: walkNow,
+    stealCursorNow: stealNow,
+    previewAngryReaction: angryNow,
     openOnboarding: tourOpen,
     openMacPrivacyPane: openMacPrivacyPane,
+    openDeveloperContact: developerContactOpen,
     getAgentMonitoringEnabled: kt,
     setAgentMonitoringOverride: xe,
     signOutCurrentAccount: pe,
@@ -23231,9 +23155,12 @@ var pg = F((ER, fg) => {
     logWarn: ln,
     movePetToCenter: ar,
     openPatternEditor: xr,
+    openSkinGallery: openSkins,
     toggleDevToolsForWindow: un,
     getPetWindow: Nr,
     getLicenseWindow: ns,
+    retryGlobalInputMonitoring = null,
+    isGlobalInputUnavailable = null,
   }) {
     let nt = null,
       { buildAppMenu: xt } = QS({
@@ -23313,6 +23240,16 @@ var pg = F((ER, fg) => {
           checked: ce === 120,
           click: () => g(120),
         },
+        { type: "separator" },
+        {
+          label: `${d("pomodoroCustom")} (${d("everyMinutes", getStretchCustomIntervalMin())})`,
+          enabled: ee(),
+          click: () =>
+            Q("wellness-interval-edit", {
+              kind: "stretch",
+              minutes: getStretchCustomIntervalMin(),
+            }),
+        },
       ];
     }
     function At() {
@@ -23378,11 +23315,13 @@ var pg = F((ER, fg) => {
       ];
     }
     function Lr() {
-      let ce = y();
+      let ce = y(),
+        waterOff = areWaterRemindersTemporarilyDisabled();
       return [
         {
           label: d("off"),
           type: "radio",
+          enabled: !waterOff && ee(),
           checked: ce === 0,
           click: () => A(0),
         },
@@ -23392,6 +23331,7 @@ var pg = F((ER, fg) => {
               {
                 label: d("everyMinuteTest"),
                 type: "radio",
+                enabled: !waterOff && ee(),
                 checked: ce === w,
                 click: () => A(w),
               },
@@ -23399,44 +23339,67 @@ var pg = F((ER, fg) => {
         {
           label: d("everyMinutes", 20),
           type: "radio",
+          enabled: !waterOff && ee(),
           checked: ce === 20,
           click: () => A(20),
         },
         {
           label: d("everyMinutes", 30),
           type: "radio",
+          enabled: !waterOff && ee(),
           checked: ce === 30,
           click: () => A(30),
         },
         {
           label: d("everyMinutes", 45),
           type: "radio",
+          enabled: !waterOff && ee(),
           checked: ce === 45,
           click: () => A(45),
         },
         {
           label: d("everyHour"),
           type: "radio",
+          enabled: !waterOff && ee(),
           checked: ce === 60,
           click: () => A(60),
         },
         {
           label: d("everyHourAndHalf"),
           type: "radio",
+          enabled: !waterOff && ee(),
           checked: ce === 90,
           click: () => A(90),
         },
         {
           label: d("everyTwoHours"),
           type: "radio",
+          enabled: !waterOff && ee(),
           checked: ce === 120,
           click: () => A(120),
+        },
+        { type: "separator" },
+        {
+          label: `${d("pomodoroCustom")} (${d("everyMinutes", getDrinkCustomIntervalMin())})`,
+          enabled: !waterOff && ee(),
+          click: () =>
+            Q("wellness-interval-edit", {
+              kind: "drink",
+              minutes: getDrinkCustomIntervalMin(),
+            }),
         },
       ];
     }
     function dn() {
+      let waterOff = areWaterRemindersTemporarilyDisabled();
       return [
-        { label: d("drinkNow"), enabled: ee(), click: () => S() },
+        {
+          label: waterOff
+            ? d("waterRemindersTemporarilyUnavailable")
+            : d("drinkNow"),
+          enabled: !waterOff && ee(),
+          click: () => S(),
+        },
         { type: "separator" },
         ...Lr(),
       ];
@@ -23520,6 +23483,23 @@ var pg = F((ER, fg) => {
         },
       ];
     }
+    function wellnessNotificationModeMenu(getMode, setMode) {
+      let mode = normalizeWellnessNotificationMode(getMode());
+      return [
+        {
+          label: d("notificationFullAnimation"),
+          type: "radio",
+          checked: mode === WELLNESS_NOTIFICATION_COVER,
+          click: () => setMode(WELLNESS_NOTIFICATION_COVER),
+        },
+        {
+          label: d("notificationCompact"),
+          type: "radio",
+          checked: mode === WELLNESS_NOTIFICATION_COMPACT,
+          click: () => setMode(WELLNESS_NOTIFICATION_COMPACT),
+        },
+      ];
+    }
     function Kt() {
       let ce = M.loadAccount(),
         De = M.isValidAccountLinked(ce) ? dr() : [];
@@ -23550,18 +23530,124 @@ var pg = F((ER, fg) => {
               click: (Be) => B(Be.checked),
             },
             {
-              label: d("drink"),
+              label: areWaterRemindersTemporarilyDisabled()
+                ? `${d("drink")} (${d("waterRemindersTemporarilyUnavailable")})`
+                : d("drink"),
               type: "checkbox",
-              checked: !!R(),
+              enabled: !areWaterRemindersTemporarilyDisabled(),
+              checked:
+                !areWaterRemindersTemporarilyDisabled() && !!R(),
               click: (Be) => _(Be.checked),
             },
           ],
         },
         {
+          label: d("wellnessNotificationStyle"),
+          submenu: [
+            {
+              label: d("stretch"),
+              submenu: wellnessNotificationModeMenu(
+                stretchNotificationModeGet,
+                stretchNotificationModeSet,
+              ),
+            },
+            {
+              label: areWaterRemindersTemporarilyDisabled()
+                ? `${d("drink")} (${d("waterRemindersTemporarilyUnavailable")})`
+                : d("drink"),
+              enabled: !areWaterRemindersTemporarilyDisabled(),
+              submenu: areWaterRemindersTemporarilyDisabled()
+                ? []
+                : wellnessNotificationModeMenu(
+                    drinkNotificationModeGet,
+                    drinkNotificationModeSet,
+                  ),
+            },
+          ],
+        },
+        {
           label: d("attentionRequests"),
+          submenu: [
+            {
+              label: d("attentionRequests"),
+              type: "checkbox",
+              checked: attentionGet(),
+              click: (Be) => attentionSet(Be.checked),
+            },
+            { type: "separator" },
+            {
+              label: d("attentionInterval"),
+              submenu: [30, 60, 120].map((Be) => ({
+                label: Be === 60 ? d("everyHour") : d("everyMinutes", Be),
+                type: "radio",
+                checked: attentionIntervalGet() === Be,
+                enabled: attentionGet(),
+                click: () => attentionIntervalSet(Be),
+              })),
+            },
+          ],
+        },
+        {
+          label: d("wellnessAccountability"),
           type: "checkbox",
-          checked: attentionGet(),
-          click: (Be) => attentionSet(Be.checked),
+          checked: wellnessAccountabilityGet(),
+          click: (Be) => wellnessAccountabilitySet(Be.checked),
+        },
+        {
+          label: d("hideOverFullscreenApps"),
+          type: "checkbox",
+          checked: fullscreenHideGet(),
+          click: (Be) => fullscreenHideSet(Be.checked),
+        },
+        {
+          label: d("musicDance"),
+          type: "checkbox",
+          checked: musicDanceGet(),
+          enabled: musicDanceAvailable(),
+          click: (Be) => musicDanceSet(Be.checked),
+        },
+        {
+          label: d("playfulBehavior"),
+          submenu: [
+            {
+              label: d("petRoaming"),
+              type: "checkbox",
+              checked: roamingGet(),
+              click: (Be) => roamingSet(Be.checked),
+            },
+            {
+              label: d("cursorStealing"),
+              type: "checkbox",
+              checked: cursorStealingGet(),
+              enabled: cursorStealingAvailable(),
+              click: (Be) => cursorStealingSet(Be.checked),
+            },
+            {
+              // V6-M8: visual hunt pose ready; OS cursor never manipulated.
+              label: d("huntCursor"),
+              type: "checkbox",
+              checked: huntCursorGet(),
+              enabled: true,
+              click: (Be) => huntCursorSet(Be.checked),
+            },
+            { type: "separator" },
+            {
+              label: d("walkNow"),
+              enabled: roamingGet() && ee(),
+              click: () => walkNow(),
+            },
+            {
+              label: d("stealCursorNow"),
+              enabled:
+                cursorStealingAvailable() && ee(),
+              click: () => stealNow(),
+            },
+            {
+              label: d("angryNow"),
+              enabled: ee(),
+              click: () => angryNow(),
+            },
+          ],
         },
         {
           label: N() === "ru" ? "Пройти обучение" : "Take the tour",
@@ -23595,6 +23681,12 @@ var pg = F((ER, fg) => {
           checked: We(),
           enabled: t.isPackaged,
           click: (Be) => Te(Be.checked),
+        },
+        { type: "separator" },
+        { label: d("developerCredit"), enabled: !1 },
+        {
+          label: d("contactDeveloper"),
+          click: () => developerContactOpen && developerContactOpen(),
         },
         { type: "separator" },
         {
@@ -23671,10 +23763,31 @@ var pg = F((ER, fg) => {
       let ce = ee();
       return r.buildFromTemplate([
         { label: d("moveToCenter"), enabled: ce, click: () => ar() },
-        { label: d("patternEditor"), enabled: ce, click: () => xr() },
+        ...(typeof isGlobalInputUnavailable === "function" &&
+        isGlobalInputUnavailable()
+          ? [
+              {
+                label: d("retryInputMonitoring"),
+                click: () => {
+                  typeof retryGlobalInputMonitoring === "function" &&
+                    retryGlobalInputMonitoring();
+                },
+              },
+            ]
+          : []),
+        ...(CAT_APPEARANCE_EDITOR_ENABLED
+          ? [{ label: d("patternEditor"), enabled: ce, click: () => xr() }]
+          : []),
+        { label: d("catSkins"), enabled: ce, click: () => openSkins() },
         { label: d("pomodoro"), enabled: ce, submenu: At() },
         { label: d("stretch"), enabled: ce, submenu: it() },
-        { label: d("drink"), enabled: ce, submenu: dn() },
+        {
+          label: areWaterRemindersTemporarilyDisabled()
+            ? `${d("drink")} (${d("waterRemindersTemporarilyUnavailable")})`
+            : d("drink"),
+          enabled: ee() && !areWaterRemindersTemporarilyDisabled(),
+          submenu: dn(),
+        },
         { label: d("peekMode"), enabled: ce, submenu: re() },
         { label: d("taskCompleteSound"), submenu: lr() },
         { label: d("size"), enabled: ce, submenu: jr() },
@@ -23818,12 +23931,16 @@ var mg = F((TR, gg) => {
           (E && (M.name = E),
             (M.pattern = W),
             (M.updatedAt = ne),
-            (M.deletedAt = null));
+            (M.deletedAt = null),
+            U?.origin === "imported"
+              ? (M.origin = "imported")
+              : M.origin || (M.origin = "custom"));
         } else {
           let ne = D();
           M = {
             id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             name: E || "My preset",
+            origin: U?.origin === "imported" ? "imported" : "custom",
             createdAt: ne,
             updatedAt: ne,
             deletedAt: null,
@@ -23912,11 +24029,13 @@ var mg = F((TR, gg) => {
         let v = E[0];
         return (
           H(W.filePath, {
-            schemaVersion: 2,
+            schemaVersion: 4,
             app: "catcode",
             exportedAt: new Date().toISOString(),
+            origin: v.origin === "imported" ? "imported" : "custom",
             preset: {
               name: (v.label && v.label.en) || "My preset",
+              origin: v.origin === "imported" ? "imported" : "custom",
               createdAt: v.createdAt,
               updatedAt: v.updatedAt,
               pattern: w(v.pattern),
@@ -23944,6 +24063,7 @@ var mg = F((TR, gg) => {
               ue = {
                 id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
                 name: ne,
+                origin: "imported",
                 createdAt: P.createdAt || M,
                 updatedAt: M,
                 deletedAt: null,
@@ -23993,6 +24113,8 @@ var mg = F((TR, gg) => {
             from_preset_type: I(E),
             to_preset_type: I(W),
           })),
+          // A curated V6 skin changes only `v6SkinId`, not the legacy preset.
+          // Always notify live renderers after a valid appearance update.
           b());
       }),
       t.on("pattern-preview", (Y, U) => {
@@ -24052,7 +24174,9 @@ var mg = F((TR, gg) => {
             })
           ).response === 0,
       ),
-      t.on("open-pattern-editor", () => ee()),
+      t.on("open-pattern-editor", () => {
+        if (CAT_APPEARANCE_EDITOR_ENABLED) ee();
+      }),
       t.on("open-mapping-editor", () => Q()),
       t.handle("mapping-load", () => {
         try {
@@ -24166,7 +24290,9 @@ var _g = F((CR, yg) => {
             }
           : null;
       }),
-      t.handle("open-landing-page", () => (e.openExternal(w), { ok: !0 })),
+      // The public landing page is intentionally unavailable during the V6
+      // visual rebuild. Keep licensing/reset flows independent from this gate.
+      t.handle("open-landing-page", () => ({ ok: !1, disabled: !0 })),
       t.handle(
         "open-license-reset-page",
         () => (e.openExternal(A), { ok: !0 }),
@@ -24277,6 +24403,9 @@ var Sg = F((RR, bg) => {
 });
 var Ag = F((OR, kg) => {
   "use strict";
+  var {
+    areWaterRemindersTemporarilyDisabled,
+  } = require("./water-reminders-gate");
   function sk({
     ipcMain: t,
     Menu: e,
@@ -24324,6 +24453,7 @@ var Ag = F((OR, kg) => {
     getShowCatName: Z,
     setShowCatName: te,
     openPatternEditor: Y,
+    openSkinGallery: openSkinsMenu,
     openMappingEditor: U,
     buildSoundMenuTemplate: E,
     buildSizeMenuTemplate: W,
@@ -24411,6 +24541,7 @@ var Ag = F((OR, kg) => {
         D(!!N);
       }),
       t.on("set-hunting-mode", () => {}),
+      t.handle("hunt-cursor-enabled-get", () => !!huntCursorEnabled),
       t.on("show-context-menu", (k, N = {}) => {
         let P = s();
         if (!P || P.isDestroyed() || Date.now() - o() < 500) return;
@@ -24421,7 +24552,7 @@ var Ag = F((OR, kg) => {
           Te = z(),
           Je = ee(),
           qe = S();
-        e.buildFromTemplate([
+        let menu = e.buildFromTemplate([
           { label: M ? "Offline" : "Online", enabled: !1 },
           { type: "separator" },
           {
@@ -24434,12 +24565,6 @@ var Ag = F((OR, kg) => {
               {
                 label: r("remindersOpen"),
                 click: () => P.webContents.send("reminder-panel-open"),
-              },
-              {
-                label: r("showReminderButtonOutside"),
-                type: "checkbox",
-                checked: T(),
-                click: (xe) => m(xe.checked),
               },
             ],
           },
@@ -24505,12 +24630,17 @@ var Ag = F((OR, kg) => {
             ],
           },
           {
-            label: r("drink"),
-            submenu: [
-              { label: r("drinkNow"), click: () => oe() },
-              { type: "separator" },
-              ...ae(),
-            ],
+            label: areWaterRemindersTemporarilyDisabled()
+              ? `${r("drink")} (${r("waterRemindersTemporarilyUnavailable")})`
+              : r("drink"),
+            enabled: !areWaterRemindersTemporarilyDisabled(),
+            submenu: areWaterRemindersTemporarilyDisabled()
+              ? []
+              : [
+                  { label: r("drinkNow"), click: () => oe() },
+                  { type: "separator" },
+                  ...ae(),
+                ],
           },
           {
             label: r("peekMode"),
@@ -24556,12 +24686,20 @@ var Ag = F((OR, kg) => {
             ],
           },
           { type: "separator" },
-          { label: r("patternEditor"), click: () => Y() },
+          ...(CAT_APPEARANCE_EDITOR_ENABLED
+            ? [{ label: r("patternEditor"), click: () => Y() }]
+            : []),
+          { label: r("catSkins"), click: () => openSkinsMenu() },
           ...(n() ? [] : [{ label: r("mappingEditor"), click: () => U() }]),
           { label: r("taskCompleteSound"), submenu: E() },
           { label: r("size"), submenu: W() },
           { label: r("settings"), submenu: v() },
-        ]).popup({ window: P });
+        ]);
+        (outsideClickMenu.track(menu, P),
+          menu.popup({
+            window: P,
+            callback: () => outsideClickMenu.clear(menu),
+          }));
       }));
   }
   kg.exports = { registerPetWindowIpc: sk };
@@ -24604,6 +24742,10 @@ var {
   dk = require("vm"),
   { spawn: hk } = require("child_process"),
   { createMacOsSupport: createCatcodeMacOsSupport } = require("./macos-support"),
+  {
+    createFullscreenVisibilityController:
+      createCatcodeFullscreenVisibilityController,
+  } = require("./fullscreen-visibility"),
   Yr = Sh(),
   ui = xh(),
   { createAnalyticsEvents: fk } = Lh(),
@@ -24619,7 +24761,7 @@ var {
   { runHookCleanupCli: kk } = pf(),
   { createHookCommandBuilders: Ak } = _f(),
   { createAgentIntegrations: Ek } = Uf(),
-  { createGlobalInputController: Tk, isEscapeKeyInput: Ck } = Bf(),
+  { createGlobalInputController: Tk, isEscapeKeyInput: Ck, isInputHookDiagnosticsEnabled: isInputHookDiagnosticsEnabled } = Bf(),
   { createCoveringMotionController: Pk } = Wf(),
   { inferEarlyAppName: Rk } = Gf(),
   { runtimePath: sn, projectPath: Ok } = Xf(),
@@ -24684,6 +24826,33 @@ var {
   Kc =
     process.env.CATCODE_SMOKE_TEST === "1" ||
     process.argv.includes("--catcode-smoke-test"),
+  catcodeGazeDiagnosticsEnabled = isGazeDiagnosticsArgEnabled(process.argv),
+  catcodeDanceForensicEnabled = isDanceForensicArgEnabled(process.argv),
+  catcodeDanceRotationForensicEnabled =
+    isDanceRotationForensicArgEnabled(process.argv),
+  catcodeCursorTeaseForensicEnabled =
+    isCursorTeaseForensicArgEnabled(process.argv),
+  catcodeHuntOwnerForensicEnabled =
+    isHuntOwnerForensicArgEnabled(process.argv) ||
+    isHuntOwnerForensicQaPackage(),
+  catcodeCursorTheftCopyForensicEnabled =
+    isCursorTheftCopyForensicArgEnabled(process.argv),
+  catcodeThinkingPreviewEnabled = isThinkingPreviewArgEnabled(process.argv),
+  catcodeAgentDiagnosticsEnabled = isAgentDiagnosticsArgEnabled(process.argv),
+  catcodeV6SkinDiagnosticsEnabled =
+    isV6SkinDiagnosticsEnabled(process.argv) || isV6SkinDiagnosticsQaPackage(),
+  catcodeV6IdlePreviewEnabled =
+    isV6IdlePreviewQaPackage() ||
+    process.env.CATCODE_V6_IDLE_PREVIEW === "1" ||
+    process.argv.includes("--catcode-v6-idle-preview") ||
+    me.commandLine.hasSwitch("catcode-v6-idle-preview"),
+  catcodeV6TypingPreviewEnabled =
+    process.argv.includes("--catcode-preview-v6-typing") ||
+    me.commandLine.hasSwitch("catcode-preview-v6-typing"),
+  catcodeInputHookDiagnosticsEnabled =
+    process.argv.includes("--catcode-input-hook-diagnostics") ||
+    me.commandLine.hasSwitch("catcode-input-hook-diagnostics") ||
+    isInputHookDiagnosticsEnabled(process.argv, me.commandLine),
   Ug = "--catcode-claude-hook",
   Qc = "--catcode-antigravity-hook",
   Zc = "--catcode-cursor-hook",
@@ -24782,10 +24951,11 @@ me.on("web-contents-created", (t, e) => {
 });
 var Re = null,
   Bt = null,
+  skinGalleryWindow = null,
   $s = null,
   Ar = null,
-  wt = sn("assets", "catcode-logo.png"),
-  TA = sn("assets", rs ? "tray-macTemplate.png" : "trayTemplate.png"),
+  wt = sn("assets", "catcode-v6-logo.png"),
+  TA = sn("assets", rs ? "catcode-v6-tray-macTemplate.png" : "catcode-v6-tray.png"),
   Vg = 23456,
   {
     buildEmbeddedNodeHookCommand: CA,
@@ -25076,8 +25246,12 @@ var Re = null,
       defaultSoundVolume: Xc,
       stretchIntervalMin: Er,
       drinkIntervalMin: Qr,
+      stretchCustomIntervalMin,
+      drinkCustomIntervalMin,
       peekStretchEnabled: Zn,
       peekDrinkEnabled: es,
+      stretchNotificationMode,
+      drinkNotificationMode,
       currentLanguage: Ht,
       catName: nr,
       userName: sr,
@@ -25088,6 +25262,13 @@ var Re = null,
       taskCompleteSoundVolume: Pr,
       soundMuted: Rr,
       attentionRequestsEnabled,
+      attentionRequestIntervalMin,
+      wellnessAccountabilityEnabled,
+      hideOverFullscreenApps,
+      petRoamingEnabled,
+      cursorStealingEnabled,
+      musicDanceEnabled,
+      huntCursorEnabled,
       launchAtLogin: Ks,
       allowAnalysis: Or,
       agentMonitoringOverrides: zs,
@@ -25102,10 +25283,28 @@ var Re = null,
         (Er = t.stretchIntervalMin),
         Object.prototype.hasOwnProperty.call(t, "drinkIntervalMin") &&
           (Qr = t.drinkIntervalMin),
+        Object.prototype.hasOwnProperty.call(t, "stretchCustomIntervalMin") &&
+          (stretchCustomIntervalMin = normalizeWellnessInterval(
+            t.stretchCustomIntervalMin,
+            30,
+          )),
+        Object.prototype.hasOwnProperty.call(t, "drinkCustomIntervalMin") &&
+          (drinkCustomIntervalMin = normalizeWellnessInterval(
+            t.drinkCustomIntervalMin,
+            60,
+          )),
         Object.prototype.hasOwnProperty.call(t, "peekStretchEnabled") &&
           (Zn = t.peekStretchEnabled),
         Object.prototype.hasOwnProperty.call(t, "peekDrinkEnabled") &&
           (es = t.peekDrinkEnabled),
+        Object.prototype.hasOwnProperty.call(t, "stretchNotificationMode") &&
+          (stretchNotificationMode = normalizeWellnessNotificationMode(
+            t.stretchNotificationMode,
+          )),
+        Object.prototype.hasOwnProperty.call(t, "drinkNotificationMode") &&
+          (drinkNotificationMode = normalizeWellnessNotificationMode(
+            t.drinkNotificationMode,
+          )),
         Object.prototype.hasOwnProperty.call(t, "currentLanguage") &&
           (Ht = t.currentLanguage),
         Object.prototype.hasOwnProperty.call(t, "catName") && (nr = t.catName),
@@ -25125,6 +25324,28 @@ var Re = null,
           (Rr = t.soundMuted),
         Object.prototype.hasOwnProperty.call(t, "attentionRequestsEnabled") &&
           (attentionRequestsEnabled = t.attentionRequestsEnabled),
+        Object.prototype.hasOwnProperty.call(t, "attentionRequestIntervalMin") &&
+          (attentionRequestIntervalMin = normalizeWellnessInterval(
+            t.attentionRequestIntervalMin,
+            60,
+            { max: 240 },
+          )),
+        Object.prototype.hasOwnProperty.call(
+          t,
+          "wellnessAccountabilityEnabled",
+        ) &&
+          (wellnessAccountabilityEnabled =
+            t.wellnessAccountabilityEnabled),
+        Object.prototype.hasOwnProperty.call(t, "hideOverFullscreenApps") &&
+          (hideOverFullscreenApps = t.hideOverFullscreenApps),
+        Object.prototype.hasOwnProperty.call(t, "petRoamingEnabled") &&
+          (petRoamingEnabled = !!t.petRoamingEnabled),
+        Object.prototype.hasOwnProperty.call(t, "cursorStealingEnabled") &&
+          (cursorStealingEnabled = !!t.cursorStealingEnabled),
+        Object.prototype.hasOwnProperty.call(t, "musicDanceEnabled") &&
+          (musicDanceEnabled = !!t.musicDanceEnabled),
+        Object.prototype.hasOwnProperty.call(t, "huntCursorEnabled") &&
+          (huntCursorEnabled = !!t.huntCursorEnabled),
         Object.prototype.hasOwnProperty.call(t, "launchAtLogin") &&
           (Ks = t.launchAtLogin),
         Object.prototype.hasOwnProperty.call(t, "allowAnalysis") &&
@@ -25187,7 +25408,22 @@ var Re = null,
     sendToPet: sl,
   }),
   {
+    start: startWellnessAccountability,
+    recordActivity: recordWellnessActivity,
+    cancel: cancelWellnessAccountability,
+  } = createWellnessAccountabilityController({
+    getEnabled: () => wellnessAccountabilityEnabled,
+    onEscalate: () => {
+      let petWindow = Re;
+      petWindow &&
+        !petWindow.isDestroyed() &&
+        petWindow.isVisible() &&
+        petWindow.webContents.send("wellness-stretch-ignored");
+    },
+  }),
+  {
     cancelCoveringMotion: nm,
+    completeWellnessNotification: completeWellnessNotification,
     triggerStretchSequence: vi,
     triggerDrinkSequence: dl,
     triggerPomodoroFocusStartSequence: SE,
@@ -25204,6 +25440,10 @@ var Re = null,
     broadcastPetSize: (...t) => kl(...t),
     getPeekStretchEnabled: () => Zn,
     getPeekDrinkEnabled: () => es,
+    getStretchNotificationMode: () => stretchNotificationMode,
+    getDrinkNotificationMode: () => drinkNotificationMode,
+    startStretchAccountability: (...t) =>
+      startWellnessAccountability(...t),
     unpeekPet: (...t) => Pl(...t),
     peekPet: (...t) => Rl(...t),
   }),
@@ -25272,6 +25512,8 @@ var Re = null,
     registerGlobalShortcuts: TE,
     startKeyHook: CE,
     stopKeyHook: am,
+    retryKeyHook,
+    isUnavailable: isGlobalInputHookUnavailable,
   } = Tk({
     isMac: rs,
     appIconPath: wt,
@@ -25286,7 +25528,23 @@ var Re = null,
     releaseBuildExcludesDevOptions: gi,
     triggerJumpSequence: kE,
     cancelCoveringMotion: nm,
+    cancelPlayfulMovement: () =>
+      playfulMovementController?.cancel({ restoreCursor: true }),
     getPetWindow: () => Re,
+    onGlobalActivity: (...t) => {
+      recordWellnessActivity(...t);
+      playfulMovementController?.recordActivity(...t);
+    },
+    dismissOutsideClickMenus: outsideClickMenu,
+    isPointInsideBounds,
+    app: me,
+    diagnosticsEnabled: catcodeInputHookDiagnosticsEnabled,
+    resourcesPath: process.resourcesPath || null,
+    onAvailabilityChanged: () => {
+      try {
+        typeof ir === "function" && ir();
+      } catch (_) {}
+    },
   }),
   {
     loadLicense: wi,
@@ -25301,7 +25559,37 @@ var Re = null,
     reinforcePetWindowOnTop: lm,
     startPetOnTopReinforcement: NE,
     stopPetOnTopReinforcement: um,
-  } = Xk({ isMac: rs, isWindows: on, getPetWindow: () => Re }),
+  } = Xk({
+    isMac: rs,
+    isWindows: on,
+    getPetWindow: () => Re,
+    getHideOverFullscreenApps: () => hideOverFullscreenApps,
+  }),
+  {
+    stop: stopFullscreenVisibilityMonitor,
+    setEnabled: setFullscreenVisibilityEnabled,
+    syncPetWindowVisibility,
+  } = createCatcodeFullscreenVisibilityController({
+    platform: process.platform,
+    helperPath: me.isPackaged
+      ? nn.join(
+          process.resourcesPath,
+          "app.asar.unpacked",
+          "native",
+          "windows",
+          "fullscreen-detector.exe",
+        )
+      : nn.join(
+          __dirname,
+          "native",
+          "windows",
+          "fullscreen-detector.exe",
+        ),
+    getPetWindow: () => Re,
+    keepWindowOnTop: cm,
+    logInfo: It,
+    logWarn: Ze,
+  }),
   {
     applyFullscreenOverlayMode: LE,
     firstDockVisibleWindow: jE,
@@ -25349,6 +25637,18 @@ var Re = null,
     },
     broadcastPattern: () => Xs(),
   }),
+  { openSkinGallery: openCatcodeSkinGallery } = createSkinGalleryWindowController({
+    BrowserWindow: en,
+    runtimePath: sn,
+    preloadPath: nn.join(__dirname, "preload.js"),
+    appIconPath: wt,
+    t: St,
+    updateDockVisibility: vl,
+    getSkinGalleryWindow: () => skinGalleryWindow,
+    setSkinGalleryWindow: (t) => {
+      skinGalleryWindow = t;
+    },
+  }),
   { openMappingEditor: dm } = zk({
     BrowserWindow: en,
     projectPath: Ok,
@@ -25389,14 +25689,30 @@ var Re = null,
     getStretchIntervalMin: () => Er,
     releaseExcludedStretchIntervalMin: Ig,
     setStretchInterval: (...t) => wT(...t),
+    getStretchCustomIntervalMin: () => stretchCustomIntervalMin,
     getDrinkIntervalMin: () => Qr,
     releaseExcludedDrinkIntervalMin: Ng,
     setDrinkInterval: (...t) => bT(...t),
+    getDrinkCustomIntervalMin: () => drinkCustomIntervalMin,
     triggerDrinkSequence: dl,
     getPeekStretchEnabled: () => Zn,
     setPeekStretchEnabled: (...t) => ST(...t),
     getPeekDrinkEnabled: () => es,
     setPeekDrinkEnabled: (...t) => kT(...t),
+    getStretchNotificationMode: () => stretchNotificationMode,
+    setStretchNotificationMode: (mode) => {
+      stretchNotificationMode = normalizeWellnessNotificationMode(mode);
+      cn({ sync: !1 });
+      ir();
+      return stretchNotificationMode;
+    },
+    getDrinkNotificationMode: () => drinkNotificationMode,
+    setDrinkNotificationMode: (mode) => {
+      drinkNotificationMode = normalizeWellnessNotificationMode(mode);
+      cn({ sync: !1 });
+      ir();
+      return drinkNotificationMode;
+    },
     getPomodoroRunning: () => Ws,
     getPomodoroRemainingSec: () => ts,
     getPomodoroMode: () => Hs,
@@ -25446,8 +25762,152 @@ var Re = null,
       ir();
       return attentionRequestsEnabled;
     },
+    getAttentionRequestIntervalMin: () => attentionRequestIntervalMin,
+    setAttentionRequestIntervalMin: (minutes) => {
+      attentionRequestIntervalMin = normalizeWellnessInterval(minutes, 60, {
+        max: 240,
+      });
+      cn();
+      Re &&
+        !Re.isDestroyed() &&
+        Re.webContents.send(
+          "attention-requests-interval",
+          attentionRequestIntervalMin,
+        );
+      ir();
+      return attentionRequestIntervalMin;
+    },
+    getWellnessAccountabilityEnabled: () => wellnessAccountabilityEnabled,
+    setWellnessAccountabilityEnabled: (enabled) => {
+      wellnessAccountabilityEnabled = !!enabled;
+      wellnessAccountabilityEnabled ||
+        cancelWellnessAccountability("disabled");
+      cn({ sync: !1 });
+      ir();
+      return wellnessAccountabilityEnabled;
+    },
+    getHideOverFullscreenApps: () => hideOverFullscreenApps,
+    setHideOverFullscreenApps: (enabled) => {
+      hideOverFullscreenApps = !!enabled;
+      cn({ sync: !1 });
+      setFullscreenVisibilityEnabled(hideOverFullscreenApps);
+      Re && !Re.isDestroyed() && cm(Re);
+      ir();
+      return hideOverFullscreenApps;
+    },
+    getPetRoamingEnabled: () => petRoamingEnabled,
+    setPetRoamingEnabled: (enabled) => {
+      petRoamingEnabled = !!enabled;
+      cn({ sync: !1 });
+      playfulMovementController?.refresh();
+      ir();
+      return petRoamingEnabled;
+    },
+    getCursorStealingEnabled: () => cursorStealingEnabled,
+    setCursorStealingEnabled: (enabled) => {
+      cursorStealingEnabled = !!enabled;
+      cn({ sync: !1 });
+      playfulMovementController?.refresh();
+      ir();
+      return cursorStealingEnabled;
+    },
+    // V6-M16 is a visual-only tease, so it is usable without cursor-warp.
+    // The legacy controller stays responsible for the old physical feature.
+    isCursorStealingAvailable: () =>
+      !!catcodeV6IdlePreviewEnabled ||
+      !!playfulMovementController?.isCursorWarpAvailable(),
+    getMusicDanceEnabled: () => musicDanceEnabled,
+    setMusicDanceEnabled: (enabled) => {
+      musicDanceEnabled = !!enabled && !!musicActivityController?.isAvailable();
+      cn({ sync: !1 });
+      if (musicDanceEnabled) musicActivityController?.start();
+      else musicActivityController?.stop();
+      try {
+        getDanceForensic()?.record?.("main-setting", {
+          musicDanceEnabled: !!musicDanceEnabled,
+          musicMeterAvailable: !!musicActivityController?.isAvailable?.(),
+        });
+      } catch {}
+      ir();
+      return musicDanceEnabled;
+    },
+    isMusicDanceAvailable: () =>
+      !!musicActivityController?.isAvailable(),
+    getHuntCursorEnabled: () => !!huntCursorEnabled,
+    setHuntCursorEnabled: (enabled) => {
+      // V6-M8: visual hunt preference only. Never enables OS cursor manipulation.
+      huntCursorEnabled = !!enabled;
+      cn({ sync: !1 });
+      if (Re && !Re.isDestroyed()) {
+        Re.webContents.send("hunt-cursor-enabled", huntCursorEnabled);
+      }
+      ir();
+      return huntCursorEnabled;
+    },
+    walkPetNow: () => {
+      if (petSleeping && Re && !Re.isDestroyed()) {
+        petSleeping = !1;
+        Re.webContents.send("pet-wake-for-play");
+      }
+      return playfulMovementController?.walkNow({ manual: true });
+    },
+    stealCursorNow: () => {
+      getCursorTeaseForensic()?.record("main-menu", {
+        v6Enabled: !!catcodeV6IdlePreviewEnabled,
+        sleeping: !!petSleeping,
+        windowReady: !!(Re && !Re.isDestroyed()),
+      });
+      getCursorTheftCopyForensic()?.record("main-menu", {
+        v6Enabled: !!catcodeV6IdlePreviewEnabled,
+        sleeping: !!petSleeping,
+        windowReady: !!(Re && !Re.isDestroyed()),
+      });
+      // V6 uses the same carry sequence as the earliest cat: approach, catch,
+      // carry the pointer, then release it. Automatic theft is separately
+      // controlled by the user's "Occasionally steal the cursor" preference.
+      if (catcodeV6IdlePreviewEnabled && Re && !Re.isDestroyed()) {
+        if (petSleeping) {
+          petSleeping = !1;
+          Re.webContents.send("pet-wake-for-play");
+        }
+        const theftStarted = !!playfulMovementController?.stealCursorNow({ manual: true });
+        getCursorTeaseForensic()?.record("theft-result", {
+          started: theftStarted,
+        });
+        getCursorTheftCopyForensic()?.record("main-menu", {
+          started: theftStarted,
+          v6Enabled: true,
+        });
+        return theftStarted;
+      }
+      if (!cursorStealingEnabled) return false;
+      if (petSleeping && Re && !Re.isDestroyed()) {
+        petSleeping = !1;
+        Re.webContents.send("pet-wake-for-play");
+      }
+      return playfulMovementController?.stealCursorNow({ manual: true });
+    },
+    previewAngryReaction: () => {
+      if (!Re || Re.isDestroyed()) return false;
+      try {
+        playfulMovementController?.cancel({ restoreCursor: true });
+      } catch (_) {}
+      if (petSleeping) {
+        petSleeping = false;
+        Re.webContents.send("pet-wake-for-play");
+      }
+      Re.webContents.send("preview-angry-reaction");
+      return true;
+    },
     openOnboarding: () => openCatcodeOnboarding({ force: !0 }),
     openMacPrivacyPane: (pane) => catcodeMacOsSupport.openPrivacyPane(pane),
+    openDeveloperContact: () =>
+      Og.openExternal("https://t.me/catcodeapp").catch((error) => {
+        Ze(
+          "[CatCode] failed to open developer contact:",
+          error && error.message ? error.message : error,
+        );
+      }),
     getAgentMonitoringEnabled: (...t) => el(...t),
     setAgentMonitoringOverride: (...t) => Rm(...t),
     signOutCurrentAccount: (...t) => fm(...t),
@@ -25455,11 +25915,24 @@ var Re = null,
     getAppNetworkOnline: () => tl,
     unlinkCurrentAccountLicense: (...t) => pm(...t),
     logWarn: Ze,
-    movePetToCenter: (...t) => JT(...t),
+    movePetToCenter: (...t) => {
+      try {
+        playfulMovementController?.cancel({ restoreCursor: true });
+      } catch (_) {}
+      try {
+        if (Re && !Re.isDestroyed()) {
+          Re.webContents.send("pet-return-to-screen", { reason: "tray" });
+        }
+      } catch (_) {}
+      return JT(...t);
+    },
     openPatternEditor: wl,
+    openSkinGallery: openCatcodeSkinGallery,
     toggleDevToolsForWindow: AE,
     getPetWindow: () => Re,
     getLicenseWindow: () => Ar,
+    retryGlobalInputMonitoring: () => retryKeyHook(),
+    isGlobalInputUnavailable: () => isGlobalInputHookUnavailable(),
   }),
   {
     oauthRedirectUrlForApp: WE,
@@ -25579,6 +26052,8 @@ var Xr = Lg(),
   Qn = null,
   Qr = xg,
   Fs = null,
+  stretchCustomIntervalMin = 30,
+  drinkCustomIntervalMin = 60,
   Zn = !1,
   es = !1,
   qs = [],
@@ -25599,6 +26074,15 @@ var Xr = Lg(),
   Ks = !1,
   Or = !0,
   attentionRequestsEnabled = !0,
+  attentionRequestIntervalMin = 60,
+  wellnessAccountabilityEnabled = !0,
+  hideOverFullscreenApps = !0,
+  petRoamingEnabled = !1,
+  cursorStealingEnabled = !1,
+  musicDanceEnabled = !1,
+  huntCursorEnabled = !1,
+  stretchNotificationMode = WELLNESS_NOTIFICATION_COVER,
+  drinkNotificationMode = WELLNESS_NOTIFICATION_COVER,
   zs = {},
   li = "",
   {
@@ -25865,6 +26349,7 @@ function openCatcodeOnboarding({ force = !1 } = {}) {
   });
   catcodeOnboardingWindow.loadFile(
     sn("renderer", "onboarding", "index.html"),
+    { query: { language: Ht === "en" ? "en" : "ru" } },
   );
   return { ok: !0, shown: !0 };
 }
@@ -25877,6 +26362,9 @@ catcodeTrustedIpcMain.handle("onboarding-complete", () => {
   window && !window.isDestroyed() && setTimeout(() => window.close(), 180);
   return { ok: !0 };
 });
+catcodeTrustedIpcMain.on("open-skin-gallery", () => {
+  openCatcodeSkinGallery();
+});
 catcodeTrustedIpcMain.handle("onboarding-skip", () => {
   setCatcodeOnboardingCompleted();
   let window = catcodeOnboardingWindow;
@@ -25884,6 +26372,7 @@ catcodeTrustedIpcMain.handle("onboarding-skip", () => {
   return { ok: !0 };
 });
 catcodeTrustedIpcMain.handle("onboarding-open-cat-editor", () => {
+  if (!CAT_APPEARANCE_EDITOR_ENABLED) return { ok: !1, disabled: !0 };
   wl();
   return { ok: !0 };
 });
@@ -25900,6 +26389,7 @@ var { createPetWindow: HT } = Gk({
     getPetWindow: () => Re,
     setPetWindow: (t) => {
       Re = t;
+      t && syncPetWindowVisibility();
     },
     getCurrentPetSize: () => Vt,
     getCurrentPetPosition: () => Zr,
@@ -25924,7 +26414,26 @@ var { createPetWindow: HT } = Gk({
     broadcastSoundMuted: TT,
     broadcastReminders: ul,
     broadcastReminderSettings: tm,
+    broadcastThinkingPreview: () =>
+      applyThinkingPreviewIfEnabled({
+        enabled: catcodeThinkingPreviewEnabled,
+        getPetWindow: () => Re,
+        send: (channel, payload) =>
+          Re && !Re.isDestroyed() && Re.webContents.send(channel, payload),
+        logInfo: It,
+      }),
+    getV6IdlePreviewEnabled: () => catcodeV6IdlePreviewEnabled,
+    getHuntCursorEnabled: () => !!huntCursorEnabled,
+    getHuntOwnerForensicEnabled: () =>
+      !!(
+        catcodeHuntOwnerForensicEnabled ||
+        (getHuntOwnerForensic && getHuntOwnerForensic()?.enabled)
+      ),
     refreshAppTrayMenu: ir,
+    onGlobalCursorActivity: (...t) => {
+      recordWellnessActivity(...t);
+      playfulMovementController?.recordActivity(...t);
+    },
   }),
   {
     clearPetPeekState: WR,
@@ -25971,8 +26480,478 @@ var { createPetWindow: HT } = Gk({
     updateShareCaptureForPetBounds: Lm,
     captureAnalytics: an,
     reinforcePetWindowOnTop: lm,
-  }),
-  {
+  });
+const cursorWarpHelperPath = me.isPackaged
+  ? process.platform === "win32"
+    ? nn.join(
+        process.resourcesPath,
+        "app.asar.unpacked",
+        "native",
+        "windows",
+        "cursor-warp.exe",
+      )
+    : process.platform === "darwin"
+      ? nn.join(
+          process.resourcesPath,
+          "app.asar.unpacked",
+          "native",
+          "macos",
+          "cursor-warp",
+        )
+      : null
+  : process.platform === "win32"
+    ? nn.join(__dirname, "native", "windows", "cursor-warp.exe")
+    : process.platform === "darwin"
+      ? nn.join(__dirname, "native", "macos", "cursor-warp")
+      : null;
+const cursorWarpController = createCursorWarpController({
+  helperPath: cursorWarpHelperPath,
+  logWarn: Ze,
+});
+initGazeDiagnostics({
+  enabled: catcodeGazeDiagnosticsEnabled,
+  userDataPath: me.getPath("userData"),
+  version: me.getVersion(),
+  platform: process.platform,
+  getHelperHealth: () => {
+    let uiohookModule = !1;
+    try {
+      require.resolve("uiohook-napi");
+      uiohookModule = !0;
+    } catch {}
+    return {
+      cursorWarpAvailable: !!cursorWarpController?.isAvailable?.(),
+      uiohookModule,
+    };
+  },
+});
+initDanceForensic({
+  enabled: catcodeDanceForensicEnabled,
+  userDataPath: me.getPath("userData"),
+  version: me.getVersion(),
+  platform: process.platform,
+});
+initDanceRotationForensic({
+  enabled: catcodeDanceRotationForensicEnabled,
+  userDataPath: me.getPath("userData"),
+  version: me.getVersion(),
+  platform: process.platform,
+});
+initCursorTeaseForensic({
+  enabled: catcodeCursorTeaseForensicEnabled,
+  userDataPath: me.getPath("userData"),
+});
+initHuntOwnerForensic({
+  enabled: catcodeHuntOwnerForensicEnabled,
+  userDataPath: me.getPath("userData"),
+  packageMarker: resolveHuntOwnerForensicPackageMarker(),
+  qaMarkerPresent: isHuntOwnerForensicQaPackage(),
+});
+initCursorTheftCopyForensic({
+  enabled: catcodeCursorTheftCopyForensicEnabled,
+  userDataPath: me.getPath("userData"),
+});
+initAgentDiagnostics({
+  enabled: catcodeAgentDiagnosticsEnabled,
+  userDataPath: me.getPath("userData"),
+});
+initV6SkinDiagnostics({
+  enabled: catcodeV6SkinDiagnosticsEnabled,
+  userDataPath: me.getPath("userData"),
+});
+if (getV6SkinDiagnostics().enabled) {
+  getV6SkinDiagnostics().record({
+    stage: "main",
+    asset: "v6-skin-diagnostics",
+    outcome: "started",
+    reason: "qa-marker-or-command-line",
+  });
+}
+catcodeTrustedIpcMain.handle("v6-skin-diagnostics-enabled", () => ({
+  ok: true,
+  enabled: !!getV6SkinDiagnostics().enabled,
+  logPath: getV6SkinDiagnostics().logPath || null,
+}));
+catcodeTrustedIpcMain.handle("v6-skin-diagnostics-log", (t, event) => {
+  try {
+    const diagnostics = getV6SkinDiagnostics();
+    if (diagnostics && diagnostics.enabled) diagnostics.record(event);
+    return { ok: true, enabled: !!(diagnostics && diagnostics.enabled) };
+  } catch {
+    return { ok: false };
+  }
+});
+catcodeTrustedIpcMain.handle("gaze-diagnostics-enabled", () => ({
+  ok: !0,
+  enabled: !!getGazeDiagnostics().enabled,
+  logPath: getGazeDiagnostics().getLogPath(),
+}));
+catcodeTrustedIpcMain.handle("gaze-diagnostics-log", (t, e) => {
+  try {
+    if (!getGazeDiagnostics().enabled) return { ok: !0, enabled: !1 };
+    getGazeDiagnostics().recordRendererEvent(e);
+    return { ok: !0, enabled: !0 };
+  } catch {
+    return { ok: !1 };
+  }
+});
+catcodeTrustedIpcMain.handle("dance-forensic-enabled", () => ({
+  ok: !0,
+  enabled: !!getDanceForensic()?.enabled,
+  logPath: getDanceForensic()?.getLogPath?.() || null,
+  musicDanceEnabled: !!musicDanceEnabled,
+  musicMeterAvailable: !!musicActivityController?.isAvailable?.(),
+}));
+catcodeTrustedIpcMain.handle("dance-forensic-log", (t, e) => {
+  try {
+    const forensic = getDanceForensic();
+    if (!forensic || !forensic.enabled) return { ok: !0, enabled: !1 };
+    forensic.record(
+      (e && e.source) || "renderer",
+      e && typeof e === "object" ? e : {},
+    );
+    return { ok: !0, enabled: !0 };
+  } catch {
+    return { ok: !1 };
+  }
+});
+catcodeTrustedIpcMain.handle("cursor-tease-forensic-enabled", () => ({
+  ok: !0,
+  enabled: !!getCursorTeaseForensic()?.enabled,
+}));
+catcodeTrustedIpcMain.handle("cursor-tease-forensic-log", (t, e) => {
+  try {
+    const forensic = getCursorTeaseForensic();
+    if (!forensic || !forensic.enabled) return { ok: !0, enabled: !1 };
+    forensic.record((e && e.source) || "guard-reject", e && typeof e === "object" ? e : {});
+    return { ok: !0, enabled: !0 };
+  } catch (_) {
+    return { ok: !1 };
+  }
+});
+catcodeTrustedIpcMain.handle("hunt-owner-forensic-enabled", () => ({
+  ok: !0,
+  enabled: !!getHuntOwnerForensic()?.enabled,
+  packageMarker: getHuntOwnerForensic()?.packageMarker || null,
+  logPath: getHuntOwnerForensic()?.getLogPath?.() || null,
+  huntCursorEnabled: !!huntCursorEnabled,
+}));
+catcodeTrustedIpcMain.handle("hunt-owner-forensic-log", (t, e) => {
+  try {
+    const forensic = getHuntOwnerForensic();
+    if (!forensic || !forensic.enabled) return { ok: !0, enabled: !1 };
+    forensic.record(
+      (e && e.source) || "status",
+      e && typeof e === "object" ? e : {},
+    );
+    return { ok: !0, enabled: !0 };
+  } catch (_) {
+    return { ok: !1 };
+  }
+});
+// Ready handshake must not depend on the trusted-IPC URL gate: that gate can
+// silently drop early pet-renderer-ready sends, leaving rendererReady false forever.
+// Validate the live pet webContents by id instead.
+tn.on(PET_RENDERER_READY_CHANNEL, (event, payload) => {
+  try {
+    const sender = event && event.sender;
+    const senderId = sender && !sender.isDestroyed() ? sender.id : null;
+    try {
+      getHuntOwnerForensic()?.record?.("boot", {
+        process: "main",
+        event: "ready-received",
+        senderId,
+      });
+    } catch {}
+    if (senderId == null) return;
+    const pet = Re;
+    const petId =
+      pet && !pet.isDestroyed() && pet.webContents && !pet.webContents.isDestroyed()
+        ? pet.webContents.id
+        : null;
+    if (petId == null || petId !== senderId) {
+      try {
+        getHuntOwnerForensic()?.record?.("handshake", {
+          process: "main",
+          event: "ready-rejected",
+          reason: "stale-or-non-pet",
+          senderId,
+          petId,
+        });
+      } catch {}
+      return;
+    }
+    const ok = markPetRendererReady(senderId, payload);
+    if (!ok) {
+      try {
+        getHuntOwnerForensic()?.record?.("handshake", {
+          process: "main",
+          event: "ready-rejected",
+          reason: "bad-payload",
+          senderId,
+        });
+      } catch {}
+      return;
+    }
+    try {
+      getHuntOwnerForensic()?.record?.("handshake", {
+        process: "main",
+        event: "renderer-ready-acked",
+        model: PET_RENDERER_READY_MODEL,
+        protocol: PET_RENDERER_READY_PROTOCOL,
+        cursorListener: !!(payload && payload.cursorListener),
+        senderId,
+      });
+    } catch {}
+    try {
+      sender.send("hunt-cursor-enabled", !!huntCursorEnabled);
+    } catch {}
+    try {
+      const forensicState = getHuntOwnerForensic();
+      sender.send("hunt-owner-forensic-enabled", {
+        enabled: !!(forensicState && forensicState.enabled),
+        packageMarker:
+          (forensicState && forensicState.packageMarker) ||
+          "v6-hunt-visual-focus-and-play-gesture-qa",
+      });
+    } catch {}
+  } catch {}
+});
+tn.on(V6_HUNT_VISUAL_FOCUS_CHANNEL, (event, payload) => {
+  try {
+    const sender = event && event.sender;
+    const senderId = sender && !sender.isDestroyed() ? sender.id : null;
+    const pet = Re;
+    const petId =
+      pet && !pet.isDestroyed() && pet.webContents && !pet.webContents.isDestroyed()
+        ? pet.webContents.id
+        : null;
+    if (senderId == null || petId == null || petId !== senderId) return;
+    const normalized = normalizeV6HuntVisualFocusContract(payload);
+    if (!normalized) return;
+    v6HuntVisualFocusByContentsId.set(senderId, normalized);
+    try {
+      getHuntOwnerForensic()?.record?.("boot", {
+        process: "main",
+        event: "visual-focus-updated",
+        focusFromContract: true,
+        senderId,
+      });
+    } catch {}
+  } catch {}
+});
+function recordHuntOwnerForensicRaw(event, payload, fallbackSource, { strictPet = true } = {}) {
+  try {
+    const forensic = getHuntOwnerForensic();
+    if (!forensic || !forensic.enabled) return;
+    const sender = event && event.sender;
+    const senderId = sender && !sender.isDestroyed() ? sender.id : null;
+    const pet = Re;
+    const petId =
+      pet && !pet.isDestroyed() && pet.webContents && !pet.webContents.isDestroyed()
+        ? pet.webContents.id
+        : null;
+    if (strictPet) {
+      if (petId == null || senderId == null || petId !== senderId) {
+        try {
+          forensic.record("handshake", {
+            process: "main",
+            event: "forensic-event-rejected",
+            reason: "stale-or-non-pet",
+            senderId,
+            petId,
+          });
+        } catch {}
+        return;
+      }
+    } else if (petId != null && senderId != null && petId !== senderId) {
+      return;
+    }
+    forensic.record((payload && payload.source) || fallbackSource || "status", {
+      ...(payload && typeof payload === "object" ? payload : {}),
+      senderId,
+    });
+  } catch {}
+}
+tn.on("hunt-owner-forensic-boot", (event, payload) => {
+  recordHuntOwnerForensicRaw(event, payload, "boot", { strictPet: false });
+});
+// Raw diagnostics path: never use catcodeTrustedIpcMain (silent drop risk).
+tn.on(HUNT_OWNER_FORENSIC_EVENT_CHANNEL, (event, payload) => {
+  recordHuntOwnerForensicRaw(event, payload, "renderer", { strictPet: true });
+});
+catcodeTrustedIpcMain.handle("cursor-theft-copy-forensic-enabled", () => ({
+  ok: !0,
+  enabled: !!getCursorTheftCopyForensic()?.enabled,
+  logPath: getCursorTheftCopyForensic()?.getLogPath?.() || null,
+}));
+catcodeTrustedIpcMain.handle("cursor-theft-copy-forensic-log", (t, e) => {
+  try {
+    const forensic = getCursorTheftCopyForensic();
+    if (!forensic || !forensic.enabled) return { ok: !0, enabled: !1 };
+    forensic.record(
+      (e && e.source) || "renderer-recv",
+      e && typeof e === "object" ? e : {},
+    );
+    return { ok: !0, enabled: !0 };
+  } catch (_) {
+    return { ok: !1 };
+  }
+});
+catcodeTrustedIpcMain.handle("dance-rotation-forensic-enabled", () => ({
+  ok: !0,
+  enabled: !!getDanceRotationForensic()?.enabled,
+  logPath: getDanceRotationForensic()?.getLogPath?.() || null,
+  musicDanceEnabled: !!musicDanceEnabled,
+  musicMeterAvailable: !!musicActivityController?.isAvailable?.(),
+}));
+catcodeTrustedIpcMain.handle("dance-rotation-forensic-log", (t, e) => {
+  try {
+    const forensic = getDanceRotationForensic();
+    if (!forensic || !forensic.enabled) return { ok: !0, enabled: !1 };
+    forensic.record(
+      (e && e.source) || "renderer",
+      e && typeof e === "object" ? e : {},
+      { force: !!(e && e.force) },
+    );
+    return { ok: !0, enabled: !0 };
+  } catch {
+    return { ok: !1 };
+  }
+});
+// Pull fallback for V6 dance. The regular push channel remains the fast path,
+// but the visible pet can recover from a missed Electron message without
+// requiring the user to restart their music.
+catcodeTrustedIpcMain.handle("music-activity-get", () => ({
+  active: !!musicDanceEnabled && !!musicActivityController?.getState?.().active,
+  energy: Number(musicActivityController?.getState?.().energy) || 0,
+  beat: !!musicActivityController?.getState?.().beat,
+}));
+playfulMovementController = createPetPlayfulMovementController({
+  getPetWindow: () => Re,
+  getCanMove: ({ active = false, manual = false } = {}) => {
+    let pet = Re;
+    if (
+      !pet ||
+      pet.isDestroyed() ||
+      !pet.isVisible() ||
+      bt ||
+      Jc
+    ) {
+      return !1;
+    }
+    // A user may explicitly ask the cat to walk or catch the pointer even
+    // while music is playing. The renderer gives the playful action priority
+    // over the dance for its short duration.
+    if (manual) return !0;
+    if (petSleeping || musicPlaybackActive || Date.now() - Gc < 12_000)
+      return !1;
+    if (active) return !0;
+    let expected = Cl(Vt),
+      bounds = pet.getBounds();
+    return (
+      Math.abs(bounds.width - expected.width) <= 2 &&
+      Math.abs(bounds.height - expected.height) <= 2
+    );
+  },
+  constrainBounds: (bounds) => Nm(bounds),
+  constrainMotionBounds: (bounds) => {
+    let display = Gs.getDisplayMatching(bounds),
+      area = display.workArea || display.bounds,
+      width = Math.min(Math.round(bounds.width), area.width),
+      height = Math.min(Math.round(bounds.height), area.height);
+    return {
+      ...bounds,
+      width,
+      height,
+      x: Math.round(
+        Math.max(area.x, Math.min(area.x + area.width - width, bounds.x)),
+      ),
+      y: Math.round(
+        Math.max(area.y, Math.min(area.y + area.height - height, bounds.y)),
+      ),
+    };
+  },
+  getMotionWindowSize: () => {
+    let resting = Cl(Vt);
+    // V6-M9: keep resting size so the full 1024 canvas stays inside the work area.
+    if (catcodeV6IdlePreviewEnabled) return resting;
+    return {
+      width: resting.width + Math.round(Vt * 0.75),
+      height: resting.height,
+    };
+  },
+  setCurrentPetPosition: (position) => {
+    Zr = position;
+  },
+  saveSettings: cn,
+  updateShareCaptureForPetBounds: Lm,
+  getRoamingEnabled: () => petRoamingEnabled,
+  getCursorStealingEnabled: () => cursorStealingEnabled,
+  getCursorPoint: () => Gs.getCursorScreenPoint(),
+  cursorWarp: cursorWarpController,
+  // V6-M9: enable side-walk when the latched V6 package/flag is active.
+  allowWalkMotion: () => !!catcodeV6IdlePreviewEnabled,
+  // V6-M16f: move the cat window toward the pointer, never the pointer itself.
+  allowCursorApproach: () => !!catcodeV6IdlePreviewEnabled,
+  // V6-M30: V6 opts into the same existing, opt-in automatic cursor-theft
+  // scheduler. The tray command remains available as an immediate manual action.
+  allowCursorTheft: () => !!catcodeV6IdlePreviewEnabled,
+});
+catcodeTrustedIpcMain.on("cancel-pet-playful-movement", () => {
+  try {
+    playfulMovementController?.cancel({ restoreCursor: true });
+  } catch (_) {}
+});
+catcodeTrustedIpcMain.on("pet-sleep-state", (_event, sleeping) => {
+  petSleeping = !!sleeping;
+  if (petSleeping) {
+    playfulMovementController?.cancel({ restoreCursor: true });
+  }
+});
+const audioMeterHelperPath =
+  process.platform !== "win32"
+    ? null
+    : me.isPackaged
+      ? nn.join(
+          process.resourcesPath,
+          "app.asar.unpacked",
+          "native",
+          "windows",
+          "audio-meter.exe",
+        )
+      : nn.join(__dirname, "native", "windows", "audio-meter.exe");
+musicActivityController = createSystemAudioActivityController({
+  helperPath: audioMeterHelperPath,
+  logWarn: Ze,
+  onState: (state) => {
+    const becameActive = !!state.active && !musicPlaybackActive;
+    musicPlaybackActive = !!state.active;
+    if (becameActive) {
+      playfulMovementController?.cancel({ restoreCursor: true });
+    }
+    try {
+      getDanceForensic()?.record?.("main-meter", {
+        meterActive: !!state.active,
+        energyBucket:
+          !state.active
+            ? "0"
+            : Number(state.energy) >= 0.5
+              ? "high"
+              : Number(state.energy) >= 0.15
+                ? "mid"
+                : "low",
+        beat: !!state.beat,
+        musicDanceEnabled: !!musicDanceEnabled,
+      });
+    } catch {}
+    let pet = Re;
+    if (pet && !pet.isDestroyed()) {
+      pet.webContents.send("music-activity", state);
+    }
+  },
+});
+var {
     clearStretchTimer: XT,
     registerWakeSyncHandler: QT,
     returnToLicenseWindow: jm,
@@ -25997,6 +26976,12 @@ var { createPetWindow: HT } = Gk({
     startReminderTimer: bE,
     stopReminderTimer: rm,
     stopPomodoroTimer: fl,
+    startPlayfulMovement: () => playfulMovementController.start(),
+    stopPlayfulMovement: () => playfulMovementController.stop(),
+    startMusicDance: () => {
+      if (musicDanceEnabled) musicActivityController.start();
+    },
+    stopMusicDance: () => musicActivityController.stop(),
     hideShareCaptureOverlay: qT,
     createLicenseWindow: Ys,
     powerMonitor: lk,
@@ -26132,6 +27117,63 @@ catcodeTrustedIpcMain.handle("attention-requests-set", (event, enabled) => {
   ir();
   return attentionRequestsEnabled;
 });
+catcodeTrustedIpcMain.handle(
+  "attention-requests-interval-get",
+  () => attentionRequestIntervalMin,
+);
+catcodeTrustedIpcMain.handle(
+  "attention-requests-interval-set",
+  (event, minutes) => {
+    attentionRequestIntervalMin = normalizeWellnessInterval(minutes, 60, {
+      max: 240,
+    });
+    cn();
+    Re &&
+      !Re.isDestroyed() &&
+      Re.webContents.send(
+        "attention-requests-interval",
+        attentionRequestIntervalMin,
+      );
+    ir();
+    return attentionRequestIntervalMin;
+  },
+);
+catcodeTrustedIpcMain.handle("wellness-interval-set", (event, payload = {}) => {
+  let kind = normalizeWellnessKind(payload.kind);
+  if (!kind) return null;
+  if (kind === "drink" && areWaterRemindersTemporarilyDisabled()) {
+    // Keep stored custom minutes if provided, but do not arm drink timers.
+    let gatedMinutes = normalizeWellnessInterval(
+      payload.minutes,
+      drinkCustomIntervalMin || Qr || 60,
+    );
+    drinkCustomIntervalMin = gatedMinutes;
+    cn();
+    return { kind, minutes: gatedMinutes, disabled: true };
+  }
+  let fallback = kind === "stretch" ? Er : Qr,
+    minutes = normalizeWellnessInterval(payload.minutes, fallback || 30);
+  if (kind === "stretch") {
+    stretchCustomIntervalMin = minutes;
+    wT(minutes);
+  } else {
+    drinkCustomIntervalMin = minutes;
+    bT(minutes);
+  }
+  return { kind, minutes };
+});
+catcodeTrustedIpcMain.handle("wellness-complete", (event, payload = {}) => {
+  let kind = normalizeWellnessKind(payload.kind);
+  if (!kind) return { ok: !1 };
+  if (!completeWellnessNotification(kind)) return { ok: !1 };
+  if (kind === "stretch") {
+    cancelWellnessAccountability("acknowledged");
+    wT(Er);
+  } else {
+    bT(Qr);
+  }
+  return { ok: !0, kind };
+});
 iA({
   ipcMain: catcodeTrustedIpcMain,
   reminderList: gE,
@@ -26208,6 +27250,7 @@ aA({
   getShowCatName: () => Tr,
   setShowCatName: Al,
   openPatternEditor: wl,
+  openSkinGallery: openCatcodeSkinGallery,
   openMappingEditor: dm,
   buildSoundMenuTemplate: UE,
   buildSizeMenuTemplate: DE,
@@ -26225,6 +27268,15 @@ me.whenReady().then(async () => {
         node: process.versions.node,
         logPath: bA,
         smokeTest: Kc,
+        gazeDiagnostics: catcodeGazeDiagnosticsEnabled,
+        gazeDiagnosticsLogPath: getGazeDiagnostics().getLogPath(),
+        thinkingPreview: catcodeThinkingPreviewEnabled,
+        thinkingPreviewFlag: THINKING_PREVIEW_FLAG,
+        v6TypingPreview: catcodeV6TypingPreviewEnabled,
+        v6TypingPreviewFlag: "--catcode-preview-v6-typing",
+        agentDiagnostics: catcodeAgentDiagnosticsEnabled,
+        agentDiagnosticsFlag: AGENT_DIAGNOSTICS_FLAG,
+        agentDiagnosticsLogPath: getAgentDiagnostics().getLogPath(),
       }),
       Kc)
     ) {
@@ -26251,6 +27303,7 @@ me.whenReady().then(async () => {
       }),
       (Ht = FA()),
       dE(),
+      setFullscreenVisibilityEnabled(hideOverFullscreenApps),
       an("app_opened"),
       _T(),
       mT(),
@@ -26285,6 +27338,9 @@ me.whenReady().then(async () => {
 });
 me.on("will-quit", () => {
   (um(),
+    stopFullscreenVisibilityMonitor(),
+    playfulMovementController?.stop(),
+    musicActivityController?.stop(),
     am(),
     XT(),
     rm(),

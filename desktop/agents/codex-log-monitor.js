@@ -1,268 +1,450 @@
 "use strict";
-var c = require("fs"),
-  _ = require("path"),
-  p = require("os"),
-  u = 50,
-  h = 65536,
-  m = 14,
-  y = 12e4,
-  d = 8e3,
-  f = class {
-    constructor(n) {
-      ((this._onStateChange = n),
-        (this._interval = null),
-        (this._tracked = new Map()),
-        (this._baseDir = _.join(p.homedir(), ".codex", "sessions")),
-        (this._startedAtMs = Date.now()));
+
+/**
+ * Codex-M1 — tail-safe live monitor for ~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl
+ *
+ * First discovery seeks to EOF (never parses historical multi-GB content).
+ * Subsequent polls read at most READ_CHUNK_BYTES per read, decode UTF-8 safely
+ * via StringDecoder, and commit offset only after a successful chunk.
+ */
+
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+const { StringDecoder } = require("string_decoder");
+
+const MAX_TRACKED_FILES = 50;
+const MAX_PARTIAL_CHARS = 65536;
+const MAX_SESSION_DAY_DIRS = 14;
+const FRESH_MTIME_MS = 120000;
+const WORKING_EMIT_DEDUP_MS = 8000;
+/** Hard cap per read — never allocate/decode larger than this in one shot. */
+const READ_CHUNK_BYTES = 256 * 1024;
+/** Max chunks processed per file per poll (backlog drain without blocking forever). */
+const MAX_CHUNKS_PER_POLL = 8;
+
+function defaultBaseDir() {
+  return path.join(os.homedir(), ".codex", "sessions");
+}
+
+class CodexLogMonitor {
+  /**
+   * @param {(event: object) => void} onStateChange
+   * @param {{ fs?: typeof fs, baseDir?: string, now?: () => number }} [options]
+   */
+  constructor(onStateChange, options = {}) {
+    this._onStateChange = onStateChange;
+    this._fs = options.fs || fs;
+    this._baseDir =
+      typeof options.baseDir === "string" ? options.baseDir : defaultBaseDir();
+    this._now = typeof options.now === "function" ? options.now : Date.now;
+    this._interval = null;
+    this._tracked = new Map();
+    this._startedAtMs = this._now();
+    this._lastErrorAt = 0;
+  }
+
+  start() {
+    if (this._interval) return;
+    this._startedAtMs = this._now();
+    try {
+      this._poll();
+    } catch (err) {
+      this._noteError("poll", err);
     }
-    start() {
-      this._interval ||
-        ((this._startedAtMs = Date.now()),
-        this._poll(),
-        (this._interval = setInterval(() => this._poll(), 1500)));
-    }
-    stop() {
-      (this._interval &&
-        (clearInterval(this._interval), (this._interval = null)),
-        this._tracked.clear());
-    }
-    _poll() {
-      let n = Date.now(),
-        t = new Set(this._tracked.keys());
-      for (let e of this._getSessionDirs()) {
-        let s;
-        try {
-          s = c.readdirSync(e);
-        } catch {
-          continue;
-        }
-        for (let i of s)
-          !i.startsWith("rollout-") ||
-            !i.endsWith(".jsonl") ||
-            t.add(_.join(e, i));
-      }
-      for (let e of t) {
-        if (!this._tracked.has(e))
-          try {
-            if (n - c.statSync(e).mtimeMs > y) continue;
-          } catch {
-            continue;
-          }
-        this._pollFile(e, _.basename(e));
-      }
-      this._cleanStaleFiles();
-    }
-    _getSessionDirs() {
-      let n = [],
-        t;
+    this._interval = setInterval(() => {
       try {
-        t = c.readdirSync(this._baseDir);
-      } catch {
-        return [];
+        this._poll();
+      } catch (err) {
+        this._noteError("poll", err);
       }
-      for (let e of t) {
-        if (!/^\d{4}$/.test(e)) continue;
-        let s = _.join(this._baseDir, e),
-          i;
+    }, 1500);
+    // Allow Node test processes to exit if a caller forgets stop().
+    if (typeof this._interval.unref === "function") this._interval.unref();
+  }
+
+  stop() {
+    if (this._interval) {
+      clearInterval(this._interval);
+      this._interval = null;
+    }
+    this._tracked.clear();
+  }
+
+  _noteError(where, err) {
+    const now = this._now();
+    // Rate-limit noisy failures (at most once / 30s).
+    if (now - this._lastErrorAt < 30000) return;
+    this._lastErrorAt = now;
+    const message = err && err.message ? err.message : String(err);
+    console.warn(`[CatCode] codex monitor ${where}: ${message}`);
+  }
+
+  _poll() {
+    const now = this._now();
+    const candidates = new Set(this._tracked.keys());
+    for (const dir of this._getSessionDirs()) {
+      let names;
+      try {
+        names = this._fs.readdirSync(dir);
+      } catch {
+        continue;
+      }
+      for (const name of names) {
+        if (!name.startsWith("rollout-") || !name.endsWith(".jsonl")) continue;
+        candidates.add(path.join(dir, name));
+      }
+    }
+    for (const filePath of candidates) {
+      if (!this._tracked.has(filePath)) {
         try {
-          i = c.readdirSync(s);
+          if (now - this._fs.statSync(filePath).mtimeMs > FRESH_MTIME_MS) {
+            continue;
+          }
         } catch {
           continue;
         }
-        for (let r of i) {
-          if (!/^\d{2}$/.test(r)) continue;
-          let o = _.join(s, r),
-            a;
-          try {
-            a = c.readdirSync(o);
-          } catch {
-            continue;
-          }
-          for (let l of a)
-            /^\d{2}$/.test(l) && n.push({ key: e + r + l, path: _.join(o, l) });
+      }
+      try {
+        this._pollFile(filePath, path.basename(filePath));
+      } catch (err) {
+        this._noteError("file", err);
+      }
+    }
+    this._cleanStaleFiles();
+  }
+
+  _getSessionDirs() {
+    const out = [];
+    let years;
+    try {
+      years = this._fs.readdirSync(this._baseDir);
+    } catch {
+      return [];
+    }
+    for (const year of years) {
+      if (!/^\d{4}$/.test(year)) continue;
+      const yearPath = path.join(this._baseDir, year);
+      let months;
+      try {
+        months = this._fs.readdirSync(yearPath);
+      } catch {
+        continue;
+      }
+      for (const month of months) {
+        if (!/^\d{2}$/.test(month)) continue;
+        const monthPath = path.join(yearPath, month);
+        let days;
+        try {
+          days = this._fs.readdirSync(monthPath);
+        } catch {
+          continue;
+        }
+        for (const day of days) {
+          if (!/^\d{2}$/.test(day)) continue;
+          out.push({
+            key: year + month + day,
+            path: path.join(monthPath, day),
+          });
         }
       }
-      return (
-        n.sort((e, s) => (e.key < s.key ? 1 : e.key > s.key ? -1 : 0)),
-        n.slice(0, m).map((e) => e.path)
+    }
+    out.sort((a, b) => (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
+    return out.slice(0, MAX_SESSION_DAY_DIRS).map((e) => e.path);
+  }
+
+  _pollFile(filePath, baseName) {
+    let stat;
+    try {
+      stat = this._fs.statSync(filePath);
+    } catch {
+      return;
+    }
+
+    let state = this._tracked.get(filePath);
+    if (!state) {
+      const sessionId = this._extractSessionId(baseName);
+      if (!sessionId) return;
+      if (this._tracked.size >= MAX_TRACKED_FILES) this._cleanStaleFiles(true);
+      // Codex-M1: attach at EOF — never parse historical multi-GB content.
+      state = {
+        offset: stat.size,
+        partial: "",
+        decoder: new StringDecoder("utf8"),
+        sessionId: `codex:${sessionId}`,
+        cwd: "",
+        lastEventTime: this._now(),
+        lastState: null,
+        lastEmitAt: 0,
+        lastNotificationEvent: "",
+        activeTurn: false,
+        hadToolUse: false,
+        hadAgentMessage: false,
+        approvalPolicy: "",
+      };
+      this._tracked.set(filePath, state);
+      return;
+    }
+
+    // Truncation / rewrite: re-tail.
+    if (stat.size < state.offset) {
+      state.offset = stat.size;
+      state.partial = "";
+      state.decoder = new StringDecoder("utf8");
+      return;
+    }
+    if (stat.size === state.offset) return;
+
+    let chunks = 0;
+    while (stat.size > state.offset && chunks < MAX_CHUNKS_PER_POLL) {
+      const toRead = Math.min(READ_CHUNK_BYTES, stat.size - state.offset);
+      let buffer;
+      try {
+        buffer = Buffer.alloc(toRead);
+        const fd = this._fs.openSync(filePath, "r");
+        try {
+          const bytesRead = this._fs.readSync(
+            fd,
+            buffer,
+            0,
+            toRead,
+            state.offset,
+          );
+          if (bytesRead <= 0) return;
+          if (bytesRead < toRead) buffer = buffer.subarray(0, bytesRead);
+        } finally {
+          this._fs.closeSync(fd);
+        }
+      } catch (err) {
+        this._noteError("read", err);
+        return;
+      }
+
+      let text;
+      try {
+        if (!state.decoder) state.decoder = new StringDecoder("utf8");
+        text = state.decoder.write(buffer);
+      } catch (err) {
+        this._noteError("decode", err);
+        return;
+      }
+
+      // Commit offset only after successful read + decode.
+      state.offset += buffer.length;
+      state.lastEventTime = this._now();
+      chunks += 1;
+
+      const combined = state.partial + text;
+      const lines = combined.split("\n");
+      const incomplete = lines.pop() || "";
+      state.partial =
+        incomplete.length > MAX_PARTIAL_CHARS ? "" : incomplete;
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          this._processLine(line, state);
+        } catch (err) {
+          this._noteError("parse", err);
+        }
+      }
+
+      // Refresh size in case the file grew while we drained.
+      try {
+        stat = this._fs.statSync(filePath);
+      } catch {
+        return;
+      }
+      if (stat.size < state.offset) {
+        state.offset = stat.size;
+        state.partial = "";
+        state.decoder = new StringDecoder("utf8");
+        return;
+      }
+    }
+  }
+
+  _processLine(line, state) {
+    let event;
+    try {
+      event = JSON.parse(line);
+    } catch {
+      // Malformed JSONL must not stop later valid events.
+      return;
+    }
+    if (typeof event.timestamp === "string") {
+      const ts = Date.parse(event.timestamp);
+      if (Number.isFinite(ts) && ts < this._startedAtMs - 1500) return;
+    }
+    const type = event.type;
+    const payload = event.payload;
+    const payloadType =
+      (payload && typeof payload === "object" && payload.type) || "";
+    const key = payloadType ? `${type}:${payloadType}` : type;
+    const toolName =
+      (payload && typeof payload === "object" && payload.name) || "";
+
+    if (type === "session_meta" && payload) {
+      state.cwd = payload.cwd || "";
+      if (typeof payload.approval_policy === "string") {
+        state.approvalPolicy = payload.approval_policy;
+      }
+      return;
+    }
+    if (type === "turn_context" && payload) {
+      if (typeof payload.cwd === "string" && payload.cwd) state.cwd = payload.cwd;
+      if (typeof payload.approval_policy === "string") {
+        state.approvalPolicy = payload.approval_policy;
+      }
+      return;
+    }
+
+    if (key === "event_msg:task_started" || key === "event_msg:user_message") {
+      state.activeTurn = true;
+      state.hadToolUse = false;
+      state.hadAgentMessage = false;
+      this._emit(state, "thinking", key);
+      return;
+    }
+
+    // Mid-turn reasoning (verified on live rollouts).
+    if (
+      key === "event_msg:agent_reasoning" ||
+      key === "response_item:reasoning"
+    ) {
+      state.activeTurn = true;
+      this._emit(state, "thinking", key);
+      return;
+    }
+
+    if (key === "event_msg:agent_message" || key === "response_item:message") {
+      state.hadAgentMessage = true;
+      return;
+    }
+
+    if (this._isUserInterventionRequest(event, state)) {
+      const id = payload && (payload.id || payload.call_id);
+      this._emitNotification(state, id ? `${key}:${id}` : key);
+      return;
+    }
+
+    if (
+      key === "response_item:function_call" ||
+      key === "response_item:custom_tool_call" ||
+      key === "response_item:web_search_call"
+    ) {
+      state.hadToolUse = true;
+      this._emit(state, "working", key);
+      return;
+    }
+
+    if (
+      key === "event_msg:exec_command_end" ||
+      key === "event_msg:patch_apply_end" ||
+      key === "event_msg:custom_tool_call_output"
+    ) {
+      this._emit(state, "working", key);
+      return;
+    }
+
+    if (key === "event_msg:task_complete") {
+      if (!state.activeTurn) return;
+      this._emit(
+        state,
+        state.hadToolUse || state.hadAgentMessage ? "complete" : "idle",
+        key,
       );
+      state.activeTurn = false;
+      state.hadToolUse = false;
+      state.hadAgentMessage = false;
+      return;
     }
-    _pollFile(n, t) {
-      let e;
+
+    if (key === "event_msg:turn_aborted") {
+      state.activeTurn = false;
+      this._emit(state, "idle", key);
+    }
+
+    // toolName kept only for intervention matching above — never logged as content.
+    void toolName;
+  }
+
+  _isUserInterventionRequest(event, state) {
+    const payload = event && event.payload;
+    if (!payload || typeof payload !== "object" || payload.type !== "function_call") {
+      return false;
+    }
+    if (
+      payload.name === "request_user_input" ||
+      payload.name === "request_plugin_install"
+    ) {
+      return true;
+    }
+    if (payload.name === "exec_command" || payload.name === "shell_command") {
+      let args = {};
       try {
-        e = c.statSync(n);
+        args = JSON.parse(payload.arguments || "{}");
       } catch {
-        return;
+        args = {};
       }
-      let s = this._tracked.get(n);
-      if (!s) {
-        let a = this._extractSessionId(t);
-        if (!a) return;
-        (this._tracked.size >= u && this._cleanStaleFiles(!0),
-          (s = {
-            offset: 0,
-            partial: "",
-            sessionId: `codex:${a}`,
-            cwd: "",
-            lastEventTime: Date.now(),
-            lastState: null,
-            lastNotificationEvent: "",
-            activeTurn: !1,
-            hadToolUse: !1,
-            hadAgentMessage: !1,
-            approvalPolicy: "",
-          }),
-          this._tracked.set(n, s));
-      }
-      if (e.size <= s.offset) return;
-      let i;
-      try {
-        let a = c.openSync(n, "r");
-        ((i = Buffer.alloc(e.size - s.offset)),
-          c.readSync(a, i, 0, i.length, s.offset),
-          c.closeSync(a));
-      } catch {
-        return;
-      }
-      ((s.offset = e.size), (s.lastEventTime = Date.now()));
-      let r = (s.partial + i.toString("utf8")).split(`
-`),
-        o = r.pop() || "";
-      s.partial = o.length > h ? "" : o;
-      for (let a of r) a.trim() && this._processLine(a, s);
+      if (!args || args.sandbox_permissions !== "require_escalated") return false;
+      const policy = String((state && state.approvalPolicy) || "");
+      return !(policy === "never" || policy === "on-failure");
     }
-    _processLine(n, t) {
-      let e;
-      try {
-        e = JSON.parse(n);
-      } catch {
-        return;
-      }
-      if (typeof e.timestamp == "string") {
-        let l = Date.parse(e.timestamp);
-        if (Number.isFinite(l) && l < this._startedAtMs - 1500) return;
-      }
-      let s = e.type,
-        i = e.payload,
-        r = (i && typeof i == "object" && i.type) || "",
-        o = r ? `${s}:${r}` : s,
-        a = (i && typeof i == "object" && i.name) || "";
-      if (
-        (console.log(
-          `[CatCode] log-line codex: ${o}${a ? ` name=${a}` : ""} session=${t.sessionId} policy=${t.approvalPolicy || "?"}`,
-        ),
-        s === "session_meta" && i)
-      ) {
-        ((t.cwd = i.cwd || ""),
-          typeof i.approval_policy == "string" &&
-            (t.approvalPolicy = i.approval_policy));
-        return;
-      }
-      if (s === "turn_context" && i) {
-        (typeof i.cwd == "string" && i.cwd && (t.cwd = i.cwd),
-          typeof i.approval_policy == "string" &&
-            (t.approvalPolicy = i.approval_policy));
-        return;
-      }
-      if (o === "event_msg:task_started" || o === "event_msg:user_message") {
-        ((t.activeTurn = !0),
-          (t.hadToolUse = !1),
-          (t.hadAgentMessage = !1),
-          this._emit(t, "thinking", o));
-        return;
-      }
-      if (o === "event_msg:agent_message" || o === "response_item:message") {
-        t.hadAgentMessage = !0;
-        return;
-      }
-      if (this._isUserInterventionRequest(e, t)) {
-        let l = i && (i.id || i.call_id);
-        this._emitNotification(t, l ? `${o}:${l}` : o);
-        return;
-      }
-      if (
-        o === "response_item:function_call" ||
-        o === "response_item:custom_tool_call" ||
-        o === "response_item:web_search_call"
-      ) {
-        ((t.hadToolUse = !0), this._emit(t, "working", o));
-        return;
-      }
-      if (
-        o === "event_msg:exec_command_end" ||
-        o === "event_msg:patch_apply_end" ||
-        o === "event_msg:custom_tool_call_output"
-      ) {
-        this._emit(t, "working", o);
-        return;
-      }
-      if (o === "event_msg:task_complete") {
-        if (!t.activeTurn) return;
-        (this._emit(
-          t,
-          t.hadToolUse || t.hadAgentMessage ? "complete" : "idle",
-          o,
-        ),
-          (t.activeTurn = !1),
-          (t.hadToolUse = !1),
-          (t.hadAgentMessage = !1));
-        return;
-      }
-      o === "event_msg:turn_aborted" &&
-        ((t.activeTurn = !1), this._emit(t, "idle", o));
+    return false;
+  }
+
+  _emitNotification(state, eventKey) {
+    const now = this._now();
+    if (
+      state.lastNotificationEvent === eventKey &&
+      now - state.lastEventTime < 5000
+    ) {
+      return;
     }
-    _isUserInterventionRequest(n, t) {
-      let e = n && n.payload;
-      if (!e || typeof e != "object" || e.type !== "function_call") return !1;
-      if (
-        e.name === "request_user_input" ||
-        e.name === "request_plugin_install"
-      )
-        return !0;
-      if (e.name === "exec_command" || e.name === "shell_command") {
-        let s = {};
-        try {
-          s = JSON.parse(e.arguments || "{}");
-        } catch {
-          s = {};
-        }
-        if (!s || s.sandbox_permissions !== "require_escalated") return !1;
-        let i = String((t && t.approvalPolicy) || "");
-        return !(i === "never" || i === "on-failure");
+    state.lastNotificationEvent = eventKey;
+    this._emit(state, "notification", eventKey);
+  }
+
+  _emit(state, nextState, eventKey) {
+    const now = this._now();
+    if (
+      nextState === state.lastState &&
+      nextState === "working" &&
+      now - (state.lastEmitAt || 0) < WORKING_EMIT_DEDUP_MS
+    ) {
+      return;
+    }
+    state.lastState = nextState;
+    state.lastEmitAt = now;
+    state.lastEventTime = now;
+    this._onStateChange({
+      agentId: "codex",
+      sessionId: state.sessionId,
+      state: nextState,
+      event: eventKey,
+      cwd: state.cwd,
+    });
+  }
+
+  _extractSessionId(fileName) {
+    const parts = fileName.replace(".jsonl", "").split("-");
+    return parts.length >= 10 ? parts.slice(-5).join("-") : null;
+  }
+
+  _cleanStaleFiles(force = false) {
+    const now = this._now();
+    for (const [filePath, state] of this._tracked) {
+      if ((force || now - state.lastEventTime > 300000) && this._tracked.delete(filePath)) {
+        /* deleted */
       }
-      return !1;
+      if (!force && this._tracked.size <= MAX_TRACKED_FILES) break;
     }
-    _emitNotification(n, t) {
-      let e = Date.now();
-      (n.lastNotificationEvent === t && e - n.lastEventTime < 5e3) ||
-        ((n.lastNotificationEvent = t), this._emit(n, "notification", t));
-    }
-    _emit(n, t, e) {
-      let s = Date.now();
-      (t === n.lastState && t === "working" && s - (n.lastEmitAt || 0) < d) ||
-        ((n.lastState = t),
-        (n.lastEmitAt = s),
-        (n.lastEventTime = s),
-        this._onStateChange({
-          agentId: "codex",
-          sessionId: n.sessionId,
-          state: t,
-          event: e,
-          cwd: n.cwd,
-        }));
-    }
-    _extractSessionId(n) {
-      let e = n.replace(".jsonl", "").split("-");
-      return e.length >= 10 ? e.slice(-5).join("-") : null;
-    }
-    _cleanStaleFiles(n = !1) {
-      let t = Date.now();
-      for (let [e, s] of this._tracked)
-        if (
-          ((n || t - s.lastEventTime > 3e5) && this._tracked.delete(e),
-          !n && this._tracked.size <= u)
-        )
-          break;
-    }
-  };
-module.exports = f;
+  }
+}
+
+module.exports = CodexLogMonitor;
+module.exports.CodexLogMonitor = CodexLogMonitor;
+module.exports.READ_CHUNK_BYTES = READ_CHUNK_BYTES;
+module.exports.MAX_CHUNKS_PER_POLL = MAX_CHUNKS_PER_POLL;
+module.exports.FRESH_MTIME_MS = FRESH_MTIME_MS;

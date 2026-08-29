@@ -38,7 +38,8 @@ main {
     ". earL earR ."
     ". head head ."
     "legFl body body legFr"
-    ". legRl legRr tail";
+    ". legRl legRr tail"
+    "side side side side";
   gap: 10px 12px;
   align-items: center;
   justify-items: center;
@@ -77,6 +78,19 @@ main {
 }
 .part-card[data-part="earR"] {
   grid-area: earR;
+}
+.part-card[data-part="side"] {
+  grid-area: side;
+  justify-self: center;
+}
+
+.part-card[data-part="side"] .part-canvas-wrap {
+  padding: 7px;
+}
+
+.side-fixed-detail {
+  pointer-events: none;
+  shape-rendering: crispEdges;
 }
 
 .part-card[data-part="head"],
@@ -154,6 +168,32 @@ main {
   border-left: 1px solid #333;
   padding: 16px;
   overflow-y: auto;
+}
+
+.v4-preview-frame {
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 1;
+  margin: 0 0 8px;
+  background:
+    linear-gradient(135deg, #2a3140 0%, #1a1f2a 55%, #12161e 100%);
+  border: 1px solid #3a4254;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+}
+
+.v4-preview-frame object {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.v4-preview-note {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #9aa3b5;
 }
 
 .control-panel {
@@ -320,10 +360,16 @@ main {
 
 .current-preset-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 58px;
+  grid-template-columns: minmax(0, 1fr) minmax(76px, auto);
   align-items: stretch;
   gap: 7px;
   margin: 0 0 8px;
+}
+
+#change-preset {
+  min-width: 76px;
+  padding-inline: 10px;
+  white-space: nowrap;
 }
 
 .current-preset-card .preset-card {

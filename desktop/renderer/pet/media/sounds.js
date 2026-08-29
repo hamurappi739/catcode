@@ -6,7 +6,7 @@ function createSounds() {
   const completionMeow = new Audio("../../assets/sound/meow.m4a");
   const reminderMeow = new Audio("../../assets/sound/meow-alert.m4a");
   const purringSound = new Audio("../../assets/sound/purring.m4a");
-  let volume = 0.1;
+  let volume = 0.65;
   let muted = false;
   let purrPlayPromise = null;
 
@@ -30,6 +30,17 @@ function createSounds() {
 
   warmAudio();
 
+  function signalInternalSound(durationMs) {
+    if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") {
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent("catcode-internal-sound", {
+        detail: { durationMs: Math.max(0, Number(durationMs) || 0) },
+      }),
+    );
+  }
+
   function applyTaskCompleteSoundVolume(nextVolume) {
     volume = Math.max(0, Math.min(1, Number(nextVolume) || 0));
     completionMeow.volume = volume;
@@ -48,6 +59,7 @@ function createSounds() {
   function playCompletionMeow() {
     if (muted) return;
     if (volume <= 0) return;
+    signalInternalSound(2400);
     completionMeow.volume = volume;
     completionMeow.currentTime = 0;
     completionMeow.play().catch(() => {});
@@ -60,6 +72,7 @@ function createSounds() {
       1,
       Math.min(3, Math.round(Number(options.repeat) || 3)),
     );
+    signalInternalSound(2400 + (repeat - 1) * 1500);
     const play = () => {
       reminderMeow.volume = volume;
       reminderMeow.currentTime = 0;

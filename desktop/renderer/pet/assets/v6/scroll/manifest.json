@@ -1,0 +1,68 @@
+{
+  "family": "v6-scroll",
+  "privacyContractVersion": "m7-v1",
+  "sourceDrop": "art-handoff/V6_CURRENT_POSES_FOR_PISKEL/05_scroll/256",
+  "supersedes": "owner-source-v6-animation-drop-2026-08-08/06_scroll (pre-refresh white-fragment frames)",
+  "registryNote": "Owner-approved 2026-08-10 refresh replaces earlier M7 scroll art with cleaned paper/cat frames. Runtime files are byte copies of the approved source mapping.",
+  "dimensions": {
+    "width": 256,
+    "height": 256
+  },
+  "frames": [
+    {
+      "key": "f0",
+      "role": "enter",
+      "fileName": "scroll-f0-ready.png",
+      "ownerSource": "scroll-f0-ready.png",
+      "sha256": "e447872a46ae466c52d6dc226717f76c8c13ddc4022b21ea2a42b9fe256e34d5",
+      "durationMs": 140,
+      "anchorNote": "Idle attention at the paper roll — enter from idle"
+    },
+    {
+      "key": "f1",
+      "role": "action",
+      "fileName": "scroll-f1-reach.png",
+      "ownerSource": "scroll-f1-reach.png",
+      "sha256": "6e4d03cc52d8b129bf856dcff13d28a42d29b8efe2dfd242b840c370c39bd9dd",
+      "durationMs": 180,
+      "anchorNote": "Paw reaches toward the roll — action loop start"
+    },
+    {
+      "key": "f2",
+      "role": "action",
+      "fileName": "scroll-f2-unroll.png",
+      "ownerSource": "scroll-f2-unroll.png",
+      "sha256": "7421ed580af51e55f54c49ac5c74873005d0d41d60c83d495fb6d3bd91426809",
+      "durationMs": 180,
+      "anchorNote": "Paper begins extending — mid action"
+    },
+    {
+      "key": "f3",
+      "role": "action",
+      "fileName": "scroll-f3-pull.png",
+      "ownerSource": "scroll-f3-pull.png",
+      "sha256": "066a1b8a0cb33549ffeda4da5a6f48d8e7bc49d96b8f96330d2b456a17857524",
+      "durationMs": 180,
+      "anchorNote": "Visible pulling action — peak action"
+    },
+    {
+      "key": "f4",
+      "role": "recovery",
+      "fileName": "scroll-f4-recover.png",
+      "ownerSource": "scroll-f4-recover.png",
+      "sha256": "e72b905c7c9aacfd9f5a0e4981df5987f72bcc16d3443dae2b89796bc4b457e6",
+      "durationMs": 240,
+      "anchorNote": "Clean recovery pose — return toward idle"
+    }
+  ],
+  "timing": {
+    "activityHoldMs": 420,
+    "actionLoopKeys": [
+      "f1",
+      "f2",
+      "f3"
+    ],
+    "reducedMotionHoldMs": 520,
+    "rationale": "Hold and frame durations unchanged from M7 controller; art refresh only."
+  }
+}

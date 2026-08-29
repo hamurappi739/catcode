@@ -1,6 +1,7 @@
 #cat-name-editor,
 #user-name-editor,
 #pomodoro-focus-editor,
+#wellness-interval-editor,
 #share-duration-editor {
   position: absolute;
   left: 50%;
@@ -81,6 +82,15 @@ body[data-editing-pomodoro-focus] #pomodoro-focus-editor {
   display: grid;
 }
 
+#wellness-interval-editor {
+  top: 4px;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+body[data-editing-wellness-interval] #wellness-interval-editor {
+  display: grid;
+}
+
 #share-duration-editor {
   top: calc(var(--cat-top) + 28%);
   grid-template-columns: minmax(0, 1fr) auto auto auto;
@@ -91,6 +101,7 @@ body[data-editing-share-duration] #share-duration-editor {
 }
 
 #pomodoro-focus-editor span,
+#wellness-interval-editor span,
 #share-duration-editor span {
   align-self: center;
   color: #171717;
@@ -108,6 +119,7 @@ body[data-editing-share-duration] #share-duration-editor {
 #user-name-input,
 #fixed-message-input,
 #pomodoro-focus-input,
+#wellness-interval-input,
 #share-duration-input {
   min-width: 0;
   border: 1px solid rgba(0, 0, 0, 0.35);
@@ -124,6 +136,7 @@ body[data-editing-share-duration] #share-duration-editor {
 #user-name-editor button,
 #fixed-message-editor button,
 #pomodoro-focus-editor button,
+#wellness-interval-editor button,
 #share-duration-editor button {
   border: 1px solid rgba(0, 0, 0, 0.35);
   border-radius: 0;
@@ -139,6 +152,7 @@ body[data-editing-share-duration] #share-duration-editor {
 
 #fixed-message-editor button,
 #user-name-editor button,
+#wellness-interval-editor button,
 #share-duration-editor button {
   cursor: pointer;
 }

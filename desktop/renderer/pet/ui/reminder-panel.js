@@ -2,6 +2,16 @@
 
 // Reminder panel, reminder form, reminder list, and reminder trigger UI wiring.
 
+function hasActiveReminders(reminders, currentTimeKey) {
+  if (!Array.isArray(reminders)) return false;
+  const now = String(currentTimeKey || "");
+  return reminders.some((reminder) => {
+    if (!reminder || reminder.enabled === false) return false;
+    if (reminder.repeat && reminder.repeat !== "none") return true;
+    return !now || String(reminder.time || "") >= now;
+  });
+}
+
 function createReminderPanel({
   clockButton,
   panel,
@@ -130,8 +140,7 @@ function createReminderPanel({
   }
 
   function applySettings(settings) {
-    const showButtonOutside = !!(settings && settings.showButtonOutside);
-    document.body.toggleAttribute("data-reminder-button", showButtonOutside);
+    syncClockVisibility();
   }
 
   function openForm() {
@@ -214,8 +223,16 @@ function createReminderPanel({
     );
   }
 
+  function syncClockVisibility() {
+    document.body.toggleAttribute(
+      "data-reminder-button",
+      hasActiveReminders(currentReminders, currentReminderTimeKey()),
+    );
+  }
+
   function renderReminders(reminders) {
     currentReminders = Array.isArray(reminders) ? reminders : [];
+    syncClockVisibility();
     if (!listEl) return;
     listEl.textContent = "";
     if (!currentReminders.length) {
@@ -385,4 +402,5 @@ function createReminderPanel({
 
 module.exports = {
   createReminderPanel,
+  hasActiveReminders,
 };

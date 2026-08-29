@@ -55,6 +55,8 @@
 <rect x="21" y="40" width="1" height="1" fill="#D9D9D9"/>
 <rect x="35" y="40" width="1" height="1" fill="#D9D9D9"/>
 <rect x="36" y="39" width="1" height="1" fill="#D9D9D9"/>
+<text x="25" y="37" fill="#F5F5F5" font-family="monospace" font-size="3" font-weight="700">A</text>
+<text x="31" y="37" fill="#F5F5F5" font-family="monospace" font-size="3" font-weight="700">B</text>
 <!-- 우측 발 (pressing) — 우측 키보드 위. legFr 패턴 매핑 (8×11 셀 → bbox 9×18). -->
 <g id="leg-fr" data-patch-frame="23 22 1.125 1.636">
   <path d="M23 36H24V27.5H25V23H26V22H30V23H31V24H32V31H31V33H30V35.5V38.5H29V40H24V39H23V36Z" fill="var(--cat-color)"/>
@@ -69,6 +71,8 @@
 <rect x="1" y="36" width="1" height="1" fill="#D9D9D9"/>
 <rect x="15" y="36" width="1" height="1" fill="#D9D9D9"/>
 <rect x="16" y="35" width="1" height="1" fill="#D9D9D9"/>
+<text x="5" y="37" fill="#F5F5F5" font-family="monospace" font-size="3" font-weight="700">A</text>
+<text x="11" y="37" fill="#F5F5F5" font-family="monospace" font-size="3" font-weight="700">B</text>
 <!-- 좌측 발 (resting) — 좌측 키보드 위. legFl 패턴 매핑 (8×11 셀 → bbox 9×19). -->
 <g id="leg-fl" data-patch-frame="10 14 1.125 1.727">
   <path d="M12 25V16H13V15H14V14H17V15H18V16H19V27.5H18V31H17V32H16V33H10V29H11V25H12Z" fill="var(--cat-color)"/>
@@ -90,16 +94,16 @@
 <g id="ear-right" data-ear-position="23 3"></g>
 <!-- 눈 -->
 <g>
-  <rect width="1" height="3" transform="translate(20 15)" fill="var(--eye-bg-color, #FFFFFF)"/>
-  <rect width="1" height="3" transform="translate(24 15)" fill="var(--eye-bg-color, #FFFFFF)"/>
-  <rect width="3" height="5" transform="translate(21 14)" fill="var(--eye-bg-color, #FFFFFF)"/>
+  <rect width="1" height="4" transform="translate(20 15)" fill="var(--eye-bg-color, #FFFFFF)"/>
+  <rect width="1" height="4" transform="translate(24 15)" fill="var(--eye-bg-color, #FFFFFF)"/>
+  <rect width="3" height="7" transform="translate(21 13)" fill="var(--eye-bg-color, #FFFFFF)"/>
 </g>
-<rect class="pupil-right" width="3" height="3" transform="translate(21 15)" fill="var(--eye-color-right, var(--eye-color, var(--cat-color)))"/>
+<rect class="pupil-right" x="21.5" y="14.5" width="2" height="4" fill="var(--eye-color-right, var(--eye-color, var(--cat-color)))"/>
 <g>
-  <rect width="1" height="3" transform="translate(11 15)" fill="var(--eye-bg-color, #FFFFFF)"/>
-  <rect width="1" height="3" transform="translate(15 15)" fill="var(--eye-bg-color, #FFFFFF)"/>
-  <rect width="3" height="5" transform="translate(12 14)" fill="var(--eye-bg-color, #FFFFFF)"/>
+  <rect width="1" height="4" transform="translate(11 15)" fill="var(--eye-bg-color, #FFFFFF)"/>
+  <rect width="1" height="4" transform="translate(15 15)" fill="var(--eye-bg-color, #FFFFFF)"/>
+  <rect width="3" height="7" transform="translate(12 13)" fill="var(--eye-bg-color, #FFFFFF)"/>
 </g>
-<rect class="pupil-left" width="3" height="3" transform="translate(12 15)" fill="var(--eye-color-left, var(--eye-color, var(--cat-color)))"/>
+<rect class="pupil-left" x="12.5" y="14.5" width="2" height="4" fill="var(--eye-color-left, var(--eye-color, var(--cat-color)))"/>
 </g>
 </svg>

@@ -3,7 +3,7 @@
 const crypto = require("crypto");
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { verifyEntitlement } = require("../license-client");
+const { createLicenseService, verifyEntitlement } = require("../license-client");
 
 function tokenFor(payload, privateKey) {
   const header = Buffer.from(JSON.stringify({ alg: "EdDSA", typ: "JWT", kid: "test" })).toString("base64url");
@@ -25,4 +25,26 @@ test("rejects expired and modified entitlements", () => {
   const token = tokenFor(payload, privateKey);
   assert.equal(verifyEntitlement(token, 3_000, publicKey), null);
   assert.equal(verifyEntitlement(`${token}x`, 1_500, publicKey), null);
+});
+
+test("records a safe diagnostic when a license request cannot reach the server", async () => {
+  const warnings = [];
+  const tempDirectory = require("fs").mkdtempSync(require("path").join(require("os").tmpdir(), "catcode-license-"));
+  const service = createLicenseService({
+    app: { getPath: () => tempDirectory, getVersion: () => "0.2.6" },
+    isWindows: true,
+    logWarn: (message) => warnings.push(message),
+    t: (key) => key,
+    safeStorage: { isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value) },
+    fetchImpl: async () => {
+      const error = new Error("socket closed");
+      error.code = "ECONNRESET";
+      throw error;
+    },
+  });
+
+  await assert.rejects(() => service.activateLicenseKey("CAT-SECRET-DO-NOT-LOG"), { code: "LICENSE_NETWORK_FAILED" });
+  assert.match(warnings[0], /license request failed for \/v1\/licenses\/activate/);
+  assert.match(warnings[0], /ECONNRESET/);
+  assert.doesNotMatch(warnings[0], /CAT-SECRET/);
 });

@@ -1,0 +1,33 @@
+{
+  "family": "v6-side-walk-bilateral",
+  "sourceDrop": "art-handoff/V6_CURRENT_POSES_FOR_PISKEL/07_walk/{left,right}/256",
+  "dimensions": {
+    "width": 256,
+    "height": 256
+  },
+  "noCssMirror": true,
+  "directions": {
+    "left": [
+      "walk-left-f0.png",
+      "walk-left-f1.png",
+      "walk-left-f2.png",
+      "walk-left-f3.png",
+      "walk-left-f4.png"
+    ],
+    "right": [
+      "walk-right-f0.png",
+      "walk-right-f1.png",
+      "walk-right-f2.png",
+      "walk-right-f3.png",
+      "walk-right-f4.png"
+    ]
+  },
+  "timing": {
+    "frameDurationMs": 200,
+    "walkDurationMs": 4800,
+    "autoRoamMinMs": 45000,
+    "autoRoamMaxMs": 90000,
+    "postWalkRearmMs": 20000
+  },
+  "neverManipulatesOsCursor": true
+}
