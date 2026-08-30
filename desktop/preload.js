@@ -321,6 +321,8 @@ s.exposeInMainWorld("electronAPI", {
   patternCustomPresetsExport: (e) =>
     n.invoke("pattern-custom-presets-export", e),
   patternCustomPresetsImport: () => n.invoke("pattern-custom-presets-import"),
+  v6SkinExport: (e) => n.invoke("v6-skin-export", e),
+  v6SkinImport: () => n.invoke("v6-skin-import"),
   patternAiTemplateSave: () => n.invoke("pattern-ai-template-save"),
   patternConfirmClearAll: (e) => n.invoke("pattern-confirm-clear-all", e),
   patternConfirmDeletePreset: (e) =>

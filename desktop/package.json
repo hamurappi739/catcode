@@ -13,7 +13,7 @@
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
-    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check onboarding-preload.js && node --check share-capture-preload.js && node --check license-client.js && node --check macos-support.js && node --check scripts/verify-macos-signing-env.js && node --check tools/migrate-v6-art-to-256.js && node --check tools/build-v6-custom-palette-contracts.js && node --check renderer/pet/custom-behavior.js && node --check renderer/pet/v6-custom-palette-core.js && node --check renderer/pet/v6-skin-runtime.js && node --check renderer/onboarding/renderer.js && node --check renderer/editor/custom-cat-creator.js && node --check renderer/v6-editor/editor.js",
+    "check": "node --check main.js && node --check preload.js && node --check license-preload.js && node --check onboarding-preload.js && node --check share-capture-preload.js && node --check license-client.js && node --check macos-support.js && node --check scripts/verify-macos-signing-env.js && node --check tools/migrate-v6-art-to-256.js && node --check tools/build-v6-custom-palette-contracts.js && node --check renderer/pet/custom-behavior.js && node --check renderer/pet/v6-eye-palette-raster.js && node --check renderer/pet/v6-custom-palette-core.js && node --check renderer/pet/v6-skin-runtime.js && node --check renderer/pet/v6-skin-file-format.js && node --check renderer/onboarding/renderer.js && node --check renderer/editor/custom-cat-creator.js && node --check renderer/v6-editor/editor.js && node --check renderer/v6-editor/v6-editor-idle-preview.js",
     "test": "node --test test/*.test.js",
     "test:platform": "node --test test/macos-build.test.js test/linux-build.test.js",
     "start": "electron .",
@@ -48,6 +48,12 @@
     "files": [
       "**/*",
       "!release/**",
+      "!release-*/**",
+      "!docs/**",
+      "!art-handoff/**",
+      "!qa-forks/**",
+      "!.tmp-qa-inspect/**",
+      "!.tmp-qa-inspect-2/**",
       "!**/.codebase-memory/**",
       "!test/**",
       "!scripts/**",

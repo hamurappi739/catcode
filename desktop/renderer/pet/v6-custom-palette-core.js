@@ -18,6 +18,15 @@
   const TOKEN_KEYS = Object.freeze(Object.keys(CANONICAL_BASELINE));
   const TOKEN_SET = new Set(TOKEN_KEYS);
   const CUSTOM_SKIN_ID = "custom-palette-v1";
+  const HUNT_FINAL_RELATIVE_PATH = "hunt-smooth/hunt-f8-gaze-ready.png";
+  const IDLE_MASTER_RELATIVE_PATH = "idle-master.png";
+  const IDLE_BODY_RELATIVE_PATH = "head-layers/idle-body-under-head-256.png";
+  const IDLE_HEAD_RELATIVE_PATH = "head-layers/idle-head-with-neck-underlap-256.png";
+  const BLACK_CANONICAL_IDLE_IRIS = Object.freeze([245, 191, 45]);
+  const BLACK_CANONICAL_HUNT_IRIS = Object.freeze([245, 191, 45]);
+  const typingEyePalette = typeof window !== "undefined"
+    ? window.CatCodeV6TypingEyePalette
+    : (typeof require === "function" ? require("./v6-eye-palette-raster.js") : null);
 
   function normalizeColor(value, fallback) {
     return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)
@@ -60,6 +69,239 @@
       .join("|");
   }
 
+  function repaintBlackCanonicalHuntIris(imageData, entry, explicit) {
+    if (!entry || entry.contractSourcePath !== HUNT_FINAL_RELATIVE_PATH || !explicit.iris) return 0;
+    const data = imageData.data;
+    const target = hexToRgb(explicit.iris);
+    let painted = 0;
+    // This is an exact, source-bound role: the black canonical f8 has this
+    // one yellow only in its two visible irises (x 54..131, y 174..196).
+    // Do not use the 1024 live-gaze mask here: it belongs to a different layer.
+    for (let y = 174; y <= 196; y += 1) {
+      for (let x = 54; x <= 131; x += 1) {
+        const offset = (y * 256 + x) * 4;
+        if (data[offset + 3] === 0
+          || data[offset] !== BLACK_CANONICAL_HUNT_IRIS[0]
+          || data[offset + 1] !== BLACK_CANONICAL_HUNT_IRIS[1]
+          || data[offset + 2] !== BLACK_CANONICAL_HUNT_IRIS[2]) continue;
+        data[offset] = target[0];
+        data[offset + 1] = target[1];
+        data[offset + 2] = target[2];
+        painted += 1;
+      }
+    }
+    return painted;
+  }
+
+  function repaintBlackCanonicalIdleIris(imageData, entry, explicit) {
+    if (!imageData || !imageData.data || !entry
+      || entry.contractSourcePath !== IDLE_HEAD_RELATIVE_PATH
+      || !explicit || !explicit.iris) return 0;
+    const data = imageData.data;
+    const target = hexToRgb(explicit.iris);
+    let painted = 0;
+    // The pupil-free idle head intentionally leaves the 161-pixel resting
+    // pupil hole in the canonical iris colour. It is still iris material, not
+    // a pupil and not an independent static eye colour. Repaint every exact
+    // canonical iris pixel in this head, including that hidden-under-pupil
+    // area, before the live pupil layer is composited.
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0
+        || data[i] !== BLACK_CANONICAL_IDLE_IRIS[0]
+        || data[i + 1] !== BLACK_CANONICAL_IDLE_IRIS[1]
+        || data[i + 2] !== BLACK_CANONICAL_IDLE_IRIS[2]) continue;
+      data[i] = target[0];
+      data[i + 1] = target[1];
+      data[i + 2] = target[2];
+      painted += 1;
+    }
+    return painted;
+  }
+
+  function repaintBlackCanonicalCustomIris(imageData, entry, explicit) {
+    if (!imageData || !imageData.data || !entry || typeof entry.sourceSha256 !== "string"
+      || !explicit || !explicit.iris) return 0;
+    const data = imageData.data;
+    const target = hexToRgb(explicit.iris);
+    let painted = 0;
+    // Stage 16 marks visible eye surfaces as protected-authored because static
+    // skins must keep them byte-identical. A custom palette is different: its
+    // iris token is explicitly editable. The Black Canonical source uses this
+    // exact yellow only for the authored iris pixels in every custom host. Do
+    // not touch pupil-black or anti-aliased eye pixels here.
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0
+        || data[i] !== BLACK_CANONICAL_IDLE_IRIS[0]
+        || data[i + 1] !== BLACK_CANONICAL_IDLE_IRIS[1]
+        || data[i + 2] !== BLACK_CANONICAL_IDLE_IRIS[2]) continue;
+      data[i] = target[0];
+      data[i + 1] = target[1];
+      data[i + 2] = target[2];
+      painted += 1;
+    }
+    return painted;
+  }
+
+  function composeLayerPixels(bodyPixels, headPixels) {
+    const width = 256;
+    const height = 256;
+    const out = new Uint8ClampedArray(width * height * 4);
+    const body = bodyPixels.data;
+    const head = headPixels.data;
+    for (let i = 0; i < out.length; i += 4) {
+      const ba = body[i + 3] / 255;
+      const ha = head[i + 3] / 255;
+      const alpha = ha + ba * (1 - ha);
+      if (alpha <= 0) continue;
+      if (ha > 0) {
+        out[i] = head[i];
+        out[i + 1] = head[i + 1];
+        out[i + 2] = head[i + 2];
+      } else {
+        out[i] = body[i];
+        out[i + 1] = body[i + 1];
+        out[i + 2] = body[i + 2];
+      }
+      out[i + 3] = Math.round(alpha * 255);
+    }
+    return { data: out, width, height };
+  }
+
+  function getContracts() {
+    if (typeof window !== "undefined" && window.CatCodeV6CustomPaletteContracts) {
+      return window.CatCodeV6CustomPaletteContracts;
+    }
+    if (typeof require === "function") {
+      try {
+        return require("./v6-custom-palette-contracts.js");
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function buildRoleMap(entry) {
+    const map = new Uint8Array(256 * 256);
+    if (!entry || !entry.runsByToken) return map;
+    for (let roleIndex = 0; roleIndex < TOKEN_KEYS.length; roleIndex += 1) {
+      const runs = entry.runsByToken[TOKEN_KEYS[roleIndex]] || [];
+      for (const run of runs) {
+        const [start, end, y] = run;
+        for (let x = start; x <= end; x += 1) {
+          map[y * 256 + x] = roleIndex + 1;
+        }
+      }
+    }
+    return map;
+  }
+
+  // The split head contains an intentional underlap, but its source role at
+  // the shared boundary is still outline. For a recoloured coat, resolve only
+  // those overlapping pixels through the flattened master role so the seam
+  // cannot become a visible line between two differently coloured layers.
+  function reconcileIdleHeadBoundary(imageData, palette, contracts) {
+    const sourceContracts = contracts || getContracts();
+    const masterEntry = sourceContracts && sourceContracts.hosts
+      ? sourceContracts.hosts[IDLE_MASTER_RELATIVE_PATH]
+      : null;
+    const bodyEntry = sourceContracts && sourceContracts.hosts
+      ? sourceContracts.hosts[IDLE_BODY_RELATIVE_PATH]
+      : null;
+    if (!imageData || !imageData.data || !masterEntry || !bodyEntry) return imageData;
+    const masterRoles = buildRoleMap(masterEntry);
+    const bodyRoles = buildRoleMap(bodyEntry);
+    // Preserve explicit-only semantics: an iris-only edit must not silently
+    // repaint the boundary with canonical coat tokens.
+    const effectivePalette = normalizePalette(palette);
+    for (let index = 0; index < bodyRoles.length; index += 1) {
+      if (!bodyRoles[index] || !masterRoles[index]) continue;
+      const roleIndex = masterRoles[index] - 1;
+      const token = TOKEN_KEYS[roleIndex];
+      const color = effectivePalette[token];
+      if (!color) continue;
+      const rgb = hexToRgb(color);
+      const offset = index * 4;
+      if (imageData.data[offset + 3] === 0) continue;
+      imageData.data[offset] = rgb[0];
+      imageData.data[offset + 1] = rgb[1];
+      imageData.data[offset + 2] = rgb[2];
+    }
+    return imageData;
+  }
+
+  // The body layer has one legacy outline row directly below the head
+  // underlap. It is hidden at rest, but becomes visible when the head moves
+  // upward. Resolve only that measured boundary row through the master role;
+  // all other body anatomy keeps its own authored ownership.
+  function reconcileIdleBodyBoundary(imageData, palette, contracts) {
+    const sourceContracts = contracts || getContracts();
+    const masterEntry = sourceContracts && sourceContracts.hosts
+      ? sourceContracts.hosts[IDLE_MASTER_RELATIVE_PATH]
+      : null;
+    const bodyEntry = sourceContracts && sourceContracts.hosts
+      ? sourceContracts.hosts[IDLE_BODY_RELATIVE_PATH]
+      : null;
+    if (!imageData || !imageData.data || !masterEntry || !bodyEntry) return imageData;
+    const masterRoles = buildRoleMap(masterEntry);
+    const bodyRoles = buildRoleMap(bodyEntry);
+    const effectivePalette = normalizePalette(palette);
+    const boundaryY = 170;
+    for (let x = 0; x < 256; x += 1) {
+      const index = boundaryY * 256 + x;
+      if (!bodyRoles[index] || !masterRoles[index]) continue;
+      if (bodyRoles[index] === masterRoles[index]) continue;
+      const token = TOKEN_KEYS[masterRoles[index] - 1];
+      const color = effectivePalette[token];
+      if (!color) continue;
+      const offset = index * 4;
+      if (imageData.data[offset + 3] === 0) continue;
+      const rgb = hexToRgb(color);
+      imageData.data[offset] = rgb[0];
+      imageData.data[offset + 1] = rgb[1];
+      imageData.data[offset + 2] = rgb[2];
+    }
+    return imageData;
+  }
+
+  // The pupil-safe idle layers intentionally contain a small shared underlap.
+  // For a flat custom idle, the adopted full master is the authority for those
+  // shared pixels; otherwise the head's outline role can become a visible
+  // horizontal seam when the coat token is changed.
+  function reconcileIdleLayerBoundary(composed, bodyPixels, headPixels, masterEntry, palette) {
+    if (!composed || !composed.data || !bodyPixels || !headPixels
+      || !masterEntry || !masterEntry.runsByToken) return composed;
+    const effectivePalette = displayPalette(palette);
+    const roleByPixel = new Uint8Array(256 * 256);
+    const roleNames = TOKEN_KEYS;
+    for (let roleIndex = 0; roleIndex < roleNames.length; roleIndex += 1) {
+      const runs = masterEntry.runsByToken[roleNames[roleIndex]] || [];
+      for (const run of runs) {
+        const [start, end, y] = run;
+        for (let x = start; x <= end; x += 1) {
+          roleByPixel[y * 256 + x] = roleIndex + 1;
+        }
+      }
+    }
+    const body = bodyPixels.data;
+    const head = headPixels.data;
+    for (let y = 0; y < 256; y += 1) {
+      for (let x = 0; x < 256; x += 1) {
+        const index = y * 256 + x;
+        const offset = index * 4;
+        if (body[offset + 3] === 0 || head[offset + 3] === 0) continue;
+        const roleIndex = roleByPixel[index] - 1;
+        if (roleIndex < 0) continue;
+        const token = roleNames[roleIndex];
+        const color = effectivePalette[token];
+        if (!color) continue;
+        const rgb = hexToRgb(color);
+        composed.data[offset] = rgb[0];
+        composed.data[offset + 1] = rgb[1];
+        composed.data[offset + 2] = rgb[2];
+      }
+    }
+    return composed;
+  }
+
   function applyPaletteToImageData(imageData, entry, palette) {
     if (!imageData || !imageData.data || !entry || !entry.runsByToken) return imageData;
     const explicit = normalizePalette(palette);
@@ -82,7 +324,98 @@
         }
       }
     }
+    repaintBlackCanonicalIdleIris(imageData, entry, explicit);
+    repaintBlackCanonicalHuntIris(imageData, entry, explicit);
+    repaintBlackCanonicalCustomIris(imageData, entry, explicit);
+    if (explicit.iris && typingEyePalette
+      && typeof typingEyePalette.recolorExactTypingIris === "function") {
+      typingEyePalette.recolorExactTypingIris(imageData, entry.contractSourcePath, explicit.iris);
+    }
+    if (entry.contractSourcePath === IDLE_HEAD_RELATIVE_PATH) {
+      reconcileIdleHeadBoundary(imageData, palette);
+    }
+    if (entry.contractSourcePath === IDLE_BODY_RELATIVE_PATH) {
+      reconcileIdleBodyBoundary(imageData, palette);
+    }
     return imageData;
+  }
+
+  function paintLayerImageData(relativePath, palette, contracts) {
+    const entry = contracts && contracts.hosts ? contracts.hosts[relativePath] : null;
+    if (!entry) return null;
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 256;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        context.imageSmoothingEnabled = false;
+        context.drawImage(image, 0, 0, 256, 256);
+        const pixels = context.getImageData(0, 0, 256, 256);
+        applyPaletteToImageData(pixels, entry, palette);
+        resolve(pixels);
+      };
+      image.onerror = () => resolve(null);
+      image.src = assetUrl(relativePath, entry);
+    });
+  }
+
+  function paintComposedIdle(palette) {
+    const key = `composed-idle:${paletteSignature(palette)}`;
+    if (cache.has(key)) return cache.get(key);
+    const contracts = typeof window !== "undefined" ? window.CatCodeV6CustomPaletteContracts : null;
+    if (!contracts || typeof document === "undefined") return Promise.resolve(null);
+    const task = Promise.all([
+      paintLayerImageData(IDLE_BODY_RELATIVE_PATH, palette, contracts),
+      paintLayerImageData(IDLE_HEAD_RELATIVE_PATH, palette, contracts),
+    ]).then((layers) => {
+      const [bodyPixels, headPixels] = layers;
+      if (!bodyPixels || !headPixels) return null;
+      const composed = composeLayerPixels(bodyPixels, headPixels);
+      reconcileIdleLayerBoundary(
+        composed,
+        bodyPixels,
+        headPixels,
+        contracts.hosts[IDLE_MASTER_RELATIVE_PATH],
+        palette,
+      );
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 256;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.putImageData(
+        new ImageData(composed.data, composed.width, composed.height),
+        0,
+        0,
+      );
+      return canvas.toDataURL("image/png");
+    });
+    cache.set(key, task);
+    return task;
+  }
+
+  function composeIdlePaletteImageData(palette, readLayerPixels) {
+    const contracts = typeof require === "function"
+      ? require("./v6-custom-palette-contracts.js")
+      : (typeof window !== "undefined" ? window.CatCodeV6CustomPaletteContracts : null);
+    if (!contracts || typeof readLayerPixels !== "function") return null;
+    const bodyEntry = contracts.hosts[IDLE_BODY_RELATIVE_PATH];
+    const headEntry = contracts.hosts[IDLE_HEAD_RELATIVE_PATH];
+    if (!bodyEntry || !headEntry) return null;
+    const body = readLayerPixels(IDLE_BODY_RELATIVE_PATH);
+    const head = readLayerPixels(IDLE_HEAD_RELATIVE_PATH);
+    if (!body || !head) return null;
+    applyPaletteToImageData(body, bodyEntry, palette);
+    applyPaletteToImageData(head, headEntry, palette);
+    const composed = composeLayerPixels(body, head);
+    return reconcileIdleLayerBoundary(
+      composed,
+      body,
+      head,
+      contracts.hosts[IDLE_MASTER_RELATIVE_PATH],
+      palette,
+    );
   }
 
   const cache = new Map();
@@ -186,11 +519,16 @@
   }
 
   function paintAsset(relativePath, palette) {
+    if (relativePath === IDLE_MASTER_RELATIVE_PATH) {
+      return paintComposedIdle(palette);
+    }
     const contracts = typeof window !== "undefined" ? window.CatCodeV6CustomPaletteContracts : null;
     const entry = contracts && contracts.hosts ? contracts.hosts[relativePath] : null;
     if (!entry || typeof document === "undefined") return Promise.resolve(null);
     const explicit = normalizePalette(palette);
-    if (!Object.keys(explicit).length) return Promise.resolve(null);
+    if (!Object.keys(explicit).length) {
+      return Promise.resolve(null);
+    }
     const key = `${relativePath}:${paletteSignature(palette)}`;
     if (cache.has(key)) return cache.get(key);
     const task = new Promise((resolve) => {
@@ -216,6 +554,16 @@
 
   /** Editor preview: idle/walk via palette recolour; hunt f8 adds centred runtime pupils. */
   function paintEditorPreview(relativePath, palette) {
+    const idlePreview = typeof window !== "undefined" ? window.CatCodeV6EditorIdlePreview : null;
+    if (idlePreview && typeof idlePreview.isIdlePreviewPath === "function"
+      && idlePreview.isIdlePreviewPath(relativePath)
+      && typeof idlePreview.paintIdlePreview === "function") {
+      const key = `editor-idle:${relativePath}:${paletteSignature(palette)}`;
+      if (cache.has(key)) return cache.get(key);
+      const task = idlePreview.paintIdlePreview(relativePath, palette, api);
+      cache.set(key, task);
+      return task;
+    }
     const huntPreview = typeof window !== "undefined" ? window.CatCodeV6EditorHuntPreview : null;
     if (huntPreview && typeof huntPreview.isHuntPreviewPath === "function"
       && huntPreview.isHuntPreviewPath(relativePath)
@@ -236,10 +584,21 @@
     TOKEN_KEYS,
     EDITOR_PREVIEW_PATHS,
     EDITOR_PREVIEW_ORDER,
+    IDLE_BODY_RELATIVE_PATH,
+    IDLE_HEAD_RELATIVE_PATH,
+    IDLE_MASTER_RELATIVE_PATH,
     normalizePalette,
     displayPalette,
     paletteSignature,
     applyPaletteToImageData,
+    composeLayerPixels,
+    reconcileIdleLayerBoundary,
+    composeIdlePaletteImageData,
+    reconcileIdleBodyBoundary,
+    reconcileIdleHeadBoundary,
+    repaintBlackCanonicalHuntIris,
+    repaintBlackCanonicalIdleIris,
+    repaintBlackCanonicalCustomIris,
     assetRoot,
     assetRootFromLocation,
     assetRootFromScriptSrc,
@@ -249,6 +608,7 @@
     isBrokenEditorPreviewUrl,
     assetUrl,
     paintAsset,
+    paintComposedIdle,
     paintEditorPreview,
     clearCache: () => cache.clear(),
   };

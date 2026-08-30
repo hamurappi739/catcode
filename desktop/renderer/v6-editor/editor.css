@@ -15,22 +15,23 @@ body { margin: 0; min-width: 860px; min-height: 520px; }
   min-height: 100vh;
 }
 
-.preview-area { padding: 28px; background: #1b1e20; }
+.preview-area { padding: 22px 24px; background: #1b1e20; }
 
 .preview-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
 h1, h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.preview-hint { margin: 5px 0 0; color: #9da9b0; font-size: 12px; }
 #status { min-height: 18px; margin: 0; color: #aeb8be; font-size: 12px; }
 
 .preview-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 24px;
+  gap: 12px 18px;
+  margin-top: 14px;
 }
 
 .preview-card { margin: 0; min-width: 0; text-align: center; }
 .preview-card img {
-  width: min(100%, 180px);
+  width: min(100%, 148px);
   aspect-ratio: 1;
   display: block;
   margin: 0 auto;
@@ -40,7 +41,7 @@ h1, h2 { margin: 0; font-size: 18px; font-weight: 700; }
   border: 1px solid #30363a;
   border-radius: 6px;
 }
-.preview-card figcaption { margin-top: 9px; color: #b9c2c7; font-size: 13px; }
+.preview-card figcaption { margin-top: 6px; color: #b9c2c7; font-size: 13px; }
 
 .controls { padding: 22px 18px; border-left: 1px solid #34393d; background: #202427; }
 .controls-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -65,6 +66,8 @@ button:hover { background: #374046; }
 .actions button { min-height: 37px; font-weight: 600; }
 .actions .primary { background: #168a75; border-color: #2aa68f; }
 .actions .primary:hover { background: #1c9b84; }
+.file-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.file-actions button { min-height: 34px; padding: 0 6px; font-size: 11px; }
 
 @media (max-width: 1100px) {
   .preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

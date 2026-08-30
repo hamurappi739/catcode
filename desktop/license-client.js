@@ -158,8 +158,17 @@ function createLicenseService({ app, isMac, isWindows, logWarn, t, fetchImpl = g
   function licenseRecoveryReasonFromMessage(value) {
     const reason = String(value || "").toLowerCase();
     if (reason.includes("device_limit")) return "limit";
-    if (/license_(invalid|revoked|expired)|invalid_entitlement/.test(reason)) return "disabled";
+    if (/license_(invalid|revoked|expired)|session_invalid|invalid_entitlement/.test(reason)) return "disabled";
     return "";
+  }
+
+  function isAuthoritativeRefreshFailure(error) {
+    return !!(
+      error &&
+      error.statusCode >= 400 &&
+      error.statusCode < 500 &&
+      /^(license_invalid|license_revoked|license_expired|session_invalid|invalid_entitlement)$/.test(String(error.code || ""))
+    );
   }
 
   async function activateLicenseKey(key) {
@@ -180,7 +189,8 @@ function createLicenseService({ app, isMac, isWindows, logWarn, t, fetchImpl = g
     if (!record) return { ok: false, reason: "missing" };
     const localEntitlement = verifyEntitlement(record.entitlement);
     const refreshToken = decryptRefreshToken(record.refreshToken);
-    if (!localEntitlement || localEntitlement.device_id !== record.deviceId || !refreshToken) return { ok: false, reason: "invalid-device" };
+    if (localEntitlement && localEntitlement.device_id !== record.deviceId) return { ok: false, reason: "invalid-device" };
+    if (!refreshToken) return { ok: false, reason: "invalid-device" };
     try {
       const response = await request("/v1/licenses/refresh", { deviceId: record.deviceId, refreshToken, appVersion: String(app.getVersion()) });
       entitlementFor(response, record.deviceId);
@@ -188,11 +198,11 @@ function createLicenseService({ app, isMac, isWindows, logWarn, t, fetchImpl = g
       writeJson(licensePath(), updated);
       return { ok: true, license: publicLicense(updated) };
     } catch (error) {
-      if (error.statusCode >= 400 && error.statusCode < 500) {
+      if (isAuthoritativeRefreshFailure(error)) {
         removeFile(licensePath());
         return { ok: false, reason: error.code || "invalid" };
       }
-      if (allowOffline) return { ok: true, license: publicLicense(record), offline: true };
+      if (allowOffline && localEntitlement) return { ok: true, license: publicLicense(record), offline: true };
       logWarn && logWarn("[CatCode] license refresh failed:", error && error.message ? error.message : error);
       return { ok: false, reason: "network", network: true };
     }

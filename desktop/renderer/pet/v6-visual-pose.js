@@ -282,6 +282,7 @@ function createV6VisualPose({
   let huntError = false;
   let huntFrameIndex = 0;
   let huntFrameTimer = null;
+  let huntReturnTimer = null;
   let teaseReady = false;
   let teaseError = false;
   let teaseFrameIndex = 0;
@@ -428,6 +429,10 @@ function createV6VisualPose({
     if (huntFrameTimer) {
       clearTimeout(huntFrameTimer);
       huntFrameTimer = null;
+    }
+    if (huntReturnTimer) {
+      clearTimeout(huntReturnTimer);
+      huntReturnTimer = null;
     }
     if (walkFrameTimer) {
       clearTimeout(walkFrameTimer);
@@ -1096,6 +1101,11 @@ function createV6VisualPose({
     const desiredKey = reducedMotion ? "f0" : frameKey;
     const index = huntFrames.findIndex((frame) => frame.key === desiredKey);
     if (index < 0) return false;
+    if (huntReturnTimer) {
+      clearTimeout(huntReturnTimer);
+      huntReturnTimer = null;
+    }
+    if (body && body.dataset) delete body.dataset.v6HuntReturning;
     // Only bump the exclusive epoch when *entering* hunt. Frame steps inside an
     // active hunt must not invalidate the hunt controller's entry timers.
     if (pose !== POSES.HUNT) {
@@ -1127,7 +1137,29 @@ function createV6VisualPose({
     if (pose !== POSES.HUNT) return false;
     bumpEpoch(reason || "leave-hunt");
     if (body && body.dataset) delete body.dataset.v6HuntGaze;
-    setPose(POSES.IDLE);
+    // Reuse the authored crouch sequence in reverse rather than snapping from
+    // the final hold straight to idle. Reduced-motion users keep the instant
+    // transition by design.
+    if (reducedMotion || huntFrameIndex <= 0) {
+      setPose(POSES.IDLE);
+      return true;
+    }
+    const token = epoch;
+    let index = Math.min(huntFrames.length - 2, huntFrameIndex - 1);
+    if (body && body.dataset) body.dataset.v6HuntReturning = "1";
+    const playReturn = () => {
+      if (token !== epoch || pose !== POSES.HUNT) return;
+      if (index < 0) {
+        huntReturnTimer = null;
+        if (body && body.dataset) delete body.dataset.v6HuntReturning;
+        setPose(POSES.IDLE);
+        return;
+      }
+      setHuntFrame(index);
+      index -= 1;
+      huntReturnTimer = setTimeout(playReturn, HUNT_ENTRY_FRAME_MS);
+    };
+    playReturn();
     return true;
   }
 

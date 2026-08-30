@@ -3,6 +3,7 @@
 (() => {
   const api = window.electronAPI;
   const painter = window.CatCodeV6CustomPalette;
+  const skinFile = window.CatCodeV6SkinFileFormat;
   if (!painter) {
     const statusNode = document.getElementById("status");
     if (statusNode) statusNode.textContent = "Ошибка: палитра не загружена";
@@ -154,6 +155,49 @@
     setStatus("Возвращён чёрный окрас");
   }
 
+  async function exportSkin() {
+    if (!api || typeof api.v6SkinExport !== "function" || !skinFile) {
+      setStatus("Ошибка: экспорт JSON недоступен");
+      return;
+    }
+    try {
+      const file = skinFile.createSkinFile({ name: "Мой окрас", palette });
+      const result = await api.v6SkinExport(file);
+      if (result && result.ok) setStatus("JSON-скин сохранён");
+      else if (!result || !result.canceled) setStatus("Не удалось сохранить JSON-скин");
+    } catch (_) {
+      setStatus("Не удалось сохранить JSON-скин");
+    }
+  }
+
+  async function importSkin() {
+    if (!api || typeof api.v6SkinImport !== "function" || !skinFile) {
+      setStatus("Ошибка: импорт JSON недоступен");
+      return;
+    }
+    let result;
+    try {
+      result = await api.v6SkinImport();
+    } catch (_) {
+      setStatus("Не удалось открыть JSON-скин");
+      return;
+    }
+    if (!result || result.canceled) return;
+    if (!result.ok || !result.file) {
+      setStatus("Этот JSON не является файлом скина CatCode");
+      return;
+    }
+    const checked = skinFile.validateSkinFile(result.file);
+    if (!checked.ok) {
+      setStatus("Этот JSON не прошёл проверку");
+      return;
+    }
+    palette = checked.value.palette;
+    syncInputs();
+    await renderPreviews();
+    setStatus("Скин загружен в предпросмотр. Нажмите «Применить»");
+  }
+
   for (const input of inputs) {
     input.addEventListener("input", () => updateToken(input.dataset.token, input.value));
   }
@@ -164,6 +208,8 @@
   });
   document.getElementById("apply").addEventListener("click", apply);
   document.getElementById("use-black").addEventListener("click", restoreBlack);
+  document.getElementById("export-skin").addEventListener("click", exportSkin);
+  document.getElementById("import-skin").addEventListener("click", importSkin);
 
   async function boot() {
     setStatus("Загрузка…");

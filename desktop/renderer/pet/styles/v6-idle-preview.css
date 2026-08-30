@@ -57,7 +57,6 @@ body[data-catcode-model="v6-idle-preview"] #stretch-svg-end,
 body[data-catcode-model="v6-idle-preview"] #stretch-pose-default,
 body[data-catcode-model="v6-idle-preview"] #stretch-pose-ing,
 body[data-catcode-model="v6-idle-preview"] #playful-walk-sprite,
-body[data-catcode-model="v6-idle-preview"] #sleep-zzz,
 body[data-catcode-model="v6-idle-preview"] #heat-steam,
 body[data-catcode-model-latched="1"] #cat,
 body[data-catcode-model-latched="1"] #purr-pose,
@@ -71,7 +70,6 @@ body[data-catcode-model-latched="1"] #stretch-svg-end,
 body[data-catcode-model-latched="1"] #stretch-pose-default,
 body[data-catcode-model-latched="1"] #stretch-pose-ing,
 body[data-catcode-model-latched="1"] #playful-walk-sprite,
-body[data-catcode-model-latched="1"] #sleep-zzz,
 body[data-catcode-model-latched="1"] #heat-steam {
   display: none !important;
 }

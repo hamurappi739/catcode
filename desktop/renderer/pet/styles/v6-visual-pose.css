@@ -435,9 +435,20 @@ body[data-catcode-model="v6-idle-preview"][data-v6-sleep-status="error"]:not([da
   display: none !important;
 }
 
-/* V6-M1: no V4 Zzz while latched (placement not proven for curled frames). */
-body[data-catcode-model="v6-idle-preview"][data-idle-sleep] #sleep-zzz,
-body[data-catcode-model-latched="1"][data-idle-sleep] #sleep-zzz {
+/* Zzz is shared UI chrome, never legacy artwork. It is visible only while a
+   V6 sleep frame is actually on screen, and pauses during the peek frame. */
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep"] #sleep-zzz,
+body[data-catcode-model-latched="1"][data-v6-pose="sleep"] #sleep-zzz {
+  display: block !important;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep"] #sleep-zzz span,
+body[data-catcode-model-latched="1"][data-v6-pose="sleep"] #sleep-zzz span {
+  animation: sleep-zzz-float 1.9s steps(4, end) infinite both;
+}
+
+body[data-catcode-model="v6-idle-preview"][data-v6-pose="sleep-peek"] #sleep-zzz,
+body[data-catcode-model-latched="1"][data-v6-pose="sleep-peek"] #sleep-zzz {
   display: none !important;
 }
 

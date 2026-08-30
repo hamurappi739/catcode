@@ -1,10 +1,8 @@
-/* Stage S1 white-pixel RCA: zzz used to share the cat's vertical band
-   (top: cat-top + 11%), so white text-shadow glyphs painted ON the left
-   head silhouette and read as a bright square. Keep the whole zzz band
-   above --cat-top so rest + float never overlap the sleep head. */
+/* Keep the zzz band close to the sleeping head while leaving enough room for
+   the float animation. The symbols must remain above --cat-top. */
 #sleep-zzz {
   position: absolute;
-  top: calc(var(--cat-top) - 56px);
+  top: calc(var(--cat-top) - 48px);
   left: 50%;
   width: var(--cat-size);
   height: 52px;
@@ -64,6 +62,13 @@ body[data-idle-sleep].sleep-zzz-cycle #sleep-zzz span {
   top: 72%;
   font-size: 9px;
   animation-delay: 0.72s;
+}
+
+#sleep-zzz span:nth-child(4) {
+  left: 66%;
+  top: 18%;
+  font-size: 8px;
+  animation-delay: 1.04s;
 }
 
 body[data-idle-sleep] #purr-hearts,

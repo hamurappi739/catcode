@@ -13,7 +13,10 @@
     <main class="editor-shell">
       <section class="preview-area" aria-label="Предпросмотр окраса">
         <div class="preview-heading">
-          <h1>Редактор кота</h1>
+          <div>
+            <h1>Редактор кота</h1>
+            <p class="preview-hint">Изменения сразу видны в шести позах кота.</p>
+          </div>
           <p id="status" aria-live="polite"></p>
         </div>
         <div class="preview-grid">
@@ -99,11 +102,19 @@
           <button type="button" id="apply" class="primary">Применить</button>
           <button type="button" id="use-black">Вернуть чёрного</button>
         </div>
+        <div class="file-actions" aria-label="Файл скина">
+          <button type="button" id="export-skin">Экспорт JSON</button>
+          <button type="button" id="import-skin">Импорт JSON</button>
+        </div>
       </aside>
     </main>
     <script src="../pet/v6-custom-palette-contracts.js"></script>
+    <script src="../pet/v6-eye-palette-raster.js"></script>
     <script src="../pet/v6-custom-palette-core.js"></script>
+    <script src="../pet/v6-gaze-masks.js"></script>
+    <script src="../pet/v6-skin-file-format.js"></script>
     <script src="v6-editor-hunt-preview.js"></script>
+    <script src="v6-editor-idle-preview.js"></script>
     <script src="editor.js"></script>
   </body>
 </html>

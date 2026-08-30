@@ -6,6 +6,7 @@
   const staticAssets = typeof window !== "undefined" ? window.CatCodeV6StaticSkinAssets : null;
   const customPalette = typeof window !== "undefined" ? window.CatCodeV6CustomPalette : null;
   const customContracts = typeof window !== "undefined" ? window.CatCodeV6CustomPaletteContracts : null;
+  const typingEyePalette = typeof window !== "undefined" ? window.CatCodeV6TypingEyePalette : null;
   const BASE_SKIN_ID = catalog ? catalog.V6_DEFAULT_SKIN_ID : "snowball";
   const CUSTOM_SKIN_ID = customPalette ? customPalette.CUSTOM_SKIN_ID : "custom-palette-v1";
   let selectedId = BASE_SKIN_ID;
@@ -51,6 +52,12 @@
     const resolved = resolveSource(source);
     const previousId = host.dataset.v6SkinId;
     host.dataset.v6SkinId = selectedId;
+    const selectedSkin = catalog && typeof catalog.getV6Skin === "function"
+      ? catalog.getV6Skin(selectedId)
+      : null;
+    const customIdleMaster = selectedId === CUSTOM_SKIN_ID && relative === "idle-master.png";
+    if (customIdleMaster) host.style.visibility = "hidden";
+    else host.style.removeProperty("visibility");
     if (host.getAttribute("src") !== resolved) host.src = resolved;
     else if (previousId && previousId !== selectedId) host.src = resolved;
     if (
@@ -70,8 +77,31 @@
           host.dataset.v6CustomPaletteRequest === request
         ) {
           host.src = painted;
+          if (customIdleMaster) host.style.visibility = "visible";
+        } else if (customIdleMaster && selectedId === CUSTOM_SKIN_ID
+          && host.dataset.v6CustomPaletteRequest === request) {
+          host.style.visibility = "visible";
         }
+      }).catch(() => {
+        // A failed compose must never leave the real host permanently hidden.
+        // The raw source remains a visible last-resort fallback.
+        if (customIdleMaster && selectedId === CUSTOM_SKIN_ID
+          && host.dataset.v6CustomPaletteRequest === request) host.style.visibility = "visible";
+      });
+    } else if (
+      selectedId !== BASE_SKIN_ID && selectedId !== CUSTOM_SKIN_ID && relative
+      && /^typing\//i.test(relative) && selectedSkin && selectedSkin.eyePalette
+      && typingEyePalette && typeof typingEyePalette.paintTypingImageUrl === "function"
+    ) {
+      const request = `${selectedId}:${relative}:${selectedSkin.eyePalette.iris}`;
+      host.dataset.v6TypingEyeRequest = request;
+      typingEyePalette.paintTypingImageUrl(resolved, selectedSkin.eyePalette.iris).then((painted) => {
+        if (painted && selectedId === selectedSkin.id
+          && host.dataset.v6TypingEyeRequest === request) host.src = painted;
       }).catch(() => {});
+    } else {
+      delete host.dataset.v6TypingEyeRequest;
+      delete host.dataset.v6CustomPaletteRequest;
     }
   }
 
@@ -101,6 +131,15 @@
     }
   }
 
+  function requestGazeRepaint() {
+    const gaze = typeof window !== "undefined" ? window.CatCodeV6Gaze : null;
+    if (!gaze) return;
+    if (typeof gaze.requestTick === "function") gaze.requestTick();
+    // Repaint the current centre state immediately when Apply updates the
+    // palette without changing the selected custom-skin id.
+    if (typeof gaze.handleCursorPos === "function") gaze.handleCursorPos({ dx: 0, dy: 0 });
+  }
+
   function setSelected(value) {
     const next = normalize(value);
     const changed = next !== selectedId;
@@ -114,15 +153,14 @@
       refreshHosts();
       // Re-request idle head/body decode so 256 layers can set head-motion-ready
       // again after overlay cleanup (do not leave readiness permanently cleared).
-      const gaze = typeof window !== "undefined" ? window.CatCodeV6Gaze : null;
-      if (gaze && typeof gaze.requestTick === "function") gaze.requestTick();
       // Pupil-free skin heads must receive a centre gaze frame immediately
       // after switching, even when the OS cursor has not moved yet.
-      if (gaze && typeof gaze.handleCursorPos === "function") {
-        gaze.handleCursorPos({ dx: 0, dy: 0 });
-      }
+      requestGazeRepaint();
     } else {
       refreshHosts();
+      // Palette Apply can keep the same skin id. The newly composed base must
+      // still be followed by a fresh black pupil, never a stale yellow hole.
+      requestGazeRepaint();
     }
     return selectedId;
   }
@@ -140,6 +178,7 @@
   if (typeof window !== "undefined") {
     window.CatCodeV6Skin = {
       getSelected: () => ({ id: selectedId }),
+      getCustomPalette: () => ({ ...selectedPalette }),
       getReady: () => Promise.resolve(),
       setHostSource,
       refreshHosts,

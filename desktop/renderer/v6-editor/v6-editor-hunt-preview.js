@@ -7,6 +7,7 @@
   const GAZE_VIEWBOX = 1024;
   const GAZE_TO_PNG_SCALE = VIEWBOX / GAZE_VIEWBOX;
   const DEFAULT_PUPIL_HEX = "#092d3a";
+  const GAZE_MASKS = typeof window !== "undefined" ? window.CatCodeV6GazeMasks : null;
 
   const HUNT_FINAL_EYE_LAYOUT_GAZE = Object.freeze([
     Object.freeze({
@@ -134,6 +135,9 @@
     if (coreApi && typeof coreApi.applyPaletteToImageData === "function" && entry) {
       coreApi.applyPaletteToImageData(imageData, entry, palette);
     }
+    // Static eye colour is applied by the source-bound custom palette
+    // contract. The 1024 runtime gaze mask is deliberately never projected
+    // onto this 256px image: doing so coloured a forepaw in editor previews.
     const pupilRgb = hexToRgb(DEFAULT_PUPIL_HEX);
     let total = 0;
     for (const eye of HUNT_FINAL_EYE_LAYOUT) {

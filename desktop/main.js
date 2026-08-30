@@ -102,6 +102,7 @@ const {
 } = require("./v6-skin-diagnostics");
 const nodeFs = require("node:fs");
 const nodePath = require("node:path");
+const v6SkinFileFormat = require("./renderer/pet/v6-skin-file-format.js");
 
 function isV6IdlePreviewQaPackage() {
   if (!process.resourcesPath) return false;
@@ -120,6 +121,16 @@ function isV6IdlePreviewQaPackage() {
     "v6-editor-77-host-apply-qa.marker",
     "v6-custom-skin-idle-hunt-gaze-repair-qa.marker",
   ].some((marker) => nodeFs.existsSync(nodePath.join(process.resourcesPath, marker)));
+}
+const INTERNAL_NO_LICENSE_QA_MARKER =
+  "catcode-internal-no-license-qa.marker";
+function isInternalNoLicenseQaPackage() {
+  return !!(
+    process.resourcesPath &&
+    nodeFs.existsSync(
+      nodePath.join(process.resourcesPath, INTERNAL_NO_LICENSE_QA_MARKER),
+    )
+  );
 }
 const {
   createSkinGalleryWindowController,
@@ -24843,7 +24854,8 @@ var {
     isV6SkinDiagnosticsEnabled(process.argv) || isV6SkinDiagnosticsQaPackage(),
   catcodeV6IdlePreviewEnabled =
     isV6IdlePreviewQaPackage() ||
-    process.env.CATCODE_V6_IDLE_PREVIEW === "1" ||
+    // V6 is the shipped model now; keep an explicit opt-out for diagnostics.
+    process.env.CATCODE_V6_IDLE_PREVIEW !== "0" ||
     process.argv.includes("--catcode-v6-idle-preview") ||
     me.commandLine.hasSwitch("catcode-v6-idle-preview"),
   catcodeV6TypingPreviewEnabled =
@@ -26376,6 +26388,47 @@ catcodeTrustedIpcMain.handle("onboarding-open-cat-editor", () => {
   wl();
   return { ok: !0 };
 });
+catcodeTrustedIpcMain.handle("v6-skin-export", async (event, file) => {
+  const checked = v6SkinFileFormat.validateSkinFile(file);
+  if (!checked.ok) return { ok: false, reason: checked.reason };
+  try {
+    const owner = en.fromWebContents(event.sender) || undefined;
+    const result = await Js.showSaveDialog(owner, {
+      title: "Экспорт скина CatCode",
+      defaultPath: "catcode-skin.json",
+      filters: [{ name: "CatCode skin JSON", extensions: ["json"] }],
+    });
+    if (result.canceled || !result.filePath) return { ok: false, canceled: true };
+    nodeFs.writeFileSync(result.filePath, v6SkinFileFormat.serializeSkinFile(checked.value), "utf8");
+    return { ok: true, filePath: result.filePath };
+  } catch (error) {
+    Ze("[CatCode] V6 skin export failed:", error && error.message ? error.message : error);
+    return { ok: false, reason: "write-failed" };
+  }
+});
+catcodeTrustedIpcMain.handle("v6-skin-import", async (event) => {
+  try {
+    const owner = en.fromWebContents(event.sender) || undefined;
+    const result = await Js.showOpenDialog(owner, {
+      title: "Импорт скина CatCode",
+      properties: ["openFile"],
+      filters: [{ name: "CatCode skin JSON", extensions: ["json"] }],
+    });
+    if (result.canceled || !result.filePaths || !result.filePaths[0]) {
+      return { ok: false, canceled: true };
+    }
+    const filePath = result.filePaths[0];
+    const stat = nodeFs.statSync(filePath);
+    if (!stat.isFile() || stat.size > 1024 * 1024) {
+      return { ok: false, reason: "file-too-large-or-not-file" };
+    }
+    const parsed = v6SkinFileFormat.parseSkinFileText(nodeFs.readFileSync(filePath, "utf8"));
+    return parsed.ok ? { ok: true, file: parsed.value } : { ok: false, reason: parsed.reason };
+  } catch (error) {
+    Ze("[CatCode] V6 skin import failed:", error && error.message ? error.message : error);
+    return { ok: false, reason: "read-failed" };
+  }
+});
 var { createPetWindow: HT } = Gk({
     BrowserWindow: en,
     screen: Gs,
@@ -26994,7 +27047,7 @@ var {
     getMappingWindow: () => $s,
     getPetWindow: () => Re,
   }),
-  { checkAppAccessValidityNow: Mm, resolveStartupAndLaunch: Cg } = yk({
+  { checkAppAccessValidityNow: Mm, resolveStartupAndLaunch: resolveStartupWithLicense } = yk({
     accountManager: Yr,
     loadLicense: wi,
     validateSavedLicense: xE,
@@ -27003,6 +27056,19 @@ var {
     createLicenseWindow: Ys,
     startLicensedApp: Ol,
   });
+const Cg = isInternalNoLicenseQaPackage()
+  ? async () => {
+      It("[CatCode] internal no-license QA package: license gate bypassed");
+      Ol();
+      return { ok: true, internalNoLicenseQa: true };
+    }
+  : resolveStartupWithLicense;
+if (isInternalNoLicenseQaPackage()) {
+  me.setPath(
+    "userData",
+    nodePath.join(me.getPath("appData"), "CatCode Internal QA"),
+  );
+}
 nA({
   ipcMain: catcodeTrustedIpcMain,
   dialog: Js,

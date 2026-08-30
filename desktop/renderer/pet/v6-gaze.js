@@ -9,6 +9,8 @@
 
 const GAZE_MASKS = (typeof window === "object" && window.CatCodeV6GazeMasks)
   || (typeof require === "function" ? require("./v6-gaze-masks") : null);
+const GAZE_SURFACE_MASKS = (typeof window === "object" && window.CatCodeV6GazeSurfaceMasks)
+  || (typeof require === "function" ? require("./v6-gaze-surface-masks") : null);
 const REFERENCE_IDLE_GAZE = (typeof window === "object" && window.CatCodeV6ReferenceIdleGaze)
   || (typeof require === "function" ? require("./v6-reference-idle-gaze-contract") : null);
 
@@ -134,7 +136,23 @@ function eyePaletteForSkin(win = typeof window !== "undefined" ? window : null) 
     : null;
   if (catalog && selected && typeof catalog.getV6Skin === "function") {
     const skin = catalog.getV6Skin(selected.id);
-    if (skin && skin.eyePalette) return skin.eyePalette;
+    if (skin && skin.eyePalette) {
+      const customPalette =
+        skin.customPalette && win && win.CatCodeV6Skin &&
+        typeof win.CatCodeV6Skin.getCustomPalette === "function"
+          ? win.CatCodeV6Skin.getCustomPalette()
+          : null;
+      if (customPalette && /^#[0-9a-f]{6}$/i.test(customPalette.iris || "")) {
+        return {
+          ...skin.eyePalette,
+          iris: customPalette.iris,
+          irisLight: customPalette.iris,
+          // The editor palette never owns pupils. They remain consistently dark.
+          pupil: skin.eyePalette.pupil || DEFAULT_EYE_PALETTE.pupil,
+        };
+      }
+      return skin.eyePalette;
+    }
   }
   return DEFAULT_EYE_PALETTE;
 }
@@ -184,6 +202,34 @@ function irisPixelSet(mask) {
   }
   irisPixelSets.set(mask, set);
   return set;
+}
+
+const gazeSurfaceSets = new WeakMap();
+function gazeSurfacePixelSet(surface) {
+  if (!surface) return null;
+  let set = gazeSurfaceSets.get(surface);
+  if (set) return set;
+  set = new Set();
+  for (const run of surface || []) {
+    const y = run[0];
+    for (let x = run[1]; x <= run[2]; x += 1) set.add(y * 256 + x);
+  }
+  gazeSurfaceSets.set(surface, set);
+  return set;
+}
+
+function gazeSurfaceForEye(layout, eye, masks) {
+  if (!GAZE_SURFACE_MASKS || !eye) return null;
+  const pack = layout === "huntFinal" ? GAZE_SURFACE_MASKS.huntFinal : GAZE_SURFACE_MASKS[layout];
+  const canonicalMasks = layout === "huntFinal" ? GAZE_MASKS && GAZE_MASKS.huntFinal : GAZE_MASKS && GAZE_MASKS.idle;
+  if (!pack) return null;
+  const side = eye.id === "right" || (!eye.id && eye.x >= 500) ? "right" : "left";
+  const mask = gazeMaskForEye(layout, eye, masks);
+  // Reference-idle contracts have their own geometry. Do not apply the Black
+  // Canonical surface to them; their exact-mask fallback remains the safe
+  // path until a matching reference surface is authored.
+  if (!canonicalMasks || !mask || mask !== canonicalMasks[side]) return null;
+  return pack[side] || null;
 }
 
 function drawReferenceIdleGaze(context, contract, lookX, lookY, palette) {
@@ -301,14 +347,37 @@ function fillClippedPupil(context, eye, lookX, lookY, palette, mask) {
 /** Pupil-only path (idle + huntFinal): exact footprint ∩ pupil track.
  * Do NOT require irisRuns — both idle and huntFinal irisRuns omit the resting
  * pupil hole, so an iris clip hides the centre pupil on pupil-free bases. */
-function fillPupilFootprintOnly(context, eye, lookX, lookY, palette) {
+function fillPupilFootprintOnly(context, eye, lookX, lookY, palette, mask = null, surface = null) {
   const rects = pupilFootprintRects(eye, lookX, lookY);
+  // The raster leaves the centre pupil hole out of irisRuns. Keep that one
+  // documented hole, but otherwise restrict the moving pupil to exact iris
+  // ownership. pupilBounds alone is wider and may cross nearby anatomy.
+  // Never mutate the cached atlas set. The same mask is also used by the
+  // full-eye path; adding the centre hole to it made later frames see a
+  // widened iris and reintroduced eye-colour artifacts.
+  const allowed = surface ? gazeSurfacePixelSet(surface) : (mask ? new Set(irisPixelSet(mask)) : null);
+  if (allowed) {
+    for (const rect of pupilFootprintRects(eye, 0, 0)) {
+      for (let y = rect.y; y < rect.y + rect.h; y += 1) {
+        for (let x = rect.x; x < rect.x + rect.w; x += 1) {
+          if (pupilPixelInsideTrack(eye, x, y)) {
+            allowed.add(surface
+              ? Math.floor(y / 4) * 256 + Math.floor(x / 4)
+              : y * V6_GAZE_VIEWBOX + x);
+          }
+        }
+      }
+    }
+  }
   context.fillStyle = palette.pupil;
   let painted = 0;
   for (const rect of rects) {
     for (let y = rect.y; y < rect.y + rect.h; y += 1) {
       for (let x = rect.x; x < rect.x + rect.w; x += 1) {
         if (!pupilPixelInsideTrack(eye, x, y)) continue;
+        if (surface) {
+          if (!allowed.has(Math.floor(y / 4) * 256 + Math.floor(x / 4))) continue;
+        } else if (allowed && !allowed.has(y * V6_GAZE_VIEWBOX + x)) continue;
         context.fillRect(x, y, 1, 1);
         painted += 1;
       }
@@ -317,7 +386,7 @@ function fillPupilFootprintOnly(context, eye, lookX, lookY, palette) {
   return painted;
 }
 
-function drawExactIrisGaze(context, eye, lookX, lookY, palette, mask) {
+function drawExactIrisGaze(context, eye, lookX, lookY, palette, mask, surface = null) {
   if (!context || !mask) return false;
   if (Object.prototype.hasOwnProperty.call(mask, "pupilRuns")) {
     if (!mask.pupilRuns || !mask.pupilRuns.length) return false;
@@ -347,38 +416,83 @@ function drawExactIrisGaze(context, eye, lookX, lookY, palette, mask) {
     }
     return painted > 0;
   }
-  fillExactRuns(context, mask.irisRuns, palette.iris);
-  // Clear the old pupil footprint only where the exact iris atlas owns it.
-  // A footprint rectangle is larger than an iris on some poses; painting it
-  // unmasked leaked iris colour onto the final hunt paw.
-  const sourceRects = pupilFootprintRects(eye, 0, 0);
-  const iris = irisPixelSet(mask);
-  context.fillStyle = palette.iris;
-  for (const rect of sourceRects) {
-    for (let y = rect.y; y < rect.y + rect.h; y += 1) {
-      for (let x = rect.x; x < rect.x + rect.w; x += 1) {
-        if (iris.has(y * V6_GAZE_VIEWBOX + x)) context.fillRect(x, y, 1, 1);
+  if (surface) {
+    // The complete exact source surface includes the resting pupil hole.
+    // Paint it before the moving pupil so the full-eye path cannot leave a
+    // stale pupil/iris fragment behind or reach adjacent anatomy.
+    fillSourceResolutionRuns(context, surface, palette.iris);
+  } else {
+    fillExactRuns(context, mask.irisRuns, palette.iris);
+    // Clear the old pupil footprint only where the exact iris atlas owns it.
+    // A footprint rectangle is larger than an iris on some poses; painting it
+    // unmasked leaked iris colour onto the final hunt paw.
+    const sourceRects = pupilFootprintRects(eye, 0, 0);
+    const iris = irisPixelSet(mask);
+    context.fillStyle = palette.iris;
+    for (const rect of sourceRects) {
+      for (let y = rect.y; y < rect.y + rect.h; y += 1) {
+        for (let x = rect.x; x < rect.x + rect.w; x += 1) {
+          if (iris.has(y * V6_GAZE_VIEWBOX + x)) context.fillRect(x, y, 1, 1);
+        }
       }
     }
   }
-  fillExactRuns(context, mask.highlightRuns, palette.irisLight);
-  fillClippedPupil(context, eye, lookX, lookY, palette, mask);
+  if (surface) {
+    fillExactRunsOnSourceSurface(context, mask.highlightRuns, palette.irisLight, surface);
+  } else {
+    fillExactRuns(context, mask.highlightRuns, palette.irisLight);
+  }
+  if (surface) {
+    fillPupilFootprintOnly(context, eye, lookX, lookY, palette, mask, surface);
+  } else {
+    fillClippedPupil(context, eye, lookX, lookY, palette, mask);
+  }
   return true;
+}
+
+function fillSourceResolutionRuns(context, runs, color) {
+  if (!context || !runs || !runs.length) return 0;
+  context.fillStyle = color;
+  for (const run of runs) {
+    const y = run[0];
+    const x0 = run[1];
+    const x1 = run[2];
+    context.fillRect(x0 * 4, y * 4, (x1 - x0 + 1) * 4, 4);
+  }
+  return runs.length;
+}
+
+function fillExactRunsOnSourceSurface(context, runs, color, surface) {
+  if (!context || !runs || !runs.length || !surface) return 0;
+  const allowed = gazeSurfacePixelSet(surface);
+  context.fillStyle = color;
+  let painted = 0;
+  for (const run of runs) {
+    const y = run[0];
+    for (let x = run[1]; x <= run[2]; x += 1) {
+      if (!allowed.has(Math.floor(x / 4) + Math.floor(y / 4) * 256)) continue;
+      context.fillRect(x, y, 1, 1);
+      painted += 1;
+    }
+  }
+  return painted;
 }
 
 function drawPixelIris(context, eye, lookX, lookY, palette = DEFAULT_EYE_PALETTE, layout = "idle", masks) {
   const mask = gazeMaskForEye(layout, eye, masks);
   if (!mask) return false;
-  return drawExactIrisGaze(context, eye, lookX, lookY, palette, mask);
+  const surface = gazeSurfaceForEye(layout, eye, masks);
+  return drawExactIrisGaze(context, eye, lookX, lookY, palette, mask, surface);
 }
 
 function drawPupilOnly(context, eye, lookX, lookY, palette = DEFAULT_EYE_PALETTE, layout = "idle", masks) {
   const mask = gazeMaskForEye(layout, eye, masks);
   if (!mask) return false;
-  // Pupil-only idle and huntFinal: footprint∩track only. irisRuns omit the
-  // resting pupil hole on pupil-free bases, so an iris membership clip hides
-  // the centre pupil. Full iris+pupil painters still use fillClippedPupil.
-  return fillPupilFootprintOnly(context, eye, lookX, lookY, palette) > 0;
+  // This overlay owns only the moving pupil. The underlying 256px pose owns
+  // iris colour and highlights. Repainting iris here caused Hunt f8 eye colour
+  // to appear over the forepaw whenever a gaze mask and pose anatomy differed.
+  const surface = gazeSurfaceForEye(layout, eye, masks);
+  return fillPupilFootprintOnly(context, eye, lookX, lookY, palette, mask, surface) > 0;
 }
 
 function huntFinalPupilRects(eye, lookX, lookY) {
@@ -395,7 +509,8 @@ function pupilRectsInsideIrisBBox(eye, lookX, lookY) {
 function drawHuntFinalPupil(context, eye, lookX, lookY, palette = DEFAULT_EYE_PALETTE) {
   const mask = gazeMaskForEye("huntFinal", eye);
   if (!mask) return false;
-  return drawExactIrisGaze(context, eye, lookX, lookY, palette, mask);
+  const surface = gazeSurfaceForEye("huntFinal", eye);
+  return drawExactIrisGaze(context, eye, lookX, lookY, palette, mask, surface);
 }
 
 function pupilPixelsInsideExactIris(eye, lookX, lookY, layout = "huntFinal") {
@@ -492,9 +607,10 @@ function wireV6Gaze({
     const selected = win && win.CatCodeV6Skin && typeof win.CatCodeV6Skin.getSelected === "function"
       ? win.CatCodeV6Skin.getSelected()
       : null;
-    // Split idle head/body layers are only safe for skins that ship matching
-    // authored layers (Snowball default + owner Ginger). Other custom skins
-    // stay as one complete authored image to avoid white layer seams.
+    // Split idle head/body layers are safe for any skin whose runtime layers
+    // are ready. Custom palettes are painted onto the same pupil-safe Black
+    // Canonical layers before this readiness check, so they use the exact
+    // same head-motion path as the owner-authored skins.
     if (selected && selected.id && selected.id !== "snowball") {
       const catalog = win && win.CatCodeV6SkinCatalog;
       const skin = catalog && typeof catalog.getV6Skin === "function"
@@ -817,6 +933,7 @@ if (typeof module === "object" && module.exports) {
     pupilOrigin,
     fillClippedPupil,
     fillPupilFootprintOnly,
+    gazeSurfaceForEye,
     gazeMaskForEye,
     pupilPixelInsideTrack,
     fillExactRuns,
