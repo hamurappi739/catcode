@@ -99,7 +99,13 @@ async function main() {
     }
 
     if (command === "overview") {
-      print({ licenses: await store.listLicenseOverview(positiveInteger(options.limit, 50, { min: 1, max: 200 })) });
+      const limit = positiveInteger(options.limit, 100, { min: 1, max: 100 });
+      const page = positiveInteger(options.page, 1, { min: 1, max: 1_000_000 });
+      const [licenses, totals] = await Promise.all([
+        store.listLicenseOverview({ limit, offset: (page - 1) * limit }),
+        store.countLicenseOverview(),
+      ]);
+      print({ licenses, page, limit, total: Number(totals.total) || 0, activeTotal: Number(totals.active_total) || 0 });
       return;
     }
 

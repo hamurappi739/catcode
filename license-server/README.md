@@ -99,7 +99,7 @@ It can issue a key, show an overview, inspect one license with its devices and e
 
 ## Owner dashboard
 
-The browser dashboard is available at `https://$API_DOMAIN/admin`. It lists license activity and devices, issues a key, frees a device slot, and revokes a license. Licenses are intentionally never deleted: revocation preserves the payment and activation history needed for support.
+The browser dashboard is available at `https://$API_DOMAIN/admin`. It lists license activity and devices, issues a key, frees a device slot, and revokes a license. The list is paginated at 100 rows per page and reports the database total, so it remains usable after more than 100 keys have been issued. Licenses are intentionally never deleted: revocation preserves the payment and activation history needed for support.
 
 The dashboard runs in a separate `admin-dashboard` container. It receives `.admin.env`; the public `license-api` container does not receive administrator database credentials. Caddy protects `/admin` with HTTPS Basic Auth. Create its private configuration before deploying the dashboard:
 
@@ -118,7 +118,7 @@ Run the maintenance migration after deploying an updated server source. It adds 
 sudo docker compose --profile maintenance run --rm license-migrate
 ```
 
-Revoking a license denies its next online refresh and prevents the app from launching online. CatCode also checks the license at startup and every 15 minutes while it is running. A user who remains offline can use an already-issued entitlement until it expires; use `ENTITLEMENT_TTL_SECONDS=86400` for a one-day maximum offline interval.
+Revoking a license denies its next online refresh and prevents the app from launching online. CatCode also checks the license at startup and every 15 minutes while it is running. Temporary refresh failures, rate limits, and network errors must not erase the locally stored license; the app may use a still-valid signed entitlement offline until it expires. A user who remains offline can use an already-issued entitlement until it expires; use `ENTITLEMENT_TTL_SECONDS=86400` for a one-day maximum offline interval.
 
 The `license-admin` container receives only the administrator database URI and `LICENSE_KEY_HMAC_SECRET`; it never receives the entitlement signing key.
 

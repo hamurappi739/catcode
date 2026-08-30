@@ -1,6 +1,6 @@
 "use strict";
 
-const state = { licenses: [], issuedKey: "" };
+const state = { licenses: [], issuedKey: "", page: 1, limit: 100, total: 0, activeTotal: 0, hasPreviousPage: false, hasNextPage: false };
 const elements = {
   empty: document.querySelector("#empty"),
   issueForm: document.querySelector("#issue-form"),
@@ -11,6 +11,9 @@ const elements = {
   detailsDialog: document.querySelector("#details-dialog"),
   detailsTitle: document.querySelector("#details-title"),
   summary: document.querySelector("#summary"),
+  pageSummary: document.querySelector("#page-summary"),
+  previousPage: document.querySelector("#previous-page"),
+  nextPage: document.querySelector("#next-page"),
   toast: document.querySelector("#toast"),
 };
 
@@ -62,7 +65,12 @@ function toast(message) {
 function renderLicenses() {
   elements.licenseList.replaceChildren();
   const active = state.licenses.filter((license) => license.status === "active").length;
-  elements.summary.textContent = `Всего: ${state.licenses.length}; активных: ${active}`;
+  const first = state.total ? (state.page - 1) * state.limit + 1 : 0;
+  const last = first ? first + state.licenses.length - 1 : 0;
+  elements.summary.textContent = `Показаны ${first}-${last} из ${state.total}; активных: ${state.activeTotal}`;
+  elements.pageSummary.textContent = `Страница ${state.page}`;
+  elements.previousPage.disabled = !state.hasPreviousPage;
+  elements.nextPage.disabled = !state.hasNextPage;
   elements.empty.hidden = state.licenses.length > 0;
   for (const license of state.licenses) {
     const row = document.createElement("tr");
@@ -79,9 +87,15 @@ function renderLicenses() {
   }
 }
 
-async function refresh() {
-  const data = await api("/admin/api/licenses?limit=100");
+async function refresh(page = state.page) {
+  const data = await api(`/admin/api/licenses?page=${page}&limit=${state.limit}`);
   state.licenses = data.licenses;
+  state.page = data.page;
+  state.total = data.total;
+  state.activeTotal = data.activeTotal;
+  state.hasPreviousPage = data.hasPreviousPage;
+  state.hasNextPage = data.hasNextPage;
+  if (!state.licenses.length && state.hasPreviousPage) return refresh(state.page - 1);
   renderLicenses();
 }
 
@@ -149,6 +163,8 @@ async function showDetails(licenseId) {
 }
 
 document.querySelector("#refresh").addEventListener("click", () => refresh().catch((error) => toast(`Ошибка: ${error.message}`)));
+elements.previousPage.addEventListener("click", () => refresh(state.page - 1).catch((error) => toast(`Ошибка: ${error.message}`)));
+elements.nextPage.addEventListener("click", () => refresh(state.page + 1).catch((error) => toast(`Ошибка: ${error.message}`)));
 document.querySelectorAll("[data-close]").forEach((control) => control.addEventListener("click", () => document.querySelector(`#${control.dataset.close}`).close()));
 document.querySelector("#copy-key").addEventListener("click", async () => {
   await navigator.clipboard.writeText(state.issuedKey);
@@ -172,7 +188,7 @@ elements.issueForm.addEventListener("submit", async (event) => {
     elements.keyDialog.showModal();
     elements.issueForm.reset();
     elements.issueForm.elements.maxDevices.value = "1";
-    await refresh();
+    await refresh(1);
   } catch (error) { toast(`Ошибка: ${error.message}`); }
   finally { submit.disabled = false; }
 });

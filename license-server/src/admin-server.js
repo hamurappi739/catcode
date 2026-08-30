@@ -101,10 +101,18 @@ function uuid(value) {
   return value;
 }
 
-function limit(value) {
-  const parsed = Number(value || 100);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 200) throw new HttpError(400, "invalid_limit");
+function paginationValue(value, fallback, maximum = 100, minimum = 0) {
+  const parsed = Number(value === null || value === undefined || value === "" ? fallback : value);
+  if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) throw new HttpError(400, "invalid_pagination");
   return parsed;
+}
+
+function parsePagination(url) {
+  const limit = paginationValue(url.searchParams.get("limit"), 100, 100, 1);
+  const page = paginationValue(url.searchParams.get("page"), 1, 1_000_000, 1);
+  const offset = (page - 1) * limit;
+  if (!Number.isSafeInteger(offset)) throw new HttpError(400, "invalid_pagination");
+  return { limit, page, offset };
 }
 
 function parseIssue(body) {
@@ -137,7 +145,21 @@ function createAdminServer({ config, store }) {
       }
 
       if (method === "GET" && pathname === "/admin/api/licenses") {
-        return sendJson(response, 200, { licenses: await store.listLicenseOverview(limit(url.searchParams.get("limit"))) });
+        const pagination = parsePagination(url);
+        const [licenses, totals] = await Promise.all([
+          store.listLicenseOverview(pagination),
+          store.countLicenseOverview(),
+        ]);
+        const total = Number(totals.total) || 0;
+        return sendJson(response, 200, {
+          licenses,
+          page: pagination.page,
+          limit: pagination.limit,
+          total,
+          activeTotal: Number(totals.active_total) || 0,
+          hasPreviousPage: pagination.page > 1,
+          hasNextPage: pagination.offset + licenses.length < total,
+        });
       }
 
       const detailMatch = pathname.match(/^\/admin\/api\/licenses\/([^/]+)$/);
@@ -222,4 +244,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createAdminServer, parseIssue };
+module.exports = { createAdminServer, parseIssue, parsePagination };

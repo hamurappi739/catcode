@@ -232,16 +232,25 @@ function createStore(pool) {
     return result.rows;
   }
 
-  async function listLicenseOverview(limit = 50) {
+  async function listLicenseOverview({ limit = 100, offset = 0 } = {}) {
     const result = await pool.query(
       `SELECT id, key_prefix, product_code, status, buyer_email, payment_reference, notes,
               max_devices, expires_at, created_at, updated_at, revoked_at,
-              active_device_count, last_seen_at, first_activated_at
+               active_device_count, last_seen_at, first_activated_at
        FROM catcode_admin.license_overview
-       ORDER BY created_at DESC LIMIT $1`,
-      [limit],
+       ORDER BY created_at DESC, id DESC LIMIT $1 OFFSET $2`,
+      [limit, offset],
     );
     return result.rows;
+  }
+
+  async function countLicenseOverview() {
+    const result = await pool.query(
+      `SELECT count(*)::int AS total,
+              count(*) FILTER (WHERE status = 'active' AND (expires_at IS NULL OR expires_at > now()))::int AS active_total
+       FROM licenses`,
+    );
+    return result.rows[0] || { total: 0, active_total: 0 };
   }
 
   async function getLicenseOverview(licenseId) {
@@ -338,6 +347,7 @@ function createStore(pool) {
   return {
     activate,
     createLicense,
+    countLicenseOverview,
     deactivate,
     deactivateDeviceForAdmin,
     getLicenseOverview,

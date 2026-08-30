@@ -6,7 +6,8 @@ const { createAdminServer, parseIssue } = require("../src/admin-server");
 
 function fakeStore() {
   return {
-    async listLicenseOverview() { return []; },
+    async listLicenseOverview({ limit } = {}) { return Array.from({ length: Math.min(limit || 100, 2) }, (_, index) => ({ id: `license-${index}`, status: "active" })); },
+    async countLicenseOverview() { return { total: 202, active_total: 200 }; },
     async getLicenseOverview(id) { return { id, key_prefix: "CAT-TEST", status: "active" }; },
     async listDevices() { return []; },
     async listLicenseEvents() { return []; },
@@ -46,6 +47,34 @@ test("dashboard issues a perpetual one-device license from a same-origin request
   assert.equal(response.status, 201);
   assert.match(body.license.key, /^CAT-/);
   assert.equal(body.license.maxDevices, 1);
+});
+
+test("license list is paginated and reports totals beyond the first 100 rows", async (t) => {
+  const { server, base } = await start();
+  t.after(() => server.close());
+  const response = await fetch(`${base}/admin/api/licenses?page=2&limit=100`, {
+    headers: { "x-forwarded-proto": "https" },
+  });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.page, 2);
+  assert.equal(body.limit, 100);
+  assert.equal(body.total, 202);
+  assert.equal(body.activeTotal, 200);
+  assert.equal(body.hasPreviousPage, true);
+  assert.equal(body.hasNextPage, true);
+});
+
+test("license list rejects zero or oversized page sizes", async (t) => {
+  const { server, base } = await start();
+  t.after(() => server.close());
+  for (const limit of ["0", "101"]) {
+    const response = await fetch(`${base}/admin/api/licenses?limit=${limit}`, {
+      headers: { "x-forwarded-proto": "https" },
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "invalid_pagination" });
+  }
 });
 
 test("dashboard validates issue input before database writes", () => {
